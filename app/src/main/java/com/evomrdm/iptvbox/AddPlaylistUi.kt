@@ -542,7 +542,7 @@ internal fun TypeSelector(
     type: PlaylistSourceType,
     onTypeChange: (PlaylistSourceType) -> Unit,
 ) {
-    val options = listOf(PlaylistSourceType.JSON_DIRECTORY, PlaylistSourceType.M3U_URL, PlaylistSourceType.XTREAM)
+    val options = listOf(PlaylistSourceType.M3U_URL, PlaylistSourceType.XTREAM, PlaylistSourceType.JSON_DIRECTORY)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
