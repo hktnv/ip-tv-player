@@ -68,9 +68,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -145,6 +152,12 @@ internal fun HomeScreen(
             .takeLast(previewLimit)
             .asReversed()
     }
+    val recentRailFocus = remember { FocusRequester() }
+    val favoritesRailFocus = remember { FocusRequester() }
+    val latestRailFocus = remember { FocusRequester() }
+    val liveRailFocus = remember { FocusRequester() }
+    val seriesRailFocus = remember { FocusRequester() }
+    val moviesRailFocus = remember { FocusRequester() }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -174,6 +187,9 @@ internal fun HomeScreen(
                     emptyText = "Henüz izlenen içerik yok",
                     onOpenAll = onOpenRecent,
                     onOpenItem = onOpenItem,
+                    headerFocusRequester = recentRailFocus,
+                    previousRailFocusRequester = null,
+                    nextRailFocusRequester = favoritesRailFocus,
                 )
             }
             item(key = "favorites-row", contentType = "media-row") {
@@ -183,6 +199,9 @@ internal fun HomeScreen(
                     emptyText = "Favori içerik yok",
                     onOpenAll = onOpenFavorites,
                     onOpenItem = onOpenItem,
+                    headerFocusRequester = favoritesRailFocus,
+                    previousRailFocusRequester = recentRailFocus,
+                    nextRailFocusRequester = latestRailFocus,
                 )
             }
             item(key = "latest-row", contentType = "media-row") {
@@ -192,6 +211,9 @@ internal fun HomeScreen(
                     emptyText = "Son eklenen içerik yok",
                     onOpenAll = { onOpenCatalogTab(firstAvailableTab(playlist)) },
                     onOpenItem = onOpenItem,
+                    headerFocusRequester = latestRailFocus,
+                    previousRailFocusRequester = favoritesRailFocus,
+                    nextRailFocusRequester = liveRailFocus,
                 )
             }
             item(key = "live-row", contentType = "media-row") {
@@ -201,6 +223,9 @@ internal fun HomeScreen(
                     emptyText = "Canlı kanal bulunamadı",
                     onOpenAll = { onOpenCatalogTab(CatalogTab.LIVE) },
                     onOpenItem = onOpenItem,
+                    headerFocusRequester = liveRailFocus,
+                    previousRailFocusRequester = latestRailFocus,
+                    nextRailFocusRequester = seriesRailFocus,
                 )
             }
             item(key = "series-row", contentType = "series-row") {
@@ -210,6 +235,9 @@ internal fun HomeScreen(
                     emptyText = "Dizi bulunamadı",
                     onOpenAll = { onOpenCatalogTab(CatalogTab.SERIES) },
                     onOpenSeries = onOpenSeries,
+                    headerFocusRequester = seriesRailFocus,
+                    previousRailFocusRequester = liveRailFocus,
+                    nextRailFocusRequester = moviesRailFocus,
                 )
             }
             item(key = "movie-row", contentType = "media-row") {
@@ -219,6 +247,9 @@ internal fun HomeScreen(
                     emptyText = "Film bulunamadı",
                     onOpenAll = { onOpenCatalogTab(CatalogTab.MOVIES) },
                     onOpenItem = onOpenItem,
+                    headerFocusRequester = moviesRailFocus,
+                    previousRailFocusRequester = seriesRailFocus,
+                    nextRailFocusRequester = null,
                 )
             }
         }
@@ -280,16 +311,16 @@ internal fun HomeContentRow(
     emptyText: String,
     onOpenAll: () -> Unit,
     onOpenItem: (CatalogItem) -> Unit,
+    headerFocusRequester: FocusRequester,
+    previousRailFocusRequester: FocusRequester?,
+    nextRailFocusRequester: FocusRequester?,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            SectionTitle(title)
-            SeeAllButton(onClick = onOpenAll)
-        }
+        HomeRailHeader(
+            title = title,
+            onOpenAll = onOpenAll,
+            focusRequester = headerFocusRequester,
+        )
         if (items.isEmpty()) {
             Text(emptyText, color = IptvColors.TextSecondary, fontSize = 13.sp)
         } else {
@@ -298,10 +329,17 @@ internal fun HomeContentRow(
                 contentPadding = PaddingValues(horizontal = 2.dp),
             ) {
                 items(items, key = { it.id }, contentType = { it.kind.name }) { item ->
-                    CompactContentCard(
-                        item = item,
-                        onClick = { onOpenItem(item) },
-                    )
+                    Box(
+                        modifier = Modifier.homeRailItemVerticalNavigation(
+                            previousRailFocusRequester = previousRailFocusRequester,
+                            nextRailFocusRequester = nextRailFocusRequester,
+                        ),
+                    ) {
+                        CompactContentCard(
+                            item = item,
+                            onClick = { onOpenItem(item) },
+                        )
+                    }
                 }
             }
         }
@@ -315,16 +353,16 @@ internal fun HomeSeriesRow(
     emptyText: String,
     onOpenAll: () -> Unit,
     onOpenSeries: (String) -> Unit,
+    headerFocusRequester: FocusRequester,
+    previousRailFocusRequester: FocusRequester?,
+    nextRailFocusRequester: FocusRequester?,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            SectionTitle(title)
-            SeeAllButton(onClick = onOpenAll)
-        }
+        HomeRailHeader(
+            title = title,
+            onOpenAll = onOpenAll,
+            focusRequester = headerFocusRequester,
+        )
         if (groups.isEmpty()) {
             Text(emptyText, color = IptvColors.TextSecondary, fontSize = 13.sp)
         } else {
@@ -333,11 +371,18 @@ internal fun HomeSeriesRow(
                 contentPadding = PaddingValues(horizontal = 2.dp),
             ) {
                 items(groups, key = { it.id }, contentType = { "series-card" }) { group ->
-                    SeriesGroupCard(
-                        group = group,
-                        onClick = { onOpenSeries(group.title) },
-                        modifier = Modifier.width(132.dp),
-                    )
+                    Box(
+                        modifier = Modifier.homeRailItemVerticalNavigation(
+                            previousRailFocusRequester = previousRailFocusRequester,
+                            nextRailFocusRequester = nextRailFocusRequester,
+                        ),
+                    ) {
+                        SeriesGroupCard(
+                            group = group,
+                            onClick = { onOpenSeries(group.title) },
+                            modifier = Modifier.width(132.dp),
+                        )
+                    }
                 }
             }
         }
@@ -345,21 +390,53 @@ internal fun HomeSeriesRow(
 }
 
 @Composable
-internal fun SeeAllButton(onClick: () -> Unit) {
+internal fun HomeRailHeader(
+    title: String,
+    onOpenAll: () -> Unit,
+    focusRequester: FocusRequester,
+) {
     var focused by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(
+            modifier = Modifier
+                .focusRequester(focusRequester)
+                .tvFocusLift(focused = focused, scale = 1.025f, liftPx = -3f)
+                .onFocusChanged { focused = it.isFocused }
+                .tvClickable(onClick = onOpenAll),
+            color = if (focused) TvFocusPanel else Color.Transparent,
+            shape = RoundedCornerShape(10.dp),
+            border = if (focused) BorderStroke(2.dp, TvFocusBorder) else null,
+            shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 10.dp),
+        ) {
+            Text(
+                text = title,
+                color = IptvColors.TextPrimary,
+                fontSize = 22.sp,
+                lineHeight = 26.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+        }
+        SeeAllLabel()
+    }
+}
+
+@Composable
+internal fun SeeAllLabel() {
     Surface(
-        modifier = Modifier
-            .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -3f)
-            .onFocusChanged { focused = it.isFocused }
-            .tvClickable(onClick = onClick),
-        color = if (focused) TvFocusPanel else Color(0xFF101720),
+        color = Color(0xFF101720),
         shape = RoundedCornerShape(999.dp),
-        border = BorderStroke(1.dp, if (focused) TvFocusBorder else TvRestingBorder),
-        shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 10.dp),
+        border = BorderStroke(1.dp, TvRestingBorder),
     ) {
         Text(
             text = "Tümü",
-            color = if (focused) IptvColors.TextPrimary else IptvColors.Accent,
+            color = IptvColors.Accent,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -368,4 +445,23 @@ internal fun SeeAllButton(onClick: () -> Unit) {
     }
 }
 
+private fun Modifier.homeRailItemVerticalNavigation(
+    previousRailFocusRequester: FocusRequester?,
+    nextRailFocusRequester: FocusRequester?,
+): Modifier {
+    return onPreviewKeyEvent { event ->
+        if (event.type != KeyEventType.KeyDown) {
+            return@onPreviewKeyEvent false
+        }
+        when (event.key) {
+            Key.DirectionDown -> nextRailFocusRequester.requestFocusSafely()
+            Key.DirectionUp -> previousRailFocusRequester.requestFocusSafely()
+            else -> false
+        }
+    }
+}
 
+private fun FocusRequester?.requestFocusSafely(): Boolean {
+    if (this == null) return false
+    return runCatching { requestFocus() }.isSuccess
+}
