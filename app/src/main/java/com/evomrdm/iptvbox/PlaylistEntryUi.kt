@@ -380,10 +380,10 @@ private fun EntryActionCard(
         label = "entryCardElevation",
     )
     val borderColor = when {
-        focused -> Color(0xFFB9D8FF)
-        action.selected -> Color(0xFF78AFFF)
+        focused -> TvFocusBorder
+        action.selected -> IptvColors.Accent
         action.emphasis == EntryEmphasis.Primary -> Color(0xFF37536D)
-        else -> Color(0xFF263240)
+        else -> TvRestingBorder
     }
     Surface(
         modifier = modifier
@@ -396,8 +396,8 @@ private fun EntryActionCard(
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = action.onClick),
         color = when {
-            focused -> Color(0xFF17283B)
-            action.selected -> Color(0xFF132538)
+            focused -> TvFocusPanel
+            action.selected -> TvSelectedPanel
             action.emphasis == EntryEmphasis.Primary -> Color(0xFF101C28)
             else -> IptvColors.Panel
         },
@@ -418,8 +418,8 @@ private fun EntryActionCard(
                 contentDescription = null,
                 modifier = Modifier.height(if (action.emphasis == EntryEmphasis.Primary) 30.dp else 22.dp),
                 tint = when {
-                    focused -> Color(0xFFB9D8FF)
-                    action.selected -> Color(0xFF78AFFF)
+                    focused -> TvFocusBorder
+                    action.selected -> IptvColors.Accent
                     else -> IptvColors.TextPrimary
                 },
             )

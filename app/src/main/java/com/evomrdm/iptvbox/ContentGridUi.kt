@@ -31,7 +31,7 @@ internal fun ContentGrid(
         val favoriteKey = favoriteIds.joinToString("|")
         val favoriteSet = remember(favoriteKey) { favoriteIds.toSet() }
         val minCell = when {
-            mostlyLive && maxWidth < 600.dp -> 112.dp
+            maxWidth < 600.dp -> 160.dp
             mostlyLive -> 150.dp
             maxWidth >= 900.dp -> 178.dp
             maxWidth >= 600.dp -> 158.dp

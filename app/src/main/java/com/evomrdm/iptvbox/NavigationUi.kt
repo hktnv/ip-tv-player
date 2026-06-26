@@ -19,10 +19,15 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LiveTv
+import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -41,11 +47,13 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.evomrdm.iptvbox.core.designsystem.IptvColors
 
 @Composable
@@ -60,10 +68,12 @@ internal fun SideNavigation(
     onOpenPlaylistEntry: () -> Unit,
 ) {
     val entries = playlistNavEntries(hasPlaylist)
+    val focusManager = LocalFocusManager.current
     Column(
         modifier = Modifier
             .width(if (expanded) 204.dp else 78.dp)
             .fillMaxHeight()
+            .zIndex(2f)
             .animateContentSize()
             .focusGroup()
             .onFocusChanged { state ->
@@ -72,7 +82,8 @@ internal fun SideNavigation(
             .onPreviewKeyEvent { event ->
                 if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionRight) {
                     onExpandedChange(false)
-                    false
+                    focusManager.moveFocus(FocusDirection.Right)
+                    true
                 } else {
                     false
                 }
@@ -125,7 +136,7 @@ internal fun SideNavigation(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             NavigationButton(
                 label = "Liste seçimi",
-                icon = Icons.AutoMirrored.Filled.List,
+                icon = Icons.AutoMirrored.Filled.PlaylistPlay,
                 selected = selected == AppScreen.PLAYLISTS,
                 enabled = true,
                 expanded = expanded,
@@ -153,7 +164,7 @@ internal fun BottomNavigation(
     onNavigate: (AppScreen) -> Unit,
     onOpenTab: (CatalogTab) -> Unit,
 ) {
-    val entries = playlistNavEntries(hasPlaylist)
+    val entries = bottomNavEntries(hasPlaylist)
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color(0xF20A0F16),
@@ -204,11 +215,13 @@ internal fun BottomNavItem(
     Surface(
         modifier = modifier
             .fillMaxHeight()
+            .zIndex(if (focused) 1f else 0f)
+            .tvFocusLift(focused = focused, scale = 1.03f, liftPx = -3f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(enabled = enabled, onClick = onClick),
         color = when {
-            focused -> Color(0xFF182636)
-            selected -> Color(0xFF10221F)
+            focused -> TvFocusPanel
+            selected -> TvSelectedPanel
             else -> Color.Transparent
         },
         contentColor = if (selected) IptvColors.Accent else IptvColors.TextPrimary,
@@ -254,11 +267,13 @@ internal fun NavigationButton(
         modifier = modifier
             .fillMaxWidth()
             .height(if (compact) 38.dp else 44.dp)
+            .zIndex(if (focused) 1f else 0f)
+            .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -4f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(enabled = enabled, onClick = onClick),
         color = when {
-            focused -> Color(0xFF1E3345)
-            selected -> Color(0xFF122721)
+            focused -> TvFocusPanel
+            selected -> TvSelectedPanel
             else -> Color.Transparent
         },
         contentColor = when {
@@ -272,10 +287,11 @@ internal fun NavigationButton(
             when {
                 focused -> TvFocusBorder
                 selected -> IptvColors.Accent
-                expanded -> Color(0xFF263241)
+                expanded -> TvRestingBorder
                 else -> Color.Transparent
             },
         ),
+        shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 10.dp),
     ) {
         Row(
             modifier = Modifier
@@ -310,11 +326,21 @@ internal fun playlistNavEntries(hasPlaylist: Boolean): List<NavEntry> {
     return listOf(
         NavEntry("Anasayfa", screen = AppScreen.HOME, enabled = hasPlaylist, icon = Icons.Filled.Home),
         NavEntry("Arama", screen = AppScreen.SEARCH, enabled = hasPlaylist, icon = Icons.Filled.Search),
-        NavEntry("Canlı TV", tab = CatalogTab.LIVE, enabled = hasPlaylist, icon = Icons.AutoMirrored.Filled.List),
-        NavEntry("Diziler", tab = CatalogTab.SERIES, enabled = hasPlaylist, icon = Icons.AutoMirrored.Filled.List),
-        NavEntry("Filmler", tab = CatalogTab.MOVIES, enabled = hasPlaylist, icon = Icons.AutoMirrored.Filled.List),
-        NavEntry("Favoriler", screen = AppScreen.FAVORITES, enabled = hasPlaylist, icon = Icons.Filled.Home),
-        NavEntry("Son İzlenen", screen = AppScreen.RECENT, enabled = hasPlaylist, icon = Icons.AutoMirrored.Filled.List),
+        NavEntry("Canlı TV", tab = CatalogTab.LIVE, enabled = hasPlaylist, icon = Icons.Filled.LiveTv),
+        NavEntry("Diziler", tab = CatalogTab.SERIES, enabled = hasPlaylist, icon = Icons.Filled.VideoLibrary),
+        NavEntry("Filmler", tab = CatalogTab.MOVIES, enabled = hasPlaylist, icon = Icons.Filled.Movie),
+        NavEntry("Favoriler", screen = AppScreen.FAVORITES, enabled = hasPlaylist, icon = Icons.Filled.Favorite),
+        NavEntry("Son İzlenen", screen = AppScreen.RECENT, enabled = hasPlaylist, icon = Icons.Filled.History),
+    )
+}
+
+internal fun bottomNavEntries(hasPlaylist: Boolean): List<NavEntry> {
+    return listOf(
+        NavEntry("Anasayfa", screen = AppScreen.HOME, enabled = hasPlaylist, icon = Icons.Filled.Home),
+        NavEntry("Canlı TV", tab = CatalogTab.LIVE, enabled = hasPlaylist, icon = Icons.Filled.LiveTv),
+        NavEntry("Filmler", tab = CatalogTab.MOVIES, enabled = hasPlaylist, icon = Icons.Filled.Movie),
+        NavEntry("Diziler", tab = CatalogTab.SERIES, enabled = hasPlaylist, icon = Icons.Filled.VideoLibrary),
+        NavEntry("Ayarlar", screen = AppScreen.SETTINGS, enabled = true, icon = Icons.Filled.Settings),
     )
 }
 
@@ -330,5 +356,3 @@ private fun screenLabel(screen: AppScreen, selectedTab: CatalogTab): String {
         AppScreen.PLAYER -> "Oynatıcı"
     }
 }
-
-private val TvFocusBorder = Color(0xFFB9D8FF)

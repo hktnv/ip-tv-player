@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
 import com.evomrdm.iptvbox.core.designsystem.IptvColors
 import com.evomrdm.iptvbox.core.model.CatalogItem
@@ -47,11 +49,14 @@ internal fun CompactContentCard(
     Surface(
         modifier = Modifier
             .width(if (item.kind == ContentKind.LIVE_CHANNEL || item.kind == ContentKind.RADIO) 124.dp else 108.dp)
+            .zIndex(if (focused) 1f else 0f)
+            .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -5f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
-        color = if (focused) Color(0xFF172431) else IptvColors.Panel,
+        color = if (focused) TvFocusPanel else IptvColors.Panel,
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, if (focused) Color(0xFFB9D8FF) else Color(0xFF263240)),
+        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
+        shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
     ) {
         Column {
             ContentArtwork(
@@ -93,11 +98,14 @@ internal fun SeriesGroupCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
+            .zIndex(if (focused) 1f else 0f)
+            .tvFocusLift(focused = focused, scale = 1.03f, liftPx = -5f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
-        color = if (focused) Color(0xFF172431) else IptvColors.Panel,
+        color = if (focused) TvFocusPanel else IptvColors.Panel,
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, if (focused) Color(0xFFB9D8FF) else Color(0xFF263240)),
+        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
+        shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
     ) {
         Column {
             ContentArtwork(
@@ -137,11 +145,14 @@ internal fun SeasonCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .zIndex(if (focused) 1f else 0f)
+            .tvFocusLift(focused = focused, scale = 1.02f, liftPx = -4f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
-        color = if (focused) Color(0xFF172431) else IptvColors.Panel,
+        color = if (focused) TvFocusPanel else IptvColors.Panel,
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, if (focused) Color(0xFFB9D8FF) else Color(0xFF263240)),
+        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
+        shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(
@@ -170,17 +181,41 @@ internal fun ContentArtwork(
     showBadge: Boolean = true,
 ) {
     val performance = LocalPerformanceMode.current
+    val logoLike = kind == ContentKind.LIVE_CHANNEL || kind == ContentKind.RADIO
     Box(
         modifier = modifier.background(Color(0xFF0B141C)),
         contentAlignment = Alignment.Center,
     ) {
         if (performance.loadImages && !logoUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = logoUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.matchParentSize(),
-            )
+            if (logoLike) {
+                Surface(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .padding(8.dp),
+                    color = Color(0xFFF3F6F8),
+                    shape = RoundedCornerShape(16.dp),
+                    shadowElevation = 2.dp,
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AsyncImage(
+                            model = logoUrl,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                }
+            } else {
+                AsyncImage(
+                    model = logoUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize(),
+                )
+            }
         } else {
             Surface(
                 color = kind.tint().copy(alpha = 0.16f),
@@ -225,11 +260,14 @@ internal fun ContentCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .zIndex(if (focused) 1f else 0f)
+            .tvFocusLift(focused = focused, scale = 1.025f, liftPx = -5f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onOpen),
-        color = if (focused) Color(0xFF172431) else IptvColors.Panel,
+        color = if (focused) TvFocusPanel else IptvColors.Panel,
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, if (focused) Color(0xFFB9D8FF) else Color(0xFF263240)),
+        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
+        shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
     ) {
         Column {
             ContentArtwork(

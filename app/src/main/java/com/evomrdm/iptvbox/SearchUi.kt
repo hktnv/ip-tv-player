@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import com.evomrdm.iptvbox.core.common.SearchNormalizer
@@ -227,11 +228,14 @@ internal fun SearchResultRow(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .zIndex(if (focused) 1f else 0f)
+            .tvFocusLift(focused = focused, scale = 1.015f, liftPx = -3f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onOpen),
-        color = if (focused) Color(0xFF172431) else IptvColors.Panel,
+        color = if (focused) TvFocusPanel else IptvColors.Panel,
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, if (focused) Color(0xFFB9D8FF) else Color(0xFF263240)),
+        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
+        shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
     ) {
         Row(
             modifier = Modifier.padding(8.dp),

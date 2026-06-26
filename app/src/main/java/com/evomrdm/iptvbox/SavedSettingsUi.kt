@@ -1,16 +1,28 @@
 ﻿package com.evomrdm.iptvbox
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.evomrdm.iptvbox.core.designsystem.IptvColors
 import com.evomrdm.iptvbox.core.model.CatalogItem
 
 @Composable
@@ -107,10 +119,7 @@ internal fun SettingsScreen(
             )
         }
         item {
-            InfoPanel(
-                title = "Performans / Tanılama",
-                body = diagnosticsText(diagnostics, playlist),
-            )
+            DiagnosticsPanel(diagnostics = diagnostics, playlist = playlist)
         }
         item {
             if (playlist == null) {
@@ -153,6 +162,88 @@ private fun diagnosticsText(
         appendLine("Son hata / çökme bilgisi: ${diagnostics.lastError ?: "Son hata yok"}")
         append("Yüklü oynatma listesi içerik sayısı: $playlistText")
     }
+}
+
+@Composable
+private fun DiagnosticsPanel(
+    diagnostics: PerformanceDiagnostics,
+    playlist: LoadedPlaylist?,
+) {
+    PremiumPanel {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                text = "Performans / Tanılama",
+                color = IptvColors.TextPrimary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            diagnosticsRows(diagnostics, playlist).forEach { row ->
+                DiagnosticRow(label = row.first, value = row.second)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DiagnosticRow(label: String, value: String) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFF101923),
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, TvRestingBorder),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = label,
+                color = IptvColors.TextSecondary,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(0.42f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = value,
+                color = IptvColors.TextPrimary,
+                fontSize = 13.sp,
+                lineHeight = 17.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(0.58f),
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+private fun diagnosticsRows(
+    diagnostics: PerformanceDiagnostics,
+    playlist: LoadedPlaylist?,
+): List<Pair<String, String>> {
+    val stats = playlist?.stats()
+    val itemCount = playlist?.cachedItemCount ?: playlist?.items?.size
+    val playlistText = if (playlist == null || itemCount == null) {
+        "Liste yok"
+    } else {
+        "$itemCount içerik (${stats?.live ?: 0} canlı, ${stats?.movies ?: 0} film, ${stats?.series ?: 0} dizi)"
+    }
+
+    return listOf(
+        "Uygulama açılışı" to diagnostics.appOpenMs(),
+        "Ana ekran ilk gösterim" to diagnostics.ms("home_first_draw_ms"),
+        "Oynatma listesi ekleme" to diagnostics.ms("playlist_import_total_ms"),
+        "Katalog hazır olma" to diagnostics.ms("catalog_screen_ready_ms"),
+        "Menü geçişleri" to diagnostics.menuTransitionsText(),
+        "Arama ilk sonuç" to diagnostics.ms("search_first_result_ms"),
+        "Yaklaşık RAM" to diagnostics.mb("ram_mb"),
+        "Son hata / çökme" to (diagnostics.lastError ?: "Son hata yok"),
+        "Yüklü içerik" to playlistText,
+    )
 }
 
 private fun PerformanceDiagnostics.appOpenMs(): String {

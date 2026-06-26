@@ -299,11 +299,13 @@ internal fun EmptyState(
         Surface(
             modifier = modifier
                 .fillMaxWidth()
+                .tvFocusLift(focused = focused, scale = 1.015f, liftPx = -3f)
                 .onFocusChanged { focused = it.isFocused }
                 .tvClickable(onClick = onAction),
-            color = if (focused) Color(0xFF142235) else IptvColors.Panel,
+            color = if (focused) TvFocusPanel else IptvColors.Panel,
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) Color(0xFFB9D8FF) else Color(0xFF263240)),
+            border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
+            shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
         ) {
             Column(
                 modifier = Modifier
@@ -456,6 +458,40 @@ internal fun StatusBanner(text: String, onDismiss: () -> Unit) {
         )
         TextButton(onClick = onDismiss) {
             Text("Kapat")
+        }
+    }
+}
+
+@Composable
+internal fun FloatingStatusToast(
+    text: String,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        color = Color(0xEE101923),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, Color(0xFF2F4154)),
+        shadowElevation = 18.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Text(
+                text = text,
+                color = IptvColors.TextPrimary,
+                fontSize = 14.sp,
+                lineHeight = 18.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            TextButton(onClick = onDismiss) {
+                Text("Kapat")
+            }
         }
     }
 }

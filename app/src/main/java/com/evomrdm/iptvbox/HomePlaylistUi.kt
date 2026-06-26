@@ -183,6 +183,7 @@ internal fun HomeScreen(
                     favoriteCount = favoriteCount,
                     recentCount = recentCount,
                     onOpenCatalog = onOpenCatalog,
+                    onOpenCatalogTab = onOpenCatalogTab,
                 )
             }
             item(key = "live-row", contentType = "media-row") {
@@ -369,11 +370,13 @@ internal fun SeeAllButton(onClick: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
     Surface(
         modifier = Modifier
+            .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -3f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
-        color = if (focused) Color(0xFF182636) else Color(0xFF101720),
+        color = if (focused) TvFocusPanel else Color(0xFF101720),
         shape = RoundedCornerShape(999.dp),
-        border = BorderStroke(1.dp, if (focused) Color(0xFFB9D8FF) else Color(0xFF263240)),
+        border = BorderStroke(1.dp, if (focused) TvFocusBorder else TvRestingBorder),
+        shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 10.dp),
     ) {
         Text(
             text = "Tümü",

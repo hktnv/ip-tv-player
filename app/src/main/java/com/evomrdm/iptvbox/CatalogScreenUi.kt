@@ -82,6 +82,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.ui.PlayerView
@@ -236,22 +237,25 @@ internal fun MainSectionButton(
     Surface(
         modifier = modifier
             .height(50.dp)
+            .zIndex(if (focused) 1f else 0f)
+            .tvFocusLift(focused = focused, scale = 1.02f, liftPx = -4f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
         color = when {
-            focused -> Color(0xFF182636)
-            selected -> Color(0xFF10221F)
+            focused -> TvFocusPanel
+            selected -> TvSelectedPanel
             else -> Color(0xFF101720)
         },
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(
             1.dp,
             when {
-                focused -> Color(0xFFB9D8FF)
+                focused -> TvFocusBorder
                 selected -> IptvColors.Accent
-                else -> Color(0xFF263240)
+                else -> TvRestingBorder
             },
         ),
+        shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
@@ -320,22 +324,25 @@ internal fun CategoryButton(
     Surface(
         modifier = Modifier
             .height(34.dp)
+            .zIndex(if (focused) 1f else 0f)
+            .tvFocusLift(focused = focused, scale = 1.025f, liftPx = -3f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
         color = when {
-            focused -> Color(0xFF182636)
-            selected -> Color(0xFF162A25)
+            focused -> TvFocusPanel
+            selected -> TvSelectedPanel
             else -> Color(0xFF101720)
         },
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(
             1.dp,
             when {
-                focused -> Color(0xFFB9D8FF)
+                focused -> TvFocusBorder
                 selected -> IptvColors.Accent
-                else -> Color(0xFF263240)
+                else -> TvRestingBorder
             },
         ),
+        shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 10.dp),
     ) {
         Box(
             modifier = Modifier.padding(horizontal = 11.dp),

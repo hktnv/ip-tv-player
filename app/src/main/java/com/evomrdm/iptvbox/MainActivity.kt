@@ -12,7 +12,6 @@ import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -29,6 +28,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -39,6 +39,7 @@ import com.evomrdm.iptvbox.core.model.ContentHint
 import com.evomrdm.iptvbox.data.playlist.CreatePlaylistSourceRequest
 import com.evomrdm.iptvbox.data.playlist.RemotePlaylistLoader
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 class MainActivity : ComponentActivity() {
@@ -334,6 +335,14 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         }
     }
 
+    LaunchedEffect(banner) {
+        val visibleMessage = banner ?: return@LaunchedEffect
+        delay(3600)
+        if (banner == visibleMessage) {
+            banner = null
+        }
+    }
+
     fun openItem(item: CatalogItem) {
         recentIds.remove(item.id)
         recentIds.add(0, item.id)
@@ -522,38 +531,24 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                     },
                 )
             } else {
-            Row(
-                Modifier
-                    .fillMaxSize()
-                    .padding(
-                        start = if (wide) 36.dp else 0.dp,
-                        end = if (wide) 36.dp else 0.dp,
-                        top = if (wide) 22.dp else 0.dp,
-                        bottom = if (wide) 22.dp else 0.dp,
-                    ),
-            ) {
-                if (wide) {
-                    SideNavigation(
-                        selected = screen,
-                        selectedTab = selectedTab,
-                        hasPlaylist = selectedPlaylist != null,
-                        expanded = sideMenuExpanded,
-                        onExpandedChange = { sideMenuExpanded = it },
-                        onNavigate = ::navigate,
-                        onOpenTab = { openCatalogRoot(it) },
-                        onOpenPlaylistEntry = ::openPlaylistEntry,
-                    )
-                }
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(
+                            start = if (wide) 36.dp else 0.dp,
+                            end = if (wide) 36.dp else 0.dp,
+                            top = if (wide) 22.dp else 0.dp,
+                            bottom = if (wide) 22.dp else 0.dp,
+                        ),
+                ) {
                 Column(
                     modifier = Modifier
-                        .weight(1f)
+                        .fillMaxSize()
+                        .padding(start = if (wide) 96.dp else 0.dp)
                         .fillMaxHeight()
                         .focusGroup()
                         .statusBarsPadding(),
                 ) {
-                    banner?.let {
-                        StatusBanner(text = it, onDismiss = { banner = null })
-                    }
                     Box(Modifier.weight(1f)) {
                         when (screen) {
                             AppScreen.HOME -> HomeScreen(
@@ -684,6 +679,27 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                             onOpenTab = { openCatalogRoot(it) },
                         )
                     }
+                }
+                if (wide) {
+                    SideNavigation(
+                        selected = screen,
+                        selectedTab = selectedTab,
+                        hasPlaylist = selectedPlaylist != null,
+                        expanded = sideMenuExpanded,
+                        onExpandedChange = { sideMenuExpanded = it },
+                        onNavigate = ::navigate,
+                        onOpenTab = { openCatalogRoot(it) },
+                        onOpenPlaylistEntry = ::openPlaylistEntry,
+                    )
+                }
+                banner?.let {
+                    FloatingStatusToast(
+                        text = it,
+                        onDismiss = { banner = null },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 12.dp, end = if (wide) 28.dp else 14.dp, start = 14.dp),
+                    )
                 }
             }
         }

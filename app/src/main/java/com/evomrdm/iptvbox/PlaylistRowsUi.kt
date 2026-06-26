@@ -82,6 +82,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.ui.PlayerView
@@ -113,6 +114,7 @@ internal fun PlaylistSummary(
     favoriteCount: Int,
     recentCount: Int,
     onOpenCatalog: () -> Unit,
+    onOpenCatalogTab: (CatalogTab) -> Unit,
 ) {
     val stats = remember(playlist.id, playlist.items) { playlist.stats() }
     PremiumPanel {
@@ -132,7 +134,7 @@ internal fun PlaylistSummary(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = "${playlist.type.label()} · ${stats.catalogSummary()} · $favoriteCount favori · $recentCount son izlenen",
+                        text = "${playlist.type.label()} · $favoriteCount favori · $recentCount son izlenen",
                         color = IptvColors.TextSecondary,
                         fontSize = 13.sp,
                         maxLines = 1,
@@ -151,21 +153,48 @@ internal fun PlaylistSummary(
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SummaryChip("Canlı", stats.live, Modifier.weight(1f))
-                SummaryChip("Film", stats.movies, Modifier.weight(1f))
-                SummaryChip("Dizi", stats.series, Modifier.weight(1f))
+                SummaryChip(
+                    label = "Canlı TV",
+                    value = stats.live,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onOpenCatalogTab(CatalogTab.LIVE) },
+                )
+                SummaryChip(
+                    label = "Filmler",
+                    value = stats.movies,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onOpenCatalogTab(CatalogTab.MOVIES) },
+                )
+                SummaryChip(
+                    label = "Diziler",
+                    value = stats.series,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onOpenCatalogTab(CatalogTab.SERIES) },
+                )
             }
         }
     }
 }
 
 @Composable
-internal fun SummaryChip(label: String, value: Int, modifier: Modifier = Modifier) {
+internal fun SummaryChip(
+    label: String,
+    value: Int,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    var focused by remember { mutableStateOf(false) }
     Surface(
-        modifier = modifier.height(40.dp),
-        color = Color(0xFF111B24),
+        modifier = modifier
+            .height(48.dp)
+            .zIndex(if (focused) 1f else 0f)
+            .tvFocusLift(focused = focused, scale = 1.02f, liftPx = -4f)
+            .onFocusChanged { focused = it.isFocused }
+            .tvClickable(onClick = onClick),
+        color = if (focused) TvFocusPanel else Color(0xFF111B24),
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Color(0xFF263240)),
+        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
+        shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
     ) {
         Row(
             modifier = Modifier
@@ -196,9 +225,18 @@ internal fun PlaylistRow(
     onRename: (() -> Unit)? = null,
 ) {
     val stats = remember(playlist.id, playlist.items) { playlist.stats() }
+    var focused by remember { mutableStateOf(false) }
     PremiumPanel(
-        modifier = Modifier.tvClickable(onClick = onClick),
-        borderColor = if (selected) IptvColors.Accent else Color(0xFF263240),
+        modifier = Modifier
+            .zIndex(if (focused) 1f else 0f)
+            .tvFocusLift(focused = focused, scale = 1.012f, liftPx = -3f)
+            .onFocusChanged { focused = it.isFocused }
+            .tvClickable(onClick = onClick),
+        borderColor = when {
+            focused -> TvFocusBorder
+            selected -> IptvColors.Accent
+            else -> TvRestingBorder
+        },
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

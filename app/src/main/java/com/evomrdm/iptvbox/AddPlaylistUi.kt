@@ -514,12 +514,12 @@ private fun DialogGhostAction(
             .defaultMinSize(minHeight = 50.dp)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(enabled = enabled, onClick = onClick),
-        color = if (focused) Color(0xFF182638) else Color.Transparent,
+        color = if (focused) TvFocusPanel else Color.Transparent,
         contentColor = if (enabled) IptvColors.TextSecondary else IptvColors.TextSecondary.copy(alpha = 0.42f),
         shape = RoundedCornerShape(10.dp),
         border = BorderStroke(
             if (focused) 2.dp else 1.dp,
-            if (focused) Color(0xFFB9D8FF) else Color(0xFF344050),
+            if (focused) TvFocusBorder else TvRestingBorder,
         ),
     ) {
         Row(
@@ -587,16 +587,16 @@ private fun SourceTypeSegment(
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
         color = when {
-            focused -> Color(0xFF1D3346)
-            selected -> Color(0xFF203044)
+            focused -> TvFocusPanel
+            selected -> TvSelectedPanel
             else -> Color.Transparent
         },
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(
             if (focused) 2.dp else 1.dp,
             when {
-                focused -> Color(0xFFB9D8FF)
-                selected -> Color(0xFF78AFFF)
+                focused -> TvFocusBorder
+                selected -> IptvColors.Accent
                 else -> Color.Transparent
             },
         ),
@@ -620,8 +620,8 @@ private fun SourceTypeSegment(
 
 @Composable
 private fun playlistFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = Color(0xFFB9D8FF),
-    focusedLabelColor = Color(0xFFB9D8FF),
+    focusedBorderColor = TvFocusBorder,
+    focusedLabelColor = TvFocusBorder,
     cursorColor = IptvColors.Accent,
     unfocusedBorderColor = Color(0xFF566272),
     unfocusedLabelColor = IptvColors.TextSecondary,
