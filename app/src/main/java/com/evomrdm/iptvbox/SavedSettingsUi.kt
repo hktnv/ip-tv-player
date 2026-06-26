@@ -51,13 +51,6 @@ internal fun SavedItemsScreen(
             .fillMaxSize()
             .padding(horizontal = contentPadding),
     ) {
-        ScreenHeader(
-            title = title,
-            subtitle = playlist.name,
-            actionLabel = null,
-            onAction = null,
-            modifier = Modifier.padding(top = 16.dp),
-        )
         if (snapshot == null || catalogIndexLoading) {
             LoadingPanel("Katalog hazırlanıyor", Modifier.padding(top = 18.dp))
         } else if (items.isEmpty()) {
@@ -96,14 +89,6 @@ internal fun SettingsScreen(
         contentPadding = PaddingValues(top = 16.dp, bottom = ScreenBottomPadding),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item {
-            ScreenHeader(
-                title = "Ayarlar",
-                subtitle = "Kişisel sürüm",
-                actionLabel = null,
-                onAction = null,
-            )
-        }
         item {
             InfoPanel(
                 title = "Başlangıç",

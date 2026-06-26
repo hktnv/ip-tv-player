@@ -120,6 +120,8 @@ internal fun HomeScreen(
     onAddPlaylist: () -> Unit,
     onOpenCatalog: () -> Unit,
     onOpenCatalogTab: (CatalogTab) -> Unit,
+    onOpenFavorites: () -> Unit,
+    onOpenRecent: () -> Unit,
     onOpenSeries: (String) -> Unit,
     onOpenItem: (CatalogItem) -> Unit,
     onSelectPlaylist: (String) -> Unit,
@@ -136,6 +138,13 @@ internal fun HomeScreen(
     val seriesPreview = remember(snapshot, previewLimit) {
         snapshot?.seriesGroupsAll.orEmpty().take(previewLimit)
     }
+    val latestPreview = remember(snapshot, previewLimit) {
+        snapshot?.allItems
+            .orEmpty()
+            .toList()
+            .takeLast(previewLimit)
+            .asReversed()
+    }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -143,14 +152,6 @@ internal fun HomeScreen(
         contentPadding = PaddingValues(top = 16.dp, bottom = ScreenBottomPadding),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item(key = "home-header", contentType = "header") {
-            ScreenHeader(
-                title = "Ana Sayfa",
-                subtitle = "Oynatma listeni yükle, katalogdan izle",
-                actionLabel = null,
-                onAction = null,
-            )
-        }
         if (playlist == null) {
             item(key = "home-empty", contentType = "empty") {
                 EmptyState(
@@ -166,24 +167,31 @@ internal fun HomeScreen(
                     LoadingPanel("Katalog hazırlanıyor")
                 }
             }
-            if (recentItems.isNotEmpty()) {
-                item(key = "continue", contentType = "media-row") {
-                    HomeContentRow(
-                        title = "Devam et",
-                        items = recentItems.take(previewLimit),
-                        emptyText = "",
-                        onOpenAll = { onOpenCatalogTab(firstAvailableTab(playlist)) },
-                        onOpenItem = onOpenItem,
-                    )
-                }
+            item(key = "recent-row", contentType = "media-row") {
+                HomeContentRow(
+                    title = "Son İzlenenler",
+                    items = recentItems.take(previewLimit),
+                    emptyText = "Henüz izlenen içerik yok",
+                    onOpenAll = onOpenRecent,
+                    onOpenItem = onOpenItem,
+                )
             }
-            item(key = "playlist-summary", contentType = "summary") {
-                PlaylistSummary(
-                    playlist = playlist,
-                    favoriteCount = favoriteCount,
-                    recentCount = recentCount,
-                    onOpenCatalog = onOpenCatalog,
-                    onOpenCatalogTab = onOpenCatalogTab,
+            item(key = "favorites-row", contentType = "media-row") {
+                HomeContentRow(
+                    title = "Favoriler",
+                    items = favoriteItems.take(previewLimit),
+                    emptyText = "Favori içerik yok",
+                    onOpenAll = onOpenFavorites,
+                    onOpenItem = onOpenItem,
+                )
+            }
+            item(key = "latest-row", contentType = "media-row") {
+                HomeContentRow(
+                    title = "Son Eklenenler",
+                    items = latestPreview,
+                    emptyText = "Son eklenen içerik yok",
+                    onOpenAll = { onOpenCatalogTab(firstAvailableTab(playlist)) },
+                    onOpenItem = onOpenItem,
                 )
             }
             item(key = "live-row", contentType = "media-row") {
@@ -192,15 +200,6 @@ internal fun HomeScreen(
                     items = livePreview,
                     emptyText = "Canlı kanal bulunamadı",
                     onOpenAll = { onOpenCatalogTab(CatalogTab.LIVE) },
-                    onOpenItem = onOpenItem,
-                )
-            }
-            item(key = "movie-row", contentType = "media-row") {
-                HomeContentRow(
-                    title = "Filmler",
-                    items = moviePreview,
-                    emptyText = "Film bulunamadı",
-                    onOpenAll = { onOpenCatalogTab(CatalogTab.MOVIES) },
                     onOpenItem = onOpenItem,
                 )
             }
@@ -213,33 +212,13 @@ internal fun HomeScreen(
                     onOpenSeries = onOpenSeries,
                 )
             }
-            item(key = "favorites-row", contentType = "media-row") {
+            item(key = "movie-row", contentType = "media-row") {
                 HomeContentRow(
-                    title = "Favoriler",
-                    items = favoriteItems.take(previewLimit),
-                    emptyText = "Favori içerik yok",
-                    onOpenAll = { onOpenCatalogTab(firstAvailableTab(playlist)) },
+                    title = "Filmler",
+                    items = moviePreview,
+                    emptyText = "Film bulunamadı",
+                    onOpenAll = { onOpenCatalogTab(CatalogTab.MOVIES) },
                     onOpenItem = onOpenItem,
-                )
-            }
-            item(key = "recent-row", contentType = "media-row") {
-                HomeContentRow(
-                    title = "Son izlenenler",
-                    items = recentItems.take(previewLimit),
-                    emptyText = "Henüz izlenen içerik yok",
-                    onOpenAll = { onOpenCatalogTab(firstAvailableTab(playlist)) },
-                    onOpenItem = onOpenItem,
-                )
-            }
-            item(key = "playlists-title", contentType = "section-title") {
-                SectionTitle("Oynatma listeleri")
-            }
-            items(playlists, key = { it.id }, contentType = { "playlist-row" }) { item ->
-                PlaylistRow(
-                    playlist = item,
-                    selected = item.id == playlist.id,
-                    onClick = { onSelectPlaylist(item.id) },
-                    onReload = null,
                 )
             }
         }

@@ -563,6 +563,8 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                                 onAddPlaylist = { showAddDialog = true },
                                 onOpenCatalog = { openCatalogRoot() },
                                 onOpenCatalogTab = { openCatalogRoot(it) },
+                                onOpenFavorites = { navigate(AppScreen.FAVORITES) },
+                                onOpenRecent = { navigate(AppScreen.RECENT) },
                                 onOpenSeries = {
                                     selectedTab = CatalogTab.SERIES
                                     selectedCategory = null
@@ -675,6 +677,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                             selected = screen,
                             selectedTab = selectedTab,
                             hasPlaylist = selectedPlaylist != null,
+                            stats = selectedPlaylist?.stats(),
                             onNavigate = ::navigate,
                             onOpenTab = { openCatalogRoot(it) },
                         )
@@ -685,11 +688,11 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                         selected = screen,
                         selectedTab = selectedTab,
                         hasPlaylist = selectedPlaylist != null,
+                        stats = selectedPlaylist?.stats(),
                         expanded = sideMenuExpanded,
                         onExpandedChange = { sideMenuExpanded = it },
                         onNavigate = ::navigate,
                         onOpenTab = { openCatalogRoot(it) },
-                        onOpenPlaylistEntry = ::openPlaylistEntry,
                     )
                 }
                 banner?.let {

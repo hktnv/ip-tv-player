@@ -270,18 +270,11 @@ internal fun EmptyCatalog(onAddPlaylist: () -> Unit, contentPadding: Dp) {
             .fillMaxSize()
             .padding(horizontal = contentPadding, vertical = 16.dp),
     ) {
-        ScreenHeader(
-            title = "Katalog",
-            subtitle = "İçerik için önce oynatma listesi ekleyin",
-            actionLabel = null,
-            onAction = null,
-        )
         EmptyState(
             title = "Katalog hazır değil",
             body = "Liste eklediğinizde canlı TV, filmler ve diziler burada düzenli şekilde görünür.",
             actionLabel = "Liste Ekle",
             onAction = onAddPlaylist,
-            modifier = Modifier.padding(top = 18.dp),
         )
     }
 }

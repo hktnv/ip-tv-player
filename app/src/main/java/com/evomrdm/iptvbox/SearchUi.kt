@@ -109,17 +109,10 @@ internal fun SearchScreen(
             .fillMaxSize()
             .padding(horizontal = contentPadding),
     ) {
-        ScreenHeader(
-            title = "Arama",
-            subtitle = playlist.name,
-            actionLabel = null,
-            onAction = null,
-            modifier = Modifier.padding(top = 16.dp),
-        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 12.dp),
+                .padding(top = 16.dp, bottom = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {

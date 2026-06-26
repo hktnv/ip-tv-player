@@ -142,22 +142,11 @@ internal fun CatalogScreen(
             .fillMaxSize()
             .padding(horizontal = contentPadding),
     ) {
-        ScreenHeader(
-            title = selectedTab.label,
-            subtitle = buildCatalogSubtitle(playlist, selectedTab, selectedCategory, selectedSeriesTitle, selectedSeasonNumber),
-            actionLabel = null,
-            onAction = null,
-            modifier = Modifier.padding(top = 16.dp),
-        )
-        ContentTabs(
-            stats = snapshot?.stats ?: playlist.stats(),
-            selectedTab = selectedTab,
-            onSelected = onTabSelected,
-        )
         CategoryStrip(
             categories = categories,
             selected = selectedCategory,
             onSelected = onCategorySelected,
+            modifier = Modifier.padding(top = 16.dp),
         )
         if (playlist.warnings.isNotEmpty()) {
             WarningText(playlist.warnings.first())
@@ -285,6 +274,7 @@ internal fun CategoryStrip(
     categories: List<String>,
     selected: String?,
     onSelected: (String?) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val rowState = rememberLazyListState()
     LaunchedEffect(categories, selected) {
@@ -292,7 +282,7 @@ internal fun CategoryStrip(
         rowState.scrollToItem(index)
     }
     LazyRow(
-        modifier = Modifier.padding(bottom = 6.dp),
+        modifier = modifier.padding(bottom = 6.dp),
         state = rowState,
         horizontalArrangement = Arrangement.spacedBy(7.dp),
         contentPadding = PaddingValues(horizontal = 2.dp),

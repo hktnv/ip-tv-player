@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
@@ -61,13 +60,13 @@ internal fun SideNavigation(
     selected: AppScreen,
     selectedTab: CatalogTab,
     hasPlaylist: Boolean,
+    stats: PlaylistStats?,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     onNavigate: (AppScreen) -> Unit,
     onOpenTab: (CatalogTab) -> Unit,
-    onOpenPlaylistEntry: () -> Unit,
 ) {
-    val entries = playlistNavEntries(hasPlaylist)
+    val entries = playlistNavEntries(hasPlaylist, stats)
     val focusManager = LocalFocusManager.current
     Column(
         modifier = Modifier
@@ -133,26 +132,15 @@ internal fun SideNavigation(
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            NavigationButton(
-                label = "Liste seçimi",
-                icon = Icons.AutoMirrored.Filled.PlaylistPlay,
-                selected = selected == AppScreen.PLAYLISTS,
-                enabled = true,
-                expanded = expanded,
-                compact = true,
-                onClick = onOpenPlaylistEntry,
-            )
-            NavigationButton(
-                label = "Ayarlar",
-                icon = Icons.Filled.Settings,
-                selected = selected == AppScreen.SETTINGS,
-                enabled = true,
-                expanded = expanded,
-                compact = true,
-                onClick = { onNavigate(AppScreen.SETTINGS) },
-            )
-        }
+        NavigationButton(
+            label = "Ayarlar",
+            icon = Icons.Filled.Settings,
+            selected = selected == AppScreen.SETTINGS,
+            enabled = true,
+            expanded = expanded,
+            compact = true,
+            onClick = { onNavigate(AppScreen.SETTINGS) },
+        )
     }
 }
 
@@ -161,10 +149,11 @@ internal fun BottomNavigation(
     selected: AppScreen,
     selectedTab: CatalogTab,
     hasPlaylist: Boolean,
+    stats: PlaylistStats?,
     onNavigate: (AppScreen) -> Unit,
     onOpenTab: (CatalogTab) -> Unit,
 ) {
-    val entries = bottomNavEntries(hasPlaylist)
+    val entries = bottomNavEntries(hasPlaylist, stats)
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color(0xF20A0F16),
@@ -195,7 +184,7 @@ internal fun BottomNavigation(
                         entry.tab?.let(onOpenTab)
                         entry.screen?.let(onNavigate)
                     },
-                    modifier = Modifier.width(92.dp),
+                    modifier = Modifier.width(104.dp),
                 )
             }
         }
@@ -322,26 +311,30 @@ internal data class NavEntry(
     val icon: ImageVector,
 )
 
-internal fun playlistNavEntries(hasPlaylist: Boolean): List<NavEntry> {
+internal fun playlistNavEntries(hasPlaylist: Boolean, stats: PlaylistStats?): List<NavEntry> {
     return listOf(
         NavEntry("Anasayfa", screen = AppScreen.HOME, enabled = hasPlaylist, icon = Icons.Filled.Home),
         NavEntry("Arama", screen = AppScreen.SEARCH, enabled = hasPlaylist, icon = Icons.Filled.Search),
-        NavEntry("Canlı TV", tab = CatalogTab.LIVE, enabled = hasPlaylist, icon = Icons.Filled.LiveTv),
-        NavEntry("Diziler", tab = CatalogTab.SERIES, enabled = hasPlaylist, icon = Icons.Filled.VideoLibrary),
-        NavEntry("Filmler", tab = CatalogTab.MOVIES, enabled = hasPlaylist, icon = Icons.Filled.Movie),
+        NavEntry(menuLabel("Canlı TV", stats?.live), tab = CatalogTab.LIVE, enabled = hasPlaylist, icon = Icons.Filled.LiveTv),
+        NavEntry(menuLabel("Diziler", stats?.series), tab = CatalogTab.SERIES, enabled = hasPlaylist, icon = Icons.Filled.VideoLibrary),
+        NavEntry(menuLabel("Filmler", stats?.movies), tab = CatalogTab.MOVIES, enabled = hasPlaylist, icon = Icons.Filled.Movie),
         NavEntry("Favoriler", screen = AppScreen.FAVORITES, enabled = hasPlaylist, icon = Icons.Filled.Favorite),
         NavEntry("Son İzlenen", screen = AppScreen.RECENT, enabled = hasPlaylist, icon = Icons.Filled.History),
     )
 }
 
-internal fun bottomNavEntries(hasPlaylist: Boolean): List<NavEntry> {
+internal fun bottomNavEntries(hasPlaylist: Boolean, stats: PlaylistStats?): List<NavEntry> {
     return listOf(
         NavEntry("Anasayfa", screen = AppScreen.HOME, enabled = hasPlaylist, icon = Icons.Filled.Home),
-        NavEntry("Canlı TV", tab = CatalogTab.LIVE, enabled = hasPlaylist, icon = Icons.Filled.LiveTv),
-        NavEntry("Filmler", tab = CatalogTab.MOVIES, enabled = hasPlaylist, icon = Icons.Filled.Movie),
-        NavEntry("Diziler", tab = CatalogTab.SERIES, enabled = hasPlaylist, icon = Icons.Filled.VideoLibrary),
+        NavEntry(menuLabel("Canlı TV", stats?.live), tab = CatalogTab.LIVE, enabled = hasPlaylist, icon = Icons.Filled.LiveTv),
+        NavEntry(menuLabel("Filmler", stats?.movies), tab = CatalogTab.MOVIES, enabled = hasPlaylist, icon = Icons.Filled.Movie),
+        NavEntry(menuLabel("Diziler", stats?.series), tab = CatalogTab.SERIES, enabled = hasPlaylist, icon = Icons.Filled.VideoLibrary),
         NavEntry("Ayarlar", screen = AppScreen.SETTINGS, enabled = true, icon = Icons.Filled.Settings),
     )
+}
+
+private fun menuLabel(label: String, count: Int?): String {
+    return if (count == null) label else "$label ($count)"
 }
 
 private fun screenLabel(screen: AppScreen, selectedTab: CatalogTab): String {
