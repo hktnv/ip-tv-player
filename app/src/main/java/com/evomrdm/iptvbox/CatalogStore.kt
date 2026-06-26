@@ -2,7 +2,6 @@ package com.evomrdm.iptvbox
 
 import android.content.ContentValues
 import android.content.Context
-import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.database.sqlite.SQLiteStatement
@@ -10,9 +9,6 @@ import com.evomrdm.iptvbox.core.common.SearchNormalizer
 import com.evomrdm.iptvbox.core.model.CatalogItem
 import com.evomrdm.iptvbox.core.model.ContentKind
 import com.evomrdm.iptvbox.core.model.PlaylistSourceType
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 internal class CatalogStore(context: Context) : SQLiteOpenHelper(
     context.applicationContext,
@@ -20,11 +16,6 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
     null,
     1,
 ) {
-    private val json = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
-
     init {
         setWriteAheadLoggingEnabled(true)
     }
@@ -382,158 +373,6 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
         }
     }
 
-    private fun LoadedPlaylist.toPlaylistValues(): ContentValues = ContentValues().apply {
-        val stats = statsWithoutCacheForStore()
-        put("id", id)
-        put("name", name)
-        put("type", type.name)
-        put("endpoint", endpoint)
-        put("headers_json", json.encodeToString(headers))
-        put("epg_json", json.encodeToString(epgUrls))
-        put("warnings_json", json.encodeToString(warnings))
-        put("item_count", items.size.takeIf { it > 0 } ?: cachedItemCount ?: 0)
-        put("live_count", stats.live)
-        put("movie_count", stats.movies)
-        put("series_count", stats.series)
-        put("updated_at", System.currentTimeMillis())
-    }
-
-    private fun Cursor.toPlaylist(): LoadedPlaylist {
-        return LoadedPlaylist(
-            id = getString(column("id")),
-            name = getString(column("name")),
-            type = PlaylistSourceType.valueOf(getString(column("type"))),
-            endpoint = getString(column("endpoint")),
-            headers = json.decodeFromString(getString(column("headers_json"))),
-            items = emptyList(),
-            epgUrls = json.decodeFromString(getString(column("epg_json"))),
-            warnings = json.decodeFromString(getString(column("warnings_json"))),
-            cachedItemCount = getInt(column("item_count")),
-            cachedLiveCount = getInt(column("live_count")),
-            cachedMovieCount = getInt(column("movie_count")),
-            cachedSeriesCount = getInt(column("series_count")),
-        )
-    }
-
-    private fun Cursor.toItems(): List<CatalogItem> = buildList {
-        while (moveToNext()) {
-            add(
-                CatalogItem(
-                    id = getString(column("item_id")),
-                    sourceId = getString(column("playlist_id")),
-                    kind = ContentKind.valueOf(getString(column("kind"))),
-                    title = getString(column("title")),
-                    streamUrl = getString(column("stream_url")),
-                    category = nullableString("category"),
-                    logoUrl = nullableString("logo_url"),
-                    tvgId = nullableString("tvg_id"),
-                    tvgName = nullableString("tvg_name"),
-                    seriesTitle = nullableString("series_title"),
-                    seasonNumber = nullableInt("season_number"),
-                    episodeNumber = nullableInt("episode_number"),
-                    episodeTitle = nullableString("episode_title"),
-                    providerOrder = getInt(column("provider_order")),
-                ),
-            )
-        }
-    }
-
-    private fun Cursor.column(name: String): Int = getColumnIndexOrThrow(name)
-
-    private fun Cursor.nullableString(name: String): String? {
-        val index = column(name)
-        return if (isNull(index)) null else getString(index)
-    }
-
-    private fun Cursor.nullableInt(name: String): Int? {
-        val index = column(name)
-        return if (isNull(index)) null else getInt(index)
-    }
-}
-
-private inline fun SQLiteDatabase.transaction(block: SQLiteDatabase.() -> Unit) {
-    beginTransaction()
-    try {
-        block()
-        setTransactionSuccessful()
-    } finally {
-        endTransaction()
-    }
-}
-
-private fun SQLiteDatabase.createCatalogIndexes() {
-    execSQL("CREATE INDEX IF NOT EXISTS idx_items_tab ON items(playlist_id, kind, category, provider_order)")
-    execSQL("CREATE INDEX IF NOT EXISTS idx_items_series ON items(playlist_id, series_title, season_number, episode_number)")
-    execSQL("CREATE INDEX IF NOT EXISTS idx_items_search ON items(playlist_id, search_text)")
-}
-
-private fun SQLiteDatabase.dropCatalogIndexes() {
-    execSQL("DROP INDEX IF EXISTS idx_items_tab")
-    execSQL("DROP INDEX IF EXISTS idx_items_series")
-    execSQL("DROP INDEX IF EXISTS idx_items_search")
-}
-
-private inline fun <T> measureDb(
-    key: String,
-    timings: MutableMap<String, Long>,
-    block: () -> T,
-): T {
-    val startedNs = System.nanoTime()
-    return try {
-        block()
-    } finally {
-        timings[key] = elapsedMs(startedNs)
-    }
-}
-
-private fun elapsedMs(startedNs: Long): Long = (System.nanoTime() - startedNs) / 1_000_000L
-
-private inline fun SQLiteStatement.use(block: (SQLiteStatement) -> Unit) {
-    try {
-        block(this)
-    } finally {
-        close()
-    }
-}
-
-private fun SQLiteStatement.bindNullableString(index: Int, value: String?) {
-    if (value == null) bindNull(index) else bindString(index, value)
-}
-
-private fun SQLiteStatement.bindNullableLong(index: Int, value: Long?) {
-    if (value == null) bindNull(index) else bindLong(index, value)
-}
-
-private fun LoadedPlaylist.withCachedStoreStats(): LoadedPlaylist {
-    val stats = statsWithoutCacheForStore()
-    return copy(
-        cachedItemCount = items.size,
-        cachedLiveCount = stats.live,
-        cachedMovieCount = stats.movies,
-        cachedSeriesCount = stats.series,
-    )
-}
-
-private fun LoadedPlaylist.statsWithoutCacheForStore(): PlaylistStats {
-    val seriesTitles = HashSet<String>()
-    var live = 0
-    var movies = 0
-    items.forEach { item ->
-        when {
-            item.kind in CatalogTab.LIVE.kinds -> live += 1
-            item.kind == ContentKind.MOVIE -> movies += 1
-            item.kind == ContentKind.EPISODE || item.seriesTitle != null -> {
-                seriesTitles += item.seriesTitle?.takeIf { it.isNotBlank() } ?: item.title
-            }
-        }
-    }
-    return PlaylistStats(live = live, movies = movies, series = seriesTitles.size)
-}
-
-private fun CatalogItem.searchTextForStore(): String {
-    return SearchNormalizer.normalize(
-        listOfNotNull(title, category, tvgName, tvgId, seriesTitle, episodeTitle).joinToString(" "),
-    )
 }
 
 internal data class CatalogWriteResult(

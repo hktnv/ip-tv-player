@@ -197,73 +197,6 @@ internal fun RecoveryScreen(
 
 
 @Composable
-internal fun ScreenHeader(
-    title: String,
-    subtitle: String,
-    actionLabel: String?,
-    onAction: (() -> Unit)?,
-    modifier: Modifier = Modifier,
-) {
-    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val compact = maxWidth < 520.dp
-        if (compact) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                HeaderTexts(title, subtitle)
-                if (actionLabel != null && onAction != null) {
-                    Button(
-                        onClick = onAction,
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
-                    ) {
-                        Text(actionLabel, maxLines = 1)
-                    }
-                }
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                HeaderTexts(title, subtitle, Modifier.weight(1f))
-                if (actionLabel != null && onAction != null) {
-                    Button(
-                        onClick = onAction,
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
-                    ) {
-                        Text(actionLabel, maxLines = 1)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-internal fun HeaderTexts(title: String, subtitle: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
-        Text(
-            text = title,
-            color = IptvColors.TextPrimary,
-            fontSize = 26.sp,
-            lineHeight = 30.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = subtitle,
-            color = IptvColors.TextSecondary,
-            fontSize = 14.sp,
-            lineHeight = 18.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
 internal fun EmptyCatalog(onAddPlaylist: () -> Unit, contentPadding: Dp) {
     Column(
         modifier = Modifier
@@ -349,7 +282,6 @@ internal fun EmptyState(
         }
     }
 }
-
 @Composable
 internal fun FocusAwarePrimaryLabel(
     text: String,
@@ -429,93 +361,4 @@ internal fun PremiumPanel(
             content()
         }
     }
-}
-
-@Composable
-internal fun StatusBanner(text: String, onDismiss: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF0F1B22))
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = text,
-            color = IptvColors.TextPrimary,
-            fontSize = 14.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        TextButton(onClick = onDismiss) {
-            Text("Kapat")
-        }
-    }
-}
-
-@Composable
-internal fun FloatingStatusToast(
-    text: String,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier,
-        color = Color(0xEE101923),
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, Color(0xFF2F4154)),
-        shadowElevation = 18.dp,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 11.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Text(
-                text = text,
-                color = IptvColors.TextPrimary,
-                fontSize = 14.sp,
-                lineHeight = 18.sp,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-            TextButton(onClick = onDismiss) {
-                Text("Kapat")
-            }
-        }
-    }
-}
-
-@Composable
-internal fun SectionTitle(text: String) {
-    Text(
-        text = text,
-        color = IptvColors.TextPrimary,
-        fontSize = 18.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(top = 4.dp),
-    )
-}
-
-@Composable
-internal fun WarningText(text: String) {
-    Text(
-        text = text,
-        color = IptvColors.Warning,
-        fontSize = 13.sp,
-        lineHeight = 17.sp,
-    )
-}
-
-@Composable
-internal fun ErrorText(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.error,
-        fontSize = 14.sp,
-        lineHeight = 19.sp,
-    )
 }

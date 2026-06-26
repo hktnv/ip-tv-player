@@ -27,6 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -67,7 +69,9 @@ internal fun SearchScreen(
     onOpenItem: (CatalogItem) -> Unit,
     onToggleFavorite: (CatalogItem) -> Unit,
     onAddPlaylist: () -> Unit,
+    onRequestSideMenu: () -> Unit,
     contentPadding: Dp,
+    initialFocusRequester: FocusRequester? = null,
 ) {
     if (playlist == null) {
         EmptyCatalog(onAddPlaylist, contentPadding)
@@ -107,6 +111,22 @@ internal fun SearchScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .onPreviewKeyEvent { event ->
+                if (
+                    television &&
+                    query.isBlank() &&
+                    event.type == KeyEventType.KeyDown &&
+                    event.key == Key.DirectionLeft
+                ) {
+                    queryEditing = false
+                    keyboardController?.hide()
+                    focusManager.clearFocus(force = true)
+                    onRequestSideMenu()
+                    true
+                } else {
+                    false
+                }
+            }
             .padding(horizontal = contentPadding),
     ) {
         Row(
@@ -121,18 +141,30 @@ internal fun SearchScreen(
                 onValueChange = onQueryChange,
                 modifier = Modifier
                     .weight(1f)
+                    .then(initialFocusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
                     .onFocusChanged { queryEditing = it.isFocused }
                     .onPreviewKeyEvent { event ->
-                        if (
-                            television &&
-                            queryEditing &&
-                            event.type == KeyEventType.KeyDown &&
-                            event.key == Key.DirectionDown
-                        ) {
-                            queryEditing = false
-                            keyboardController?.hide()
-                            focusManager.clearFocus(force = true)
-                            false
+                        if (television && queryEditing && event.type == KeyEventType.KeyDown) {
+                            when (event.key) {
+                                Key.DirectionDown -> {
+                                    queryEditing = false
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus(force = true)
+                                    false
+                                }
+                                Key.DirectionLeft -> {
+                                    if (query.isBlank()) {
+                                        queryEditing = false
+                                        keyboardController?.hide()
+                                        focusManager.clearFocus(force = true)
+                                        onRequestSideMenu()
+                                        true
+                                    } else {
+                                        false
+                                    }
+                                }
+                                else -> false
+                            }
                         } else {
                             false
                         }

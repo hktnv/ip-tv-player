@@ -4,9 +4,9 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -30,13 +28,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -53,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.evomrdm.iptvbox.core.designsystem.IptvColors
+import kotlinx.coroutines.delay
 
 @Composable
 internal fun SideNavigation(
@@ -67,25 +70,71 @@ internal fun SideNavigation(
 ) {
     val entries = playlistNavEntries(hasPlaylist, stats)
     val focusManager = LocalFocusManager.current
+    val menuFocusRequester = remember { FocusRequester() }
+    val settingsIndex = entries.size
+    val selectedIndex = selectedMenuIndex(
+        entries = entries,
+        selected = selected,
+        selectedTab = selectedTab,
+        settingsIndex = settingsIndex,
+    )
+    var focusedIndex by remember { mutableStateOf(selectedIndex) }
+
+    LaunchedEffect(expanded, selected, selectedTab, entries.map { it.focusKey() }) {
+        focusedIndex = selectedIndex
+        if (expanded) {
+            withFrameNanos { }
+            delay(80L)
+            runCatching { menuFocusRequester.requestFocus() }
+        }
+    }
+
     Column(
         modifier = Modifier
             .width(if (expanded) 204.dp else 78.dp)
             .fillMaxHeight()
             .zIndex(2f)
             .animateContentSize()
-            .focusGroup()
-            .onFocusChanged { state ->
-                if (state.hasFocus) onExpandedChange(true)
-            }
+            .focusRequester(menuFocusRequester)
             .onPreviewKeyEvent { event ->
-                if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionRight) {
-                    onExpandedChange(false)
-                    focusManager.moveFocus(FocusDirection.Right)
-                    true
-                } else {
-                    false
+                if (event.type != KeyEventType.KeyDown) {
+                    return@onPreviewKeyEvent false
+                }
+                when (event.key) {
+                    Key.DirectionUp -> {
+                        focusedIndex = previousEnabledMenuIndex(focusedIndex, entries)
+                        true
+                    }
+                    Key.DirectionDown -> {
+                        focusedIndex = nextEnabledMenuIndex(focusedIndex, entries)
+                        true
+                    }
+                    Key.DirectionRight -> {
+                        onExpandedChange(false)
+                        focusManager.moveFocus(FocusDirection.Right)
+                        true
+                    }
+                    Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
+                        activateMenuItem(
+                            focusedIndex = focusedIndex,
+                            settingsIndex = settingsIndex,
+                            entries = entries,
+                            onExpandedChange = onExpandedChange,
+                            onNavigate = onNavigate,
+                            onOpenTab = onOpenTab,
+                        )
+                    }
+                    else -> false
                 }
             }
+            .onFocusChanged { state ->
+                if (state.hasFocus && !expanded) {
+                    focusedIndex = selectedIndex
+                    onExpandedChange(true)
+                }
+            }
+            .focusable()
+            .focusGroup()
             .background(Color(0xFF0A0F16), RoundedCornerShape(18.dp))
             .statusBarsPadding()
             .navigationBarsPadding()
@@ -111,19 +160,17 @@ internal fun SideNavigation(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            entries.forEach { entry ->
-                val isSelected = when {
-                    entry.tab != null -> selected == AppScreen.CATALOG && selectedTab == entry.tab
-                    entry.screen != null -> selected == entry.screen
-                    else -> false
-                }
+            entries.forEachIndexed { index, entry ->
                 NavigationButton(
                     label = entry.label,
                     icon = entry.icon,
-                    selected = isSelected,
+                    selected = entrySelected(entry, selected, selectedTab),
+                    visualFocused = expanded && focusedIndex == index,
                     enabled = entry.enabled,
                     expanded = expanded,
+                    onFocused = { focusedIndex = index },
                     onClick = {
+                        onExpandedChange(false)
                         entry.tab?.let(onOpenTab)
                         entry.screen?.let(onNavigate)
                     },
@@ -135,107 +182,16 @@ internal fun SideNavigation(
             label = "Ayarlar",
             icon = Icons.Filled.Settings,
             selected = selected == AppScreen.SETTINGS,
+            visualFocused = expanded && focusedIndex == settingsIndex,
             enabled = true,
             expanded = expanded,
             compact = true,
-            onClick = { onNavigate(AppScreen.SETTINGS) },
+            onFocused = { focusedIndex = settingsIndex },
+            onClick = {
+                onExpandedChange(false)
+                onNavigate(AppScreen.SETTINGS)
+            },
         )
-    }
-}
-
-@Composable
-internal fun BottomNavigation(
-    selected: AppScreen,
-    selectedTab: CatalogTab,
-    hasPlaylist: Boolean,
-    stats: PlaylistStats?,
-    onNavigate: (AppScreen) -> Unit,
-    onOpenTab: (CatalogTab) -> Unit,
-) {
-    val entries = bottomNavEntries(hasPlaylist, stats)
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = Color(0xF20A0F16),
-        tonalElevation = 6.dp,
-    ) {
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusGroup()
-                .navigationBarsPadding()
-                .padding(horizontal = 10.dp, vertical = 4.dp)
-                .height(56.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(horizontal = 2.dp),
-        ) {
-            items(entries) { entry ->
-                val isSelected = when {
-                    entry.tab != null -> selected == AppScreen.CATALOG && selectedTab == entry.tab
-                    entry.screen != null -> selected == entry.screen
-                    else -> false
-                }
-                BottomNavItem(
-                    label = entry.label,
-                    icon = entry.icon,
-                    selected = isSelected,
-                    enabled = entry.enabled,
-                    onClick = {
-                        entry.tab?.let(onOpenTab)
-                        entry.screen?.let(onNavigate)
-                    },
-                    modifier = Modifier.width(104.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-internal fun BottomNavItem(
-    label: String,
-    icon: ImageVector,
-    selected: Boolean,
-    enabled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var focused by remember { mutableStateOf(false) }
-    Surface(
-        modifier = modifier
-            .fillMaxHeight()
-            .zIndex(if (focused) 1f else 0f)
-            .tvFocusLift(focused = focused, scale = 1.03f, liftPx = -3f)
-            .onFocusChanged { focused = it.isFocused }
-            .tvClickable(enabled = enabled, onClick = onClick),
-        color = when {
-            focused -> TvFocusPanel
-            selected -> TvSelectedPanel
-            else -> Color.Transparent
-        },
-        contentColor = if (selected) IptvColors.Accent else IptvColors.TextPrimary,
-        shape = RoundedCornerShape(14.dp),
-        border = if (focused || selected) {
-            BorderStroke(1.dp, if (focused) TvFocusBorder else IptvColors.Accent)
-        } else {
-            null
-        },
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 5.dp, vertical = 5.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Icon(imageVector = icon, contentDescription = null, modifier = Modifier.height(17.dp))
-            Text(
-                text = label,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                fontSize = 10.sp,
-                lineHeight = 12.sp,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (!enabled) IptvColors.TextSecondary.copy(alpha = 0.36f) else Color.Unspecified,
-            )
-        }
     }
 }
 
@@ -249,18 +205,26 @@ internal fun NavigationButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
+    visualFocused: Boolean = false,
+    focusRequester: FocusRequester? = null,
+    onFocused: (() -> Unit)? = null,
 ) {
     var focused by remember { mutableStateOf(false) }
+    val showFocus = focused || visualFocused
     Surface(
         modifier = modifier
+            .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
             .fillMaxWidth()
             .height(if (compact) 38.dp else 44.dp)
-            .zIndex(if (focused) 1f else 0f)
-            .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -4f)
-            .onFocusChanged { focused = it.isFocused }
+            .zIndex(if (showFocus) 1f else 0f)
+            .tvFocusLift(focused = showFocus, scale = 1.035f, liftPx = -4f)
+            .onFocusChanged {
+                focused = it.isFocused
+                if (it.isFocused) onFocused?.invoke()
+            }
             .tvClickable(enabled = enabled, onClick = onClick),
         color = when {
-            focused -> TvFocusPanel
+            showFocus -> TvFocusPanel
             selected -> TvSelectedPanel
             else -> Color.Transparent
         },
@@ -271,15 +235,15 @@ internal fun NavigationButton(
         },
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(
-            if (focused) 2.dp else 1.dp,
+            if (showFocus) 2.dp else 1.dp,
             when {
-                focused -> TvFocusBorder
+                showFocus -> TvFocusBorder
                 selected -> IptvColors.Accent
                 expanded -> TvRestingBorder
                 else -> Color.Transparent
             },
         ),
-        shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 10.dp),
+        shadowElevation = tvFocusElevation(focused = showFocus, resting = 0.dp, focusedElevation = 10.dp),
     ) {
         Row(
             modifier = Modifier
@@ -329,6 +293,66 @@ internal fun bottomNavEntries(hasPlaylist: Boolean, stats: PlaylistStats?): List
         NavEntry(menuLabel("Diziler", stats?.series), tab = CatalogTab.SERIES, enabled = hasPlaylist, icon = Icons.Filled.VideoLibrary),
         NavEntry("Ayarlar", screen = AppScreen.SETTINGS, enabled = true, icon = Icons.Filled.Settings),
     )
+}
+
+private fun NavEntry.focusKey(): String = tab?.name ?: screen?.name ?: label
+
+internal fun entrySelected(entry: NavEntry, selected: AppScreen, selectedTab: CatalogTab): Boolean {
+    return when {
+        entry.tab != null -> selected == AppScreen.CATALOG && selectedTab == entry.tab
+        entry.screen != null -> selected == entry.screen
+        else -> false
+    }
+}
+
+private fun selectedMenuIndex(
+    entries: List<NavEntry>,
+    selected: AppScreen,
+    selectedTab: CatalogTab,
+    settingsIndex: Int,
+): Int {
+    if (selected == AppScreen.SETTINGS) return settingsIndex
+    val selectedEntry = entries.indexOfFirst { entrySelected(it, selected, selectedTab) }
+    if (selectedEntry >= 0) return selectedEntry
+    return entries.indexOfFirst { it.enabled }.takeIf { it >= 0 } ?: settingsIndex
+}
+
+private fun activateMenuItem(
+    focusedIndex: Int,
+    settingsIndex: Int,
+    entries: List<NavEntry>,
+    onExpandedChange: (Boolean) -> Unit,
+    onNavigate: (AppScreen) -> Unit,
+    onOpenTab: (CatalogTab) -> Unit,
+): Boolean {
+    if (focusedIndex == settingsIndex) {
+        onExpandedChange(false)
+        onNavigate(AppScreen.SETTINGS)
+        return true
+    }
+    val entry = entries.getOrNull(focusedIndex) ?: return false
+    if (!entry.enabled) return false
+    onExpandedChange(false)
+    entry.tab?.let(onOpenTab)
+    entry.screen?.let(onNavigate)
+    return true
+}
+
+private fun nextEnabledMenuIndex(currentIndex: Int, entries: List<NavEntry>): Int {
+    val indexes = enabledMenuIndexes(entries)
+    val currentPosition = indexes.indexOf(currentIndex).takeIf { it >= 0 } ?: 0
+    return indexes[(currentPosition + 1) % indexes.size]
+}
+
+private fun previousEnabledMenuIndex(currentIndex: Int, entries: List<NavEntry>): Int {
+    val indexes = enabledMenuIndexes(entries)
+    val currentPosition = indexes.indexOf(currentIndex).takeIf { it >= 0 } ?: 0
+    return indexes[(currentPosition - 1 + indexes.size) % indexes.size]
+}
+
+private fun enabledMenuIndexes(entries: List<NavEntry>): List<Int> {
+    val entryIndexes = entries.mapIndexedNotNull { index, entry -> index.takeIf { entry.enabled } }
+    return entryIndexes + entries.size
 }
 
 private fun menuLabel(label: String, count: Int?): String {
