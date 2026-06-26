@@ -127,6 +127,7 @@ internal fun HomeScreen(
     onAddPlaylist: () -> Unit,
     onOpenCatalog: () -> Unit,
     onOpenCatalogTab: (CatalogTab) -> Unit,
+    onOpenLatest: () -> Unit,
     onOpenFavorites: () -> Unit,
     onOpenRecent: () -> Unit,
     onOpenSeries: (String) -> Unit,
@@ -188,7 +189,6 @@ internal fun HomeScreen(
                     onOpenAll = onOpenRecent,
                     onOpenItem = onOpenItem,
                     headerFocusRequester = recentRailFocus,
-                    previousRailFocusRequester = null,
                     nextRailFocusRequester = favoritesRailFocus,
                 )
             }
@@ -200,7 +200,6 @@ internal fun HomeScreen(
                     onOpenAll = onOpenFavorites,
                     onOpenItem = onOpenItem,
                     headerFocusRequester = favoritesRailFocus,
-                    previousRailFocusRequester = recentRailFocus,
                     nextRailFocusRequester = latestRailFocus,
                 )
             }
@@ -209,34 +208,9 @@ internal fun HomeScreen(
                     title = "Son Eklenenler",
                     items = latestPreview,
                     emptyText = "Son eklenen içerik yok",
-                    onOpenAll = { onOpenCatalogTab(firstAvailableTab(playlist)) },
+                    onOpenAll = onOpenLatest,
                     onOpenItem = onOpenItem,
                     headerFocusRequester = latestRailFocus,
-                    previousRailFocusRequester = favoritesRailFocus,
-                    nextRailFocusRequester = liveRailFocus,
-                )
-            }
-            item(key = "live-row", contentType = "media-row") {
-                HomeContentRow(
-                    title = "Canlı TV",
-                    items = livePreview,
-                    emptyText = "Canlı kanal bulunamadı",
-                    onOpenAll = { onOpenCatalogTab(CatalogTab.LIVE) },
-                    onOpenItem = onOpenItem,
-                    headerFocusRequester = liveRailFocus,
-                    previousRailFocusRequester = latestRailFocus,
-                    nextRailFocusRequester = seriesRailFocus,
-                )
-            }
-            item(key = "series-row", contentType = "series-row") {
-                HomeSeriesRow(
-                    title = "Diziler",
-                    groups = seriesPreview,
-                    emptyText = "Dizi bulunamadı",
-                    onOpenAll = { onOpenCatalogTab(CatalogTab.SERIES) },
-                    onOpenSeries = onOpenSeries,
-                    headerFocusRequester = seriesRailFocus,
-                    previousRailFocusRequester = liveRailFocus,
                     nextRailFocusRequester = moviesRailFocus,
                 )
             }
@@ -248,7 +222,28 @@ internal fun HomeScreen(
                     onOpenAll = { onOpenCatalogTab(CatalogTab.MOVIES) },
                     onOpenItem = onOpenItem,
                     headerFocusRequester = moviesRailFocus,
-                    previousRailFocusRequester = seriesRailFocus,
+                    nextRailFocusRequester = liveRailFocus,
+                )
+            }
+            item(key = "live-row", contentType = "media-row") {
+                HomeContentRow(
+                    title = "Canlı TV",
+                    items = livePreview,
+                    emptyText = "Canlı kanal bulunamadı",
+                    onOpenAll = { onOpenCatalogTab(CatalogTab.LIVE) },
+                    onOpenItem = onOpenItem,
+                    headerFocusRequester = liveRailFocus,
+                    nextRailFocusRequester = seriesRailFocus,
+                )
+            }
+            item(key = "series-row", contentType = "series-row") {
+                HomeSeriesRow(
+                    title = "Diziler",
+                    groups = seriesPreview,
+                    emptyText = "Dizi bulunamadı",
+                    onOpenAll = { onOpenCatalogTab(CatalogTab.SERIES) },
+                    onOpenSeries = onOpenSeries,
+                    headerFocusRequester = seriesRailFocus,
                     nextRailFocusRequester = null,
                 )
             }
@@ -312,7 +307,6 @@ internal fun HomeContentRow(
     onOpenAll: () -> Unit,
     onOpenItem: (CatalogItem) -> Unit,
     headerFocusRequester: FocusRequester,
-    previousRailFocusRequester: FocusRequester?,
     nextRailFocusRequester: FocusRequester?,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -331,7 +325,7 @@ internal fun HomeContentRow(
                 items(items, key = { it.id }, contentType = { it.kind.name }) { item ->
                     Box(
                         modifier = Modifier.homeRailItemVerticalNavigation(
-                            previousRailFocusRequester = previousRailFocusRequester,
+                            headerFocusRequester = headerFocusRequester,
                             nextRailFocusRequester = nextRailFocusRequester,
                         ),
                     ) {
@@ -354,7 +348,6 @@ internal fun HomeSeriesRow(
     onOpenAll: () -> Unit,
     onOpenSeries: (String) -> Unit,
     headerFocusRequester: FocusRequester,
-    previousRailFocusRequester: FocusRequester?,
     nextRailFocusRequester: FocusRequester?,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -373,7 +366,7 @@ internal fun HomeSeriesRow(
                 items(groups, key = { it.id }, contentType = { "series-card" }) { group ->
                     Box(
                         modifier = Modifier.homeRailItemVerticalNavigation(
-                            previousRailFocusRequester = previousRailFocusRequester,
+                            headerFocusRequester = headerFocusRequester,
                             nextRailFocusRequester = nextRailFocusRequester,
                         ),
                     ) {
@@ -396,21 +389,24 @@ internal fun HomeRailHeader(
     focusRequester: FocusRequester,
 ) {
     var focused by remember { mutableStateOf(false) }
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .focusRequester(focusRequester)
+            .tvFocusLift(focused = focused, scale = 1.01f, liftPx = -3f)
+            .onFocusChanged { focused = it.isFocused }
+            .tvClickable(onClick = onOpenAll),
+        color = if (focused) TvFocusPanel else Color.Transparent,
+        shape = RoundedCornerShape(12.dp),
+        border = if (focused) BorderStroke(2.dp, TvFocusBorder) else null,
+        shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 10.dp),
     ) {
-        Surface(
+        Row(
             modifier = Modifier
-                .focusRequester(focusRequester)
-                .tvFocusLift(focused = focused, scale = 1.025f, liftPx = -3f)
-                .onFocusChanged { focused = it.isFocused }
-                .tvClickable(onClick = onOpenAll),
-            color = if (focused) TvFocusPanel else Color.Transparent,
-            shape = RoundedCornerShape(10.dp),
-            border = if (focused) BorderStroke(2.dp, TvFocusBorder) else null,
-            shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 10.dp),
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = title,
@@ -420,10 +416,10 @@ internal fun HomeRailHeader(
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                modifier = Modifier.weight(1f),
             )
+            SeeAllLabel()
         }
-        SeeAllLabel()
     }
 }
 
@@ -446,7 +442,7 @@ internal fun SeeAllLabel() {
 }
 
 private fun Modifier.homeRailItemVerticalNavigation(
-    previousRailFocusRequester: FocusRequester?,
+    headerFocusRequester: FocusRequester,
     nextRailFocusRequester: FocusRequester?,
 ): Modifier {
     return onPreviewKeyEvent { event ->
@@ -455,7 +451,7 @@ private fun Modifier.homeRailItemVerticalNavigation(
         }
         when (event.key) {
             Key.DirectionDown -> nextRailFocusRequester.requestFocusSafely()
-            Key.DirectionUp -> previousRailFocusRequester.requestFocusSafely()
+            Key.DirectionUp -> headerFocusRequester.requestFocusSafely()
             else -> false
         }
     }

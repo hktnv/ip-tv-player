@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,6 +39,7 @@ internal fun SavedItemsScreen(
     onToggleFavorite: (CatalogItem) -> Unit,
     onAddPlaylist: () -> Unit,
     contentPadding: Dp,
+    initialFocusRequester: FocusRequester? = null,
 ) {
     if (playlist == null) {
         EmptyCatalog(onAddPlaylist, contentPadding)
@@ -68,6 +70,60 @@ internal fun SavedItemsScreen(
                 onOpenItem = onOpenItem,
                 onToggleFavorite = onToggleFavorite,
                 modifier = Modifier.weight(1f),
+                requestInitialFocus = initialFocusRequester != null,
+                initialFocusRequester = initialFocusRequester,
+            )
+        }
+    }
+}
+
+@Composable
+internal fun LatestItemsScreen(
+    playlist: LoadedPlaylist?,
+    snapshot: CatalogSnapshot?,
+    catalogIndexLoading: Boolean,
+    favoriteIds: List<String>,
+    onOpenItem: (CatalogItem) -> Unit,
+    onToggleFavorite: (CatalogItem) -> Unit,
+    onAddPlaylist: () -> Unit,
+    contentPadding: Dp,
+    initialFocusRequester: FocusRequester? = null,
+) {
+    if (playlist == null) {
+        EmptyCatalog(onAddPlaylist, contentPadding)
+        return
+    }
+    val items = remember(snapshot) {
+        snapshot?.allItems
+            .orEmpty()
+            .toList()
+            .asReversed()
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = contentPadding),
+    ) {
+        if (snapshot == null || catalogIndexLoading) {
+            LoadingPanel("Katalog hazırlanıyor", Modifier.padding(top = 18.dp))
+        } else if (items.isEmpty()) {
+            EmptyState(
+                title = "Son eklenen içerik yok",
+                body = "Oynatma listesi hazır olduğunda yeni içerikler burada görünür.",
+                actionLabel = null,
+                onAction = null,
+                modifier = Modifier.padding(top = 18.dp),
+            )
+        } else {
+            ContentGrid(
+                items = items,
+                favoriteIds = favoriteIds,
+                onOpenItem = onOpenItem,
+                onToggleFavorite = onToggleFavorite,
+                modifier = Modifier.weight(1f),
+                requestInitialFocus = true,
+                initialFocusRequester = initialFocusRequester,
             )
         }
     }

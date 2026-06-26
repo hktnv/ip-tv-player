@@ -341,6 +341,7 @@ private fun screenLabel(screen: AppScreen, selectedTab: CatalogTab): String {
         AppScreen.PLAYLISTS -> "Liste seçimi"
         AppScreen.CATALOG -> selectedTab.label
         AppScreen.SEARCH -> "Arama"
+        AppScreen.LATEST -> "Son Eklenenler"
         AppScreen.FAVORITES -> "Favoriler"
         AppScreen.RECENT -> "Son izlenen"
         AppScreen.SETTINGS -> "Ayarlar"

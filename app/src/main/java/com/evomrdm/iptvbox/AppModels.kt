@@ -13,6 +13,7 @@ internal enum class AppScreen {
     PLAYLISTS,
     CATALOG,
     SEARCH,
+    LATEST,
     FAVORITES,
     RECENT,
     SETTINGS,

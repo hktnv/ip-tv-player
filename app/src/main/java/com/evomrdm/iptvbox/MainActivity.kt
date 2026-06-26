@@ -30,7 +30,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import com.evomrdm.iptvbox.core.designsystem.IptvColors
 import com.evomrdm.iptvbox.core.designsystem.IptvTheme
@@ -93,8 +95,10 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var updateCheckStarted by rememberSaveable { mutableStateOf(false) }
     var updateState by remember { mutableStateOf<AppUpdateUiState>(AppUpdateUiState.Hidden) }
     var pendingNavigationStartedAt by remember { mutableStateOf<Long?>(null) }
+    var contentFocusRequest by remember { mutableStateOf(0) }
     val favoriteIds = remember { mutableStateListOf<String>() }
     val recentIds = remember { mutableStateListOf<String>() }
+    val contentInitialFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
         val restoreStartedAt = SystemClock.elapsedRealtime()
@@ -287,6 +291,17 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         selectedSeasonNumber = null
         screen = AppScreen.CATALOG
         showPlaylistEntry = false
+        sideMenuExpanded = false
+    }
+
+    fun openHomeRailScreen(target: AppScreen) {
+        pendingNavigationStartedAt = SystemClock.elapsedRealtime()
+        screen = target
+        showPlaylistEntry = false
+        sideMenuExpanded = false
+        selectedSeriesTitle = null
+        selectedSeasonNumber = null
+        contentFocusRequest += 1
     }
 
     fun openPlaylistCatalog(playlistId: String) {
@@ -467,6 +482,17 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         ) {
             val wide = maxWidth >= 900.dp
             val contentPadding = if (wide) 30.dp else 18.dp
+            val focusManager = LocalFocusManager.current
+
+            LaunchedEffect(contentFocusRequest) {
+                if (contentFocusRequest > 0 && wide && !showPlaylistEntry && screen != AppScreen.PLAYER) {
+                    withFrameNanos { }
+                    sideMenuExpanded = false
+                    focusManager.clearFocus(force = true)
+                    delay(160L)
+                    runCatching { contentInitialFocusRequester.requestFocus() }
+                }
+            }
 
             if (!restoredApplied) {
                 BootScreen(contentPadding = contentPadding)
@@ -563,14 +589,17 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                                 onAddPlaylist = { showAddDialog = true },
                                 onOpenCatalog = { openCatalogRoot() },
                                 onOpenCatalogTab = { openCatalogRoot(it) },
-                                onOpenFavorites = { navigate(AppScreen.FAVORITES) },
-                                onOpenRecent = { navigate(AppScreen.RECENT) },
+                                onOpenLatest = { openHomeRailScreen(AppScreen.LATEST) },
+                                onOpenFavorites = { openHomeRailScreen(AppScreen.FAVORITES) },
+                                onOpenRecent = { openHomeRailScreen(AppScreen.RECENT) },
                                 onOpenSeries = {
                                     selectedTab = CatalogTab.SERIES
                                     selectedCategory = null
                                     selectedSeriesTitle = it
                                     selectedSeasonNumber = null
                                     screen = AppScreen.CATALOG
+                                    showPlaylistEntry = false
+                                    sideMenuExpanded = false
                                 },
                                 onOpenItem = ::openItem,
                                 onSelectPlaylist = {
@@ -635,6 +664,17 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                                 onAddPlaylist = { showAddDialog = true },
                                 contentPadding = contentPadding,
                             )
+                            AppScreen.LATEST -> LatestItemsScreen(
+                                playlist = selectedPlaylist,
+                                snapshot = catalogSnapshot,
+                                catalogIndexLoading = catalogIndexLoading,
+                                favoriteIds = favoriteIds,
+                                onOpenItem = ::openItem,
+                                onToggleFavorite = { toggleFavorite(favoriteIds, it.id) },
+                                onAddPlaylist = { showAddDialog = true },
+                                contentPadding = contentPadding,
+                                initialFocusRequester = contentInitialFocusRequester,
+                            )
                             AppScreen.FAVORITES -> SavedItemsScreen(
                                 title = "Favoriler",
                                 emptyText = "Favori içerik yok",
@@ -647,6 +687,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                                 onToggleFavorite = { toggleFavorite(favoriteIds, it.id) },
                                 onAddPlaylist = { showAddDialog = true },
                                 contentPadding = contentPadding,
+                                initialFocusRequester = contentInitialFocusRequester,
                             )
                             AppScreen.RECENT -> SavedItemsScreen(
                                 title = "Son izlenenler",
@@ -660,6 +701,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                                 onToggleFavorite = { toggleFavorite(favoriteIds, it.id) },
                                 onAddPlaylist = { showAddDialog = true },
                                 contentPadding = contentPadding,
+                                initialFocusRequester = contentInitialFocusRequester,
                             )
                             AppScreen.SETTINGS -> SettingsScreen(
                                 playlist = selectedPlaylist,

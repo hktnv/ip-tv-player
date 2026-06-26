@@ -255,10 +255,11 @@ internal fun ContentCard(
     favorite: Boolean,
     onOpen: () -> Unit,
     onToggleFavorite: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var focused by remember { mutableStateOf(false) }
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.025f, liftPx = -5f)

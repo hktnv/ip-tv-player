@@ -9,11 +9,16 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import com.evomrdm.iptvbox.core.model.CatalogItem
 import com.evomrdm.iptvbox.core.model.ContentKind
+import kotlinx.coroutines.delay
 
 @Composable
 internal fun ContentGrid(
@@ -22,8 +27,23 @@ internal fun ContentGrid(
     onOpenItem: (CatalogItem) -> Unit,
     onToggleFavorite: (CatalogItem) -> Unit,
     modifier: Modifier = Modifier,
+    requestInitialFocus: Boolean = false,
+    initialFocusRequester: FocusRequester? = null,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val fallbackFocusRequester = remember { FocusRequester() }
+        val itemFocusRequester = initialFocusRequester ?: fallbackFocusRequester
+        val firstItemId = items.firstOrNull()?.id
+        LaunchedEffect(requestInitialFocus, firstItemId) {
+            if (requestInitialFocus && firstItemId != null) {
+                repeat(4) { attempt ->
+                    withFrameNanos { }
+                    if (attempt > 0) delay(80L)
+                    val focused = runCatching { itemFocusRequester.requestFocus() }.getOrDefault(false)
+                    if (focused) return@LaunchedEffect
+                }
+            }
+        }
         val mostlyLive = remember(items) {
             val sample = items.take(18)
             sample.isNotEmpty() && sample.count { it.kind in CatalogTab.LIVE.kinds } >= sample.size * 2 / 3
@@ -50,6 +70,11 @@ internal fun ContentGrid(
                     favorite = item.id in favoriteSet,
                     onOpen = { onOpenItem(item) },
                     onToggleFavorite = { onToggleFavorite(item) },
+                    modifier = if (requestInitialFocus && item.id == firstItemId) {
+                        Modifier.focusRequester(itemFocusRequester)
+                    } else {
+                        Modifier
+                    },
                 )
             }
         }

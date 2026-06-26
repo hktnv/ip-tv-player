@@ -226,6 +226,7 @@ internal fun restoredScreen(name: String?, hasPlaylist: Boolean): AppScreen {
 internal fun AppScreen.requiresPlaylist(): Boolean {
     return this == AppScreen.CATALOG ||
         this == AppScreen.SEARCH ||
+        this == AppScreen.LATEST ||
         this == AppScreen.FAVORITES ||
         this == AppScreen.RECENT ||
         this == AppScreen.PLAYER
