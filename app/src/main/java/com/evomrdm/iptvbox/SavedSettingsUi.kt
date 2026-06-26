@@ -74,6 +74,7 @@ internal fun SettingsScreen(
     diagnostics: PerformanceDiagnostics,
     onReload: () -> Unit,
     onAddPlaylist: () -> Unit,
+    onOpenPlaylistEntry: () -> Unit,
     contentPadding: Dp,
 ) {
     LazyColumn(
@@ -95,6 +96,8 @@ internal fun SettingsScreen(
             InfoPanel(
                 title = "Başlangıç",
                 body = "Son oynatma listesi, favoriler ve son izlenenler bu cihazda hatırlanır.",
+                actionLabel = "Liste seçimine dön",
+                onAction = onOpenPlaylistEntry,
             )
         }
         item {

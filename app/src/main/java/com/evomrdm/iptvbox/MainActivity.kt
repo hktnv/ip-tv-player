@@ -72,6 +72,8 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var bootError by remember { mutableStateOf<String?>(null) }
     var selectedPlaylistId by rememberSaveable { mutableStateOf<String?>(null) }
     var screen by rememberSaveable { mutableStateOf(AppScreen.HOME) }
+    var showPlaylistEntry by rememberSaveable { mutableStateOf(true) }
+    var sideMenuExpanded by rememberSaveable { mutableStateOf(false) }
     var returnScreen by rememberSaveable { mutableStateOf(AppScreen.CATALOG) }
     var selectedTab by rememberSaveable { mutableStateOf(CatalogTab.LIVE) }
     var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
@@ -101,7 +103,13 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                 playlists.clear()
                 playlists.addAll(restoredState.playlists)
                 selectedPlaylistId = restoredState.selectedPlaylistId
-                screen = restoredScreen(restoredState.selectedScreen, restoredState.playlists.isNotEmpty())
+                val restoredScreenValue = restoredScreen(
+                    name = restoredState.selectedScreen,
+                    hasPlaylist = restoredState.playlists.isNotEmpty(),
+                )
+                showPlaylistEntry = restoredState.playlists.isEmpty() ||
+                    restoredScreenValue == AppScreen.PLAYLISTS
+                screen = if (showPlaylistEntry) AppScreen.PLAYLISTS else restoredScreenValue
                 selectedTab = restoredTab(restoredState.selectedTab)
                 selectedCategory = restoredState.selectedCategory
                 selectedSeriesTitle = restoredState.selectedSeriesTitle
@@ -120,6 +128,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                 telemetry.recordError("Açılış verisi okunamadı", it)
                 bootError = "Uygulama verileri okunamadı."
                 showRecovery = true
+                showPlaylistEntry = true
                 restoredApplied = true
             }
             /*
@@ -163,6 +172,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     LaunchedEffect(restoredApplied, selectedPlaylist?.id, screen) {
         if (restoredApplied && selectedPlaylist == null && screen.requiresPlaylist()) {
             screen = AppScreen.HOME
+            showPlaylistEntry = true
         }
     }
 
@@ -177,11 +187,12 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         selectedCategory,
         selectedSeriesTitle,
         selectedSeasonNumber,
+        showPlaylistEntry,
         favoriteIds.joinToString("|"),
         recentIds.joinToString("|"),
     ) {
         val playlist = selectedPlaylist
-        if (playlist == null) {
+        if (playlist == null || showPlaylistEntry) {
             catalogSnapshot = null
             catalogIndexLoading = false
         } else {
@@ -239,6 +250,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         selectedCategory,
         selectedSeriesTitle,
         selectedSeasonNumber,
+        showPlaylistEntry,
         searchDraft,
         submittedSearch,
         favoriteSignature,
@@ -249,7 +261,11 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                 PersistedAppState(
                     playlists = playlists.toList(),
                     selectedPlaylistId = selectedPlaylist?.id,
-                    selectedScreen = screen.takeUnless { it == AppScreen.PLAYER }?.name,
+                    selectedScreen = if (showPlaylistEntry) {
+                        AppScreen.PLAYLISTS.name
+                    } else {
+                        screen.takeUnless { it == AppScreen.PLAYER }?.name
+                    },
                     selectedTab = selectedTab.name,
                     selectedCategory = selectedCategory,
                     selectedSeriesTitle = selectedSeriesTitle,
@@ -269,6 +285,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         selectedSeriesTitle = null
         selectedSeasonNumber = null
         screen = AppScreen.CATALOG
+        showPlaylistEntry = false
     }
 
     fun openPlaylistCatalog(playlistId: String) {
@@ -278,16 +295,28 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         selectedCategory = null
         selectedSeriesTitle = null
         selectedSeasonNumber = null
-        screen = AppScreen.CATALOG
+        submittedSearch = ""
+        searchDraft = ""
+        screen = AppScreen.HOME
+        showPlaylistEntry = false
+        sideMenuExpanded = false
+    }
+
+    fun openPlaylistEntry() {
+        screen = AppScreen.PLAYLISTS
+        showPlaylistEntry = true
+        sideMenuExpanded = true
     }
 
     fun navigate(target: AppScreen) {
-        if (target == screen && target != AppScreen.CATALOG) return
+        if (!showPlaylistEntry && target == screen && target != AppScreen.CATALOG) return
         pendingNavigationStartedAt = SystemClock.elapsedRealtime()
         when (target) {
             AppScreen.CATALOG -> openCatalogRoot()
+            AppScreen.PLAYLISTS -> openPlaylistEntry()
             else -> {
                 screen = target
+                showPlaylistEntry = false
                 if (target != AppScreen.PLAYER) {
                     selectedSeriesTitle = null
                     selectedSeasonNumber = null
@@ -458,7 +487,8 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                             selectedSeasonNumber = null
                             submittedSearch = ""
                             searchDraft = ""
-                            screen = AppScreen.HOME
+                            screen = AppScreen.PLAYLISTS
+                            showPlaylistEntry = true
                             showRecovery = false
                             bootError = null
                             banner = "Sorunlu liste kaldırıldı"
@@ -472,6 +502,23 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                     onBack = {
                         screen = returnScreen
                         currentItem = null
+                    },
+                )
+            } else if (showPlaylistEntry) {
+                PlaylistEntryScreen(
+                    playlists = playlists,
+                    selectedPlaylistId = selectedPlaylist?.id,
+                    contentPadding = contentPadding,
+                    onOpenLastPlaylist = {
+                        selectedPlaylist?.let { openPlaylistCatalog(it.id) } ?: run {
+                            showAddDialog = true
+                        }
+                    },
+                    onAddPlaylist = { showAddDialog = true },
+                    onSelectPlaylist = ::openPlaylistCatalog,
+                    onOpenSettings = {
+                        screen = AppScreen.SETTINGS
+                        showPlaylistEntry = false
                     },
                 )
             } else {
@@ -488,9 +535,13 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                 if (wide) {
                     SideNavigation(
                         selected = screen,
+                        selectedTab = selectedTab,
                         hasPlaylist = selectedPlaylist != null,
+                        expanded = sideMenuExpanded,
+                        onExpandedChange = { sideMenuExpanded = it },
                         onNavigate = ::navigate,
-                        onAddPlaylist = { showAddDialog = true },
+                        onOpenTab = { openCatalogRoot(it) },
+                        onOpenPlaylistEntry = ::openPlaylistEntry,
                     )
                 }
                 Column(
@@ -618,6 +669,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                                 diagnostics = diagnostics,
                                 onReload = { selectedPlaylist?.let(::reloadPlaylist) },
                                 onAddPlaylist = { showAddDialog = true },
+                                onOpenPlaylistEntry = ::openPlaylistEntry,
                                 contentPadding = contentPadding,
                             )
                             AppScreen.PLAYER -> Unit
@@ -626,8 +678,10 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                     if (!wide) {
                         BottomNavigation(
                             selected = screen,
+                            selectedTab = selectedTab,
                             hasPlaylist = selectedPlaylist != null,
                             onNavigate = ::navigate,
+                            onOpenTab = { openCatalogRoot(it) },
                         )
                     }
                 }
@@ -673,7 +727,9 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                         selectedSeriesTitle = null
                         selectedSeasonNumber = null
                         submittedSearch = ""
-                        screen = AppScreen.CATALOG
+                        screen = AppScreen.HOME
+                        showPlaylistEntry = false
+                        sideMenuExpanded = false
                         banner = "${playlist.name} yüklendi: ${playlist.items.size} içerik"
                         showAddDialog = false
                         withFrameNanos { }
