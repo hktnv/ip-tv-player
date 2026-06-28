@@ -161,6 +161,8 @@ internal fun HomeScreen(
     val liveRailFocus = remember { FocusRequester() }
     val seriesRailFocus = remember { FocusRequester() }
     val moviesRailFocus = remember { FocusRequester() }
+    val showFavoritesRail = favoriteItems.isNotEmpty()
+    val afterRecentFocus = if (showFavoritesRail) favoritesRailFocus else latestRailFocus
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -191,10 +193,13 @@ internal fun HomeScreen(
                     onOpenAll = onOpenRecent,
                     onOpenItem = onOpenItem,
                     headerFocusRequester = recentRailFocus,
-                    nextRailFocusRequester = favoritesRailFocus,
+                    nextRailFocusRequester = afterRecentFocus,
+                    cardWidth = 136.dp,
+                    cardRatio = 0.78f,
                 )
             }
-            item(key = "favorites-row", contentType = "media-row") {
+            if (showFavoritesRail) {
+                item(key = "favorites-row", contentType = "media-row") {
                 HomeContentRow(
                     title = "Favoriler",
                     items = favoriteItems.take(previewLimit),
@@ -204,6 +209,7 @@ internal fun HomeScreen(
                     headerFocusRequester = favoritesRailFocus,
                     nextRailFocusRequester = latestRailFocus,
                 )
+                }
             }
             item(key = "latest-row", contentType = "media-row") {
                 HomeContentRow(

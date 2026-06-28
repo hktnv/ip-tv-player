@@ -1,14 +1,17 @@
 package com.evomrdm.iptvbox
 
+import android.os.SystemClock
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -17,13 +20,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LiveTv
-import androidx.compose.material.icons.filled.Movie
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -68,6 +65,8 @@ internal fun SideNavigation(
     onDrawerEvent: (NavigationDrawerEvent) -> Unit,
     onNavigate: (AppScreen) -> Unit,
     onOpenTab: (CatalogTab) -> Unit,
+    lastCollapsedMenuIntentAt: Long,
+    onRequestExitConfirmation: () -> Unit,
 ) {
     val entries = playlistNavEntries(hasPlaylist, stats)
     val focusManager = LocalFocusManager.current
@@ -124,6 +123,10 @@ internal fun SideNavigation(
                         focusManager.moveFocus(FocusDirection.Right)
                         true
                     }
+                    Key.Back -> {
+                        onRequestExitConfirmation()
+                        true
+                    }
                     Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
                         activateMenuItem(
                             focusedIndex = focusedIndex,
@@ -141,7 +144,17 @@ internal fun SideNavigation(
                 if (state.hasFocus) {
                     focusedIndex = selectedIndex
                     if (!expanded) {
-                        onDrawerEvent(NavigationDrawerEvent.DrawerFocused)
+                        val focusFollowsUserLeftIntent = shouldExpandCollapsedDrawerOnFocus(
+                            nowMs = SystemClock.uptimeMillis(),
+                            lastUserLeftIntentMs = lastCollapsedMenuIntentAt,
+                        )
+                        onDrawerEvent(
+                            if (focusFollowsUserLeftIntent) {
+                                NavigationDrawerEvent.OpenByUserNavigation
+                            } else {
+                                NavigationDrawerEvent.DrawerFocused
+                            },
+                        )
                     }
                 }
             }
@@ -244,7 +257,7 @@ internal fun NavigationButton(
             .then(if (interactive) Modifier.tvClickable(enabled = enabled, onClick = onClick) else Modifier),
         color = when {
             showFocus -> TvFocusPanel
-            selected -> TvSelectedPanel
+            selected -> IptvColors.Accent.copy(alpha = 0.12f)
             else -> Color.Transparent
         },
         contentColor = when {
@@ -257,72 +270,42 @@ internal fun NavigationButton(
             if (showFocus) 2.dp else 1.dp,
             when {
                 showFocus -> TvFocusBorder
-                selected -> IptvColors.Accent
-                expanded -> TvRestingBorder
+                expanded -> TvRestingBorder.copy(alpha = if (selected) 0.55f else 1f)
                 else -> Color.Transparent
             },
         ),
         shadowElevation = tvFocusElevation(focused = showFocus, resting = 0.dp, focusedElevation = 10.dp),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = if (expanded) 10.dp else 0.dp),
-            horizontalArrangement = if (expanded) Arrangement.spacedBy(9.dp) else Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(imageVector = icon, contentDescription = null, modifier = Modifier.height(17.dp))
-            if (expanded) {
-                Text(
-                    text = label,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontSize = if (compact) 11.sp else 12.sp,
-                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+        Box(Modifier.fillMaxSize()) {
+            if (selected) {
+                NavigationActiveIndicator(
+                    compact = compact,
+                    modifier = Modifier.align(Alignment.CenterStart),
                 )
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = if (expanded) 12.dp else 0.dp),
+                horizontalArrangement = if (expanded) Arrangement.spacedBy(9.dp) else Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(imageVector = icon, contentDescription = null, modifier = Modifier.height(17.dp))
+                if (expanded) {
+                    Text(
+                        text = label,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = if (compact) 11.sp else 12.sp,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                    )
+                }
             }
         }
     }
 }
 
-internal data class NavEntry(
-    val label: String,
-    val screen: AppScreen? = null,
-    val tab: CatalogTab? = null,
-    val enabled: Boolean,
-    val icon: ImageVector,
-)
-
-internal fun playlistNavEntries(hasPlaylist: Boolean, stats: PlaylistStats?): List<NavEntry> {
-    return listOf(
-        NavEntry("Anasayfa", screen = AppScreen.HOME, enabled = hasPlaylist, icon = Icons.Filled.Home),
-        NavEntry("Arama", screen = AppScreen.SEARCH, enabled = hasPlaylist, icon = Icons.Filled.Search),
-        NavEntry(menuLabel("Canlı TV", stats?.live), tab = CatalogTab.LIVE, enabled = hasPlaylist, icon = Icons.Filled.LiveTv),
-        NavEntry(menuLabel("Diziler", stats?.series), tab = CatalogTab.SERIES, enabled = hasPlaylist, icon = Icons.Filled.VideoLibrary),
-        NavEntry(menuLabel("Filmler", stats?.movies), tab = CatalogTab.MOVIES, enabled = hasPlaylist, icon = Icons.Filled.Movie),
-        NavEntry("Favoriler", screen = AppScreen.FAVORITES, enabled = hasPlaylist, icon = Icons.Filled.Favorite),
-    )
-}
-
-internal fun bottomNavEntries(hasPlaylist: Boolean, stats: PlaylistStats?): List<NavEntry> {
-    return listOf(
-        NavEntry("Anasayfa", screen = AppScreen.HOME, enabled = hasPlaylist, icon = Icons.Filled.Home),
-        NavEntry(menuLabel("Canlı TV", stats?.live), tab = CatalogTab.LIVE, enabled = hasPlaylist, icon = Icons.Filled.LiveTv),
-        NavEntry(menuLabel("Filmler", stats?.movies), tab = CatalogTab.MOVIES, enabled = hasPlaylist, icon = Icons.Filled.Movie),
-        NavEntry(menuLabel("Diziler", stats?.series), tab = CatalogTab.SERIES, enabled = hasPlaylist, icon = Icons.Filled.VideoLibrary),
-        NavEntry("Ayarlar", screen = AppScreen.SETTINGS, enabled = true, icon = Icons.Filled.Settings),
-    )
-}
-
 private fun NavEntry.focusKey(): String = tab?.name ?: screen?.name ?: label
-
-internal fun entrySelected(entry: NavEntry, selected: AppScreen, selectedTab: CatalogTab): Boolean {
-    return when {
-        entry.tab != null -> selected == AppScreen.CATALOG && selectedTab == entry.tab
-        entry.screen != null -> selected == entry.screen
-        else -> false
-    }
-}
 
 private fun selectedMenuIndex(
     entries: List<NavEntry>,
@@ -372,22 +355,4 @@ private fun previousEnabledMenuIndex(currentIndex: Int, entries: List<NavEntry>)
 private fun enabledMenuIndexes(entries: List<NavEntry>): List<Int> {
     val entryIndexes = entries.mapIndexedNotNull { index, entry -> index.takeIf { entry.enabled } }
     return entryIndexes + entries.size
-}
-
-private fun menuLabel(label: String, count: Int?): String {
-    return if (count == null) label else "$label ($count)"
-}
-
-private fun screenLabel(screen: AppScreen, selectedTab: CatalogTab): String {
-    return when (screen) {
-        AppScreen.HOME -> "Anasayfa"
-        AppScreen.PLAYLISTS -> "Liste seçimi"
-        AppScreen.CATALOG -> selectedTab.label
-        AppScreen.SEARCH -> "Arama"
-        AppScreen.LATEST -> "Son Eklenenler"
-        AppScreen.FAVORITES -> "Favoriler"
-        AppScreen.RECENT -> "Son izlenen"
-        AppScreen.SETTINGS -> "Ayarlar"
-        AppScreen.PLAYER -> "Oynatıcı"
-    }
 }

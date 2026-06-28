@@ -7,6 +7,7 @@ import com.evomrdm.iptvbox.data.playlist.RemotePlaylistLoader
 @Composable
 internal fun IptvDialogHost(
     showAddDialog: Boolean,
+    showExitDialog: Boolean,
     loader: RemotePlaylistLoader,
     telemetry: AppPerformanceTelemetry,
     existingPlaylistNames: List<String>,
@@ -15,6 +16,8 @@ internal fun IptvDialogHost(
     screen: AppScreen,
     showRecovery: Boolean,
     onDismissAdd: () -> Unit,
+    onDismissExit: () -> Unit,
+    onConfirmExit: () -> Unit,
     onPlaylistLoaded: (DraftPlaylist, PlaylistLoadResult) -> Unit,
     onDismissRename: () -> Unit,
     onRenamePlaylist: (LoadedPlaylist, String) -> Unit,
@@ -23,6 +26,13 @@ internal fun IptvDialogHost(
     onOpenInstaller: () -> Unit,
     onDismissUpdate: () -> Unit,
 ) {
+    if (showExitDialog) {
+        ExitConfirmationDialog(
+            onDismiss = onDismissExit,
+            onConfirm = onConfirmExit,
+        )
+    }
+
     if (showAddDialog) {
         AddPlaylistDialog(
             loader = loader,
@@ -45,6 +55,7 @@ internal fun IptvDialogHost(
         it is AppUpdateUiState.Hidden ||
             screen == AppScreen.PLAYER ||
             showAddDialog ||
+            showExitDialog ||
             renamingPlaylist != null ||
             showRecovery
     }

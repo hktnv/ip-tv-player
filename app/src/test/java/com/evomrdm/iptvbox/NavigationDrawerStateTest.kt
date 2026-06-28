@@ -23,7 +23,7 @@ class NavigationDrawerStateTest {
     }
 
     @Test
-    fun drawerFocusOpensOnlyWhenFocusExpansionIsEnabled() {
+    fun drawerFocusNeverChangesWidthWithoutExplicitUserNavigation() {
         val blocked = NavigationDrawerModel(
             state = NavigationDrawerState.Collapsed,
             focusExpansion = NavigationDrawerFocusExpansion.BlockedAfterNavigation,
@@ -38,7 +38,11 @@ class NavigationDrawerStateTest {
             enabled,
             listOf(NavigationDrawerEvent.CollapseForContentFocus, NavigationDrawerEvent.DrawerFocused),
         ))
-        assertEquals(1, countDrawerWidthTransitions(enabled, listOf(NavigationDrawerEvent.DrawerFocused)))
+        assertEquals(0, countDrawerWidthTransitions(enabled, listOf(NavigationDrawerEvent.DrawerFocused)))
+        assertEquals(
+            NavigationDrawerState.Collapsed,
+            enabled.reduce(NavigationDrawerEvent.DrawerFocused).model.state,
+        )
     }
 
     @Test
@@ -50,7 +54,7 @@ class NavigationDrawerStateTest {
             NavigationDrawerEvent.CollapseForNavigation,
             NavigationDrawerEvent.DrawerFocused,
             NavigationDrawerEvent.ContentFocusRestored,
-            NavigationDrawerEvent.DrawerFocused,
+            NavigationDrawerEvent.OpenByUserNavigation,
         )
 
         assertEquals(2, countDrawerWidthTransitions(initial, events))
@@ -72,5 +76,31 @@ class NavigationDrawerStateTest {
             NavigationDrawerState.ExpandedByUserNavigation,
             blocked.reduce(NavigationDrawerEvent.OpenByUserNavigation).model.state,
         )
+    }
+
+    @Test
+    fun categoryFocusLeakCannotOpenCollapsedDrawer() {
+        val initial = NavigationDrawerModel(
+            state = NavigationDrawerState.Collapsed,
+            focusExpansion = NavigationDrawerFocusExpansion.Enabled,
+        )
+        val events = listOf(
+            NavigationDrawerEvent.ContentFocusRestored,
+            NavigationDrawerEvent.DrawerFocused,
+            NavigationDrawerEvent.DrawerFocused,
+        )
+
+        assertEquals(0, countDrawerWidthTransitions(initial, events))
+        assertEquals(
+            NavigationDrawerState.Collapsed,
+            events.fold(initial) { model, event -> model.reduce(event).model }.state,
+        )
+    }
+
+    @Test
+    fun collapsedDrawerFocusExpandsOnlyAfterFreshLeftIntent() {
+        assertEquals(true, shouldExpandCollapsedDrawerOnFocus(nowMs = 1_200L, lastUserLeftIntentMs = 1_000L))
+        assertEquals(false, shouldExpandCollapsedDrawerOnFocus(nowMs = 1_600L, lastUserLeftIntentMs = 1_000L))
+        assertEquals(false, shouldExpandCollapsedDrawerOnFocus(nowMs = 1_000L, lastUserLeftIntentMs = 0L))
     }
 }

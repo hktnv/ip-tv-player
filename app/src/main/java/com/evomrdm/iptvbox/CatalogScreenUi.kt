@@ -365,7 +365,7 @@ internal fun CategoryButton(
             .tvClickable(onClick = onClick),
         color = when {
             focused -> TvFocusPanel
-            selected -> Color(0xFF13211D)
+            selected -> IptvColors.Accent.copy(alpha = 0.12f)
             else -> Color(0xFF101720)
         },
         shape = RoundedCornerShape(8.dp),
@@ -373,7 +373,7 @@ internal fun CategoryButton(
             1.dp,
             when {
                 focused -> TvFocusBorder
-                selected -> Color(0xFF3A4642)
+                selected -> TvRestingBorder.copy(alpha = 0.35f)
                 else -> TvRestingBorder
             },
         ),

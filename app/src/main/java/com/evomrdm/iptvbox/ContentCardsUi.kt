@@ -28,10 +28,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -44,11 +46,16 @@ import com.evomrdm.iptvbox.core.model.ContentKind
 internal fun CompactContentCard(
     item: CatalogItem,
     onClick: () -> Unit,
+    fixedWidth: Dp? = null,
+    fixedRatio: Float? = null,
 ) {
     var focused by remember { mutableStateOf(false) }
+    val logoLike = item.kind == ContentKind.LIVE_CHANNEL || item.kind == ContentKind.RADIO
+    val cardWidth = fixedWidth ?: if (logoLike) 124.dp else 108.dp
+    val artworkRatio = fixedRatio ?: if (logoLike) 0.78f else item.posterRatio()
     Surface(
         modifier = Modifier
-            .width(if (item.kind == ContentKind.LIVE_CHANNEL || item.kind == ContentKind.RADIO) 124.dp else 108.dp)
+            .width(cardWidth)
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -5f)
             .onFocusChanged { focused = it.isFocused }
@@ -58,15 +65,28 @@ internal fun CompactContentCard(
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
     ) {
-        Column {
+        Box {
             ContentArtwork(
                 title = item.displayTitle(),
                 kind = item.kind,
                 logoUrl = item.logoUrl,
-                showBadge = false,
-                modifier = Modifier.fillMaxWidth().aspectRatio(item.posterRatio()),
+                showBadge = true,
+                modifier = Modifier.fillMaxWidth().aspectRatio(artworkRatio),
             )
-            Column(Modifier.padding(9.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            0f to Color.Transparent,
+                            0.35f to Color.Black.copy(alpha = 0.56f),
+                            1f to Color.Black.copy(alpha = 0.88f),
+                        ),
+                    )
+                    .padding(start = 9.dp, end = 9.dp, top = 30.dp, bottom = 9.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
                 Text(
                     text = item.displayTitle(),
                     color = IptvColors.TextPrimary,
@@ -212,8 +232,8 @@ internal fun ContentArtwork(
                         AsyncImage(
                             model = logoUrl,
                             contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize().padding(10.dp),
                         )
                     }
                 }

@@ -38,11 +38,7 @@ internal fun NavigationDrawerModel.reduce(event: NavigationDrawerEvent): Navigat
             state = NavigationDrawerState.ExpandedByUserNavigation,
             focusExpansion = NavigationDrawerFocusExpansion.Enabled,
         )
-        NavigationDrawerEvent.DrawerFocused -> if (focusExpansion == NavigationDrawerFocusExpansion.Enabled) {
-            copy(state = NavigationDrawerState.ExpandedByUserNavigation)
-        } else {
-            this
-        }
+        NavigationDrawerEvent.DrawerFocused -> this
         NavigationDrawerEvent.CollapseForNavigation -> copy(
             state = NavigationDrawerState.Collapsed,
             focusExpansion = NavigationDrawerFocusExpansion.BlockedAfterNavigation,
@@ -74,4 +70,12 @@ internal fun countDrawerWidthTransitions(
         model = transition.model
     }
     return count
+}
+
+internal fun shouldExpandCollapsedDrawerOnFocus(
+    nowMs: Long,
+    lastUserLeftIntentMs: Long,
+    thresholdMs: Long = 450L,
+): Boolean {
+    return lastUserLeftIntentMs > 0L && nowMs - lastUserLeftIntentMs in 0L..thresholdMs
 }

@@ -1,5 +1,6 @@
 package com.evomrdm.iptvbox
 
+import android.os.SystemClock
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,9 +9,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.evomrdm.iptvbox.core.model.CatalogItem
@@ -61,11 +71,24 @@ internal fun PlaylistContentScaffold(
     onOpenPlaylistEntry: () -> Unit,
     onNavigate: (AppScreen) -> Unit,
     onDrawerEvent: (NavigationDrawerEvent) -> Unit,
+    onRequestExitConfirmation: () -> Unit,
     onDismissBanner: () -> Unit,
 ) {
+    var lastCollapsedMenuIntentAt by remember { mutableLongStateOf(0L) }
     Box(
         Modifier
             .fillMaxSize()
+            .onPreviewKeyEvent { event ->
+                if (
+                    wide &&
+                    !sideMenuExpanded &&
+                    event.type == KeyEventType.KeyDown &&
+                    event.key == Key.DirectionLeft
+                ) {
+                    lastCollapsedMenuIntentAt = SystemClock.uptimeMillis()
+                }
+                false
+            }
             .padding(
                 start = if (wide) 36.dp else 0.dp,
                 end = if (wide) 36.dp else 0.dp,
@@ -146,6 +169,8 @@ internal fun PlaylistContentScaffold(
                 onDrawerEvent = onDrawerEvent,
                 onNavigate = onNavigate,
                 onOpenTab = onOpenCatalogTab,
+                lastCollapsedMenuIntentAt = lastCollapsedMenuIntentAt,
+                onRequestExitConfirmation = onRequestExitConfirmation,
             )
         }
         banner?.let {

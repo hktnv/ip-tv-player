@@ -82,6 +82,7 @@ internal fun IptvContentHost(
     onOpenPlaylistEntry: () -> Unit,
     onNavigate: (AppScreen) -> Unit,
     onDrawerEvent: (NavigationDrawerEvent) -> Unit,
+    onRequestExitConfirmation: () -> Unit,
     onDismissBanner: () -> Unit,
 ) {
     CompositionLocalProvider(LocalPerformanceMode provides performanceMode) {
@@ -95,7 +96,6 @@ internal fun IptvContentHost(
         ) {
             onSeriesBack()
         }
-
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
@@ -104,6 +104,20 @@ internal fun IptvContentHost(
             val wide = maxWidth >= 900.dp
             val contentPadding = if (wide) 30.dp else 18.dp
             val focusManager = LocalFocusManager.current
+            BackHandler(
+                enabled = wide &&
+                    !showPlaylistEntry &&
+                    screen != AppScreen.PLAYER &&
+                    !(screen == AppScreen.CATALOG &&
+                        selectedTab == CatalogTab.SERIES &&
+                        (selectedSeasonNumber != null || selectedSeriesTitle != null)),
+            ) {
+                if (sideMenuExpanded) {
+                    onRequestExitConfirmation()
+                } else {
+                    onDrawerEvent(NavigationDrawerEvent.OpenByUserNavigation)
+                }
+            }
 
             LaunchedEffect(contentFocusRequest) {
                 if (contentFocusRequest > 0 && wide && !showPlaylistEntry && screen != AppScreen.PLAYER) {
@@ -184,10 +198,11 @@ internal fun IptvContentHost(
                     onQueryChange = onQueryChange,
                     onSearch = onSearch,
                     onOpenPlaylistEntry = onOpenPlaylistEntry,
-                    onNavigate = onNavigate,
-                    onDrawerEvent = onDrawerEvent,
-                    onDismissBanner = onDismissBanner,
-                )
+                        onNavigate = onNavigate,
+                        onDrawerEvent = onDrawerEvent,
+                        onRequestExitConfirmation = onRequestExitConfirmation,
+                        onDismissBanner = onDismissBanner,
+                    )
             }
         }
     }

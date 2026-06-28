@@ -17,7 +17,7 @@ import com.evomrdm.iptvbox.data.playlist.RemotePlaylistLoader
 
 @Composable
 internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
-    val context = LocalContext.current.applicationContext
+    val localContext = LocalContext.current; val context = localContext.applicationContext; val activity = localContext as? android.app.Activity
     val loader = remember { RemotePlaylistLoader() }
     val catalogStore = remember(context) { CatalogStore(context) }
     val catalogRepository = remember(catalogStore) { AppCatalogRepository(catalogStore) }
@@ -39,7 +39,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var selectedTab by rememberSaveable { mutableStateOf(CatalogTab.LIVE) }
     var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }; var selectedSeriesTitle by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedSeasonNumber by rememberSaveable { mutableStateOf<Int?>(null) }; var searchDraft by rememberSaveable { mutableStateOf("") }
-    var submittedSearch by rememberSaveable { mutableStateOf("") }; var showAddDialog by rememberSaveable { mutableStateOf(false) }
+    var submittedSearch by rememberSaveable { mutableStateOf("") }; var showAddDialog by rememberSaveable { mutableStateOf(false) }; var showExitDialog by rememberSaveable { mutableStateOf(false) }
     var renamingPlaylist by remember { mutableStateOf<LoadedPlaylist?>(null) }
     var banner by rememberSaveable { mutableStateOf<String?>(null) }
     var currentItem by remember { mutableStateOf<CatalogItem?>(null) }; var currentHeaders by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
@@ -349,16 +349,16 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onSeriesSelected = { selectedSeriesTitle = it; selectedSeasonNumber = null },
         onSeasonSelected = { selectedSeasonNumber = it }, onToggleFavorite = { toggleFavorite(favoriteIds, it.id) },
         onQueryChange = { searchDraft = it }, onSearch = { submittedSearch = searchDraft.trim() },
-        onOpenPlaylistEntry = ::openPlaylistEntry, onNavigate = ::navigate,
-        onDrawerEvent = ::applyDrawerEvent,
-        onDismissBanner = { banner = null },
+        onOpenPlaylistEntry = ::openPlaylistEntry, onNavigate = ::navigate, onDrawerEvent = ::applyDrawerEvent,
+        onRequestExitConfirmation = { showExitDialog = true }, onDismissBanner = { banner = null },
     )
 
     IptvDialogHost(
-        showAddDialog = showAddDialog, loader = loader, telemetry = telemetry,
+        showAddDialog = showAddDialog, showExitDialog = showExitDialog, loader = loader, telemetry = telemetry,
         existingPlaylistNames = playlists.map { it.name }, renamingPlaylist = renamingPlaylist,
         updateState = updateState, screen = screen, showRecovery = showRecovery,
-        onDismissAdd = { showAddDialog = false },
+        onDismissAdd = { showAddDialog = false }, onDismissExit = { showExitDialog = false },
+        onConfirmExit = { showExitDialog = false; activity?.finish() },
         onPlaylistLoaded = { draft, result ->
             scope.saveLoadedPlaylistAction(
                 draft = draft, result = result, telemetry = telemetry, catalogStore = catalogStore,

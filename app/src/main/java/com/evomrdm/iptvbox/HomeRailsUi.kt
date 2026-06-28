@@ -32,6 +32,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.evomrdm.iptvbox.core.designsystem.IptvColors
@@ -46,6 +47,8 @@ internal fun HomeContentRow(
     onOpenItem: (CatalogItem) -> Unit,
     headerFocusRequester: FocusRequester,
     nextRailFocusRequester: FocusRequester?,
+    cardWidth: Dp? = null,
+    cardRatio: Float? = null,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         HomeRailHeader(
@@ -70,6 +73,8 @@ internal fun HomeContentRow(
                         CompactContentCard(
                             item = item,
                             onClick = { onOpenItem(item) },
+                            fixedWidth = cardWidth,
+                            fixedRatio = cardRatio,
                         )
                     }
                 }
