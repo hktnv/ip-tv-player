@@ -212,13 +212,10 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     )
 
     fun openItem(item: CatalogItem) {
-        recentIds.remove(item.id)
-        recentIds.add(0, item.id)
+        recentIds.remove(item.id); recentIds.add(0, item.id)
         while (recentIds.size > 60) recentIds.removeLast()
-        currentItem = item
-        currentHeaders = selectedPlaylist?.headers.orEmpty()
-        returnScreen = screen.takeIf { it != AppScreen.PLAYER } ?: AppScreen.CATALOG
-        screen = AppScreen.PLAYER
+        currentItem = item; currentHeaders = selectedPlaylist?.headers.orEmpty()
+        returnScreen = screen.takeIf { it != AppScreen.PLAYER } ?: AppScreen.CATALOG; screen = AppScreen.PLAYER
     }
     fun reloadPlaylist(playlist: LoadedPlaylist) {
         scope.reloadPlaylistAction(
@@ -228,8 +225,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             catalogStore = catalogStore,
             onBanner = { banner = it },
             onStored = { stored ->
-                val index = playlists.indexOfFirst { it.id == stored.id }
-                if (index >= 0) playlists[index] = stored
+                val index = playlists.indexOfFirst { it.id == stored.id }; if (index >= 0) playlists[index] = stored
             },
         )
     }
@@ -250,53 +246,37 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             playlists = playlists,
             catalogStore = catalogStore,
             onUpdated = { updated ->
-            val index = playlists.indexOfFirst { it.id == playlist.id }
-            if (index >= 0) playlists[index] = updated
-            if (selectedPlaylistId == playlist.id) selectedPlaylistId = updated.id
-            renamingPlaylist = null
-            banner = "Oynatma listesi adı güncellendi"
+                val index = playlists.indexOfFirst { it.id == playlist.id }; if (index >= 0) playlists[index] = updated
+                if (selectedPlaylistId == playlist.id) selectedPlaylistId = updated.id
+                renamingPlaylist = null; banner = "Oynatma listesi adı güncellendi"
             },
         )
     }
     fun clearBrokenState() {
         scope.clearBrokenStateAction(stateStore) {
             playlists.clear()
-            favoriteIds.clear()
-            recentIds.clear()
-            selectedPlaylistId = null
-            selectedCategory = null
-            selectedSeriesTitle = null
-            selectedSeasonNumber = null
-            submittedSearch = ""
-            searchDraft = ""
-            screen = AppScreen.PLAYLISTS
-            showPlaylistEntry = true
-            showRecovery = false
-            bootError = null
-            banner = "Sorunlu liste kaldırıldı"
+            favoriteIds.clear(); recentIds.clear()
+            selectedPlaylistId = null; selectedCategory = null
+            selectedSeriesTitle = null; selectedSeasonNumber = null
+            submittedSearch = ""; searchDraft = ""
+            screen = AppScreen.PLAYLISTS; showPlaylistEntry = true
+            showRecovery = false; bootError = null; banner = "Sorunlu liste kaldırıldı"
         }
     }
     fun openSettingsFromEntry() {
-        screen = AppScreen.SETTINGS
-        showPlaylistEntry = false
+        screen = AppScreen.SETTINGS; showPlaylistEntry = false
         requestContentFocus()
     }
 
     fun openSeriesCatalog(title: String) {
-        selectedTab = CatalogTab.SERIES
-        selectedCategory = null
-        selectedSeriesTitle = title
-        selectedSeasonNumber = null
-        screen = AppScreen.CATALOG
-        showPlaylistEntry = false
+        selectedTab = CatalogTab.SERIES; selectedCategory = null; selectedSeriesTitle = title
+        selectedSeasonNumber = null; screen = AppScreen.CATALOG; showPlaylistEntry = false
         requestContentFocus()
     }
 
     fun resetCatalogNavigation(tab: CatalogTab? = null, category: String? = selectedCategory) {
         tab?.let { selectedTab = it }
-        selectedCategory = category
-        selectedSeriesTitle = null
-        selectedSeasonNumber = null
+        selectedCategory = category; selectedSeriesTitle = null; selectedSeasonNumber = null
     }
 
     IptvContentHost(
@@ -360,8 +340,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             val update = when (val state = updateState) {
                 is AppUpdateUiState.Available -> state.update; is AppUpdateUiState.Downloading -> state.update
                 is AppUpdateUiState.PermissionRequired -> state.update; else -> null
-            }
-            if (update != null) startUpdateDownload(update)
+            }; if (update != null) startUpdateDownload(update)
         },
         onOpenPermission = { updateInstaller.openInstallPermissionSettings() }, onOpenInstaller = {
             val state = updateState as? AppUpdateUiState.PermissionRequired

@@ -79,11 +79,8 @@ internal fun PlaylistContentScaffold(
         Modifier
             .fillMaxSize()
             .onPreviewKeyEvent { event ->
-                if (
-                    wide &&
-                    !sideMenuExpanded &&
-                    event.type == KeyEventType.KeyDown &&
-                    event.key == Key.DirectionLeft
+                if (wide && !sideMenuExpanded &&
+                    event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft
                 ) {
                     lastCollapsedMenuIntentAt = SystemClock.uptimeMillis()
                 }

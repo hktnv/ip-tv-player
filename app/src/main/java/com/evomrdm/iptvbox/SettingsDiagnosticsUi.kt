@@ -2,6 +2,8 @@ package com.evomrdm.iptvbox
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -9,7 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -23,50 +24,70 @@ internal fun DiagnosticsPanelContent(
     diagnostics: PerformanceDiagnostics,
     playlist: LoadedPlaylist?,
 ) {
-    androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = "Performans / Tanılama",
-            color = IptvColors.TextPrimary,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-        )
-        diagnosticsRows(diagnostics, playlist).forEach { row ->
-            DiagnosticRow(label = row.first, value = row.second)
+    val rows = diagnosticsRows(diagnostics, playlist)
+    BoxWithConstraints {
+        val twoColumns = maxWidth >= 420.dp
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "Performans / Tanılama",
+                color = IptvColors.TextPrimary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            if (twoColumns) {
+                rows.chunked(2).forEach { pair ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        pair.forEach { row ->
+                            DiagnosticTile(
+                                label = row.first,
+                                value = row.second,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+            } else {
+                rows.forEach { row -> DiagnosticTile(label = row.first, value = row.second) }
+            }
         }
     }
 }
 
 @Composable
-private fun DiagnosticRow(label: String, value: String) {
+private fun DiagnosticTile(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         color = Color(0xFF101923),
         shape = RoundedCornerShape(10.dp),
         border = BorderStroke(1.dp, TvRestingBorder),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
                 text = label,
                 color = IptvColors.TextSecondary,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
+                fontSize = 10.sp,
+                lineHeight = 12.sp,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.weight(0.42f),
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = value,
                 color = IptvColors.TextPrimary,
-                fontSize = 13.sp,
-                lineHeight = 17.sp,
+                fontSize = 11.sp,
+                lineHeight = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(0.58f),
-                maxLines = 3,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
@@ -87,13 +108,13 @@ private fun diagnosticsRows(
 
     return listOf(
         "Uygulama açılışı" to diagnostics.appOpenMs(),
-        "Ana ekran ilk gösterim" to diagnostics.ms("home_first_draw_ms"),
-        "Oynatma listesi ekleme" to diagnostics.ms("playlist_import_total_ms"),
-        "Katalog hazır olma" to diagnostics.ms("catalog_screen_ready_ms"),
+        "Ana ekran" to diagnostics.ms("home_first_draw_ms"),
+        "Liste ekleme" to diagnostics.ms("playlist_import_total_ms"),
+        "Katalog hazır" to diagnostics.ms("catalog_screen_ready_ms"),
         "Menü geçişleri" to diagnostics.menuTransitionsText(),
-        "Arama ilk sonuç" to diagnostics.ms("search_first_result_ms"),
+        "Arama sonucu" to diagnostics.ms("search_first_result_ms"),
         "Yaklaşık RAM" to diagnostics.mb("ram_mb"),
-        "Son hata / çökme" to (diagnostics.lastError ?: "Son hata yok"),
+        "Son hata" to (diagnostics.lastError ?: "Son hata yok"),
         "Yüklü içerik" to playlistText,
     )
 }

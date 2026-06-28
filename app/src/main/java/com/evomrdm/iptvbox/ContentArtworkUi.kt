@@ -1,6 +1,5 @@
 package com.evomrdm.iptvbox
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -46,22 +45,19 @@ internal fun ContentArtwork(
 
 @Composable
 private fun LogoArtwork(logoUrl: String) {
-    Surface(
-        modifier = Modifier.fillMaxSize().padding(10.dp),
-        color = Color(0xFF131D26),
-        shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.10f)),
-        shadowElevation = 1.dp,
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF111A23)),
+        contentAlignment = Alignment.Center,
     ) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            AsyncImage(
-                model = logoUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize().padding(10.dp),
-            )
-            Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.18f)))
-        }
+        AsyncImage(
+            model = logoUrl,
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize().padding(22.dp),
+        )
+        Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.30f)))
     }
 }
 
@@ -81,7 +77,6 @@ private fun PlaceholderArtwork(title: String, kind: ContentKind) {
     Surface(
         color = kind.tint().copy(alpha = 0.16f),
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, kind.tint().copy(alpha = 0.30f)),
     ) {
         Text(
             text = title.initials(),

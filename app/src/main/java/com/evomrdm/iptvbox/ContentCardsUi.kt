@@ -35,6 +35,12 @@ import com.evomrdm.iptvbox.core.designsystem.IptvColors
 import com.evomrdm.iptvbox.core.model.CatalogItem
 import com.evomrdm.iptvbox.core.model.ContentKind
 
+private val MediaCardShape = RoundedCornerShape(8.dp)
+private val MediaCardCompactWidth = 136.dp
+private const val MediaCardArtworkRatio = 0.78f
+private val MediaCardRailInfoHeight = 64.dp
+private val MediaCardGridInfoHeight = 122.dp
+
 @Composable
 internal fun CompactContentCard(
     item: CatalogItem,
@@ -44,8 +50,8 @@ internal fun CompactContentCard(
     onFocused: () -> Unit = {},
 ) {
     var focused by remember { mutableStateOf(false) }
-    val cardWidth = fixedWidth ?: 136.dp
-    val artworkRatio = fixedRatio ?: 0.78f
+    val cardWidth = fixedWidth ?: MediaCardCompactWidth
+    val artworkRatio = fixedRatio ?: MediaCardArtworkRatio
     val title = item.compactTitle()
     Surface(
         modifier = Modifier
@@ -58,7 +64,7 @@ internal fun CompactContentCard(
             }
             .tvClickable(onClick = onClick),
         color = if (focused) TvFocusPanel else IptvColors.Panel,
-        shape = RoundedCornerShape(8.dp),
+        shape = MediaCardShape,
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
     ) {
@@ -73,6 +79,7 @@ internal fun CompactContentCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(MediaCardRailInfoHeight)
                     .background(Color(0xFF0C151E))
                     .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -122,7 +129,7 @@ internal fun SeriesGroupCard(
             }
             .tvClickable(onClick = onClick),
         color = if (focused) TvFocusPanel else IptvColors.Panel,
-        shape = RoundedCornerShape(8.dp),
+        shape = MediaCardShape,
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
     ) {
@@ -131,14 +138,21 @@ internal fun SeriesGroupCard(
                 title = group.title,
                 kind = ContentKind.SERIES,
                 logoUrl = group.logoUrl,
-                modifier = Modifier.fillMaxWidth().aspectRatio(0.78f),
+                modifier = Modifier.fillMaxWidth().aspectRatio(MediaCardArtworkRatio),
             )
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .height(MediaCardRailInfoHeight)
+                    .background(Color(0xFF0C151E))
+                    .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
                 Text(
                     text = group.title,
                     color = IptvColors.TextPrimary,
-                    fontSize = 14.sp,
-                    lineHeight = 17.sp,
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -146,7 +160,7 @@ internal fun SeriesGroupCard(
                 Text(
                     text = "${group.seasonCount} sezon · ${group.episodeCount} bölüm",
                     color = IptvColors.TextSecondary,
-                    fontSize = 12.sp,
+                    fontSize = 10.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -174,7 +188,7 @@ internal fun SeasonCard(
             }
             .tvClickable(onClick = onClick),
         color = if (focused) TvFocusPanel else IptvColors.Panel,
-        shape = RoundedCornerShape(8.dp),
+        shape = MediaCardShape,
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
     ) {
@@ -217,7 +231,7 @@ internal fun ContentCard(
             }
             .tvClickable(onClick = onOpen),
         color = if (focused) TvFocusPanel else IptvColors.Panel,
-        shape = RoundedCornerShape(8.dp),
+        shape = MediaCardShape,
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
     ) {
@@ -226,14 +240,21 @@ internal fun ContentCard(
                 title = item.displayTitle(),
                 kind = item.kind,
                 logoUrl = item.logoUrl,
-                modifier = Modifier.fillMaxWidth().aspectRatio(0.78f),
+                modifier = Modifier.fillMaxWidth().aspectRatio(MediaCardArtworkRatio),
             )
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .height(MediaCardGridInfoHeight)
+                    .background(Color(0xFF0C151E))
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
                 Text(
                     text = item.displayTitle(),
                     color = IptvColors.TextPrimary,
-                    fontSize = 15.sp,
-                    lineHeight = 18.sp,
+                    fontSize = 14.sp,
+                    lineHeight = 17.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -241,7 +262,7 @@ internal fun ContentCard(
                 Text(
                     text = item.metaLine(),
                     color = IptvColors.TextSecondary,
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

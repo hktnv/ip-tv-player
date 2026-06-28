@@ -11,7 +11,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -341,24 +340,6 @@ internal fun InfoPanel(
                     Text(actionLabel)
                 }
             }
-        }
-    }
-}
-
-@Composable
-internal fun PremiumPanel(
-    modifier: Modifier = Modifier,
-    borderColor: Color = Color(0xFF263240),
-    content: @Composable () -> Unit,
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = IptvColors.Panel,
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, borderColor),
-    ) {
-        Box(Modifier.padding(18.dp)) {
-            content()
         }
     }
 }
