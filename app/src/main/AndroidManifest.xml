@@ -21,7 +21,7 @@
         android:theme="@style/Theme.IptvBoxPlayer"
         android:usesCleartextTraffic="true">
         <activity
-            android:name="com.evomrdm.iptvbox.MainActivity"
+            android:name="com.hktnv.iptvbox.MainActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize"
             android:exported="true">
             <intent-filter>

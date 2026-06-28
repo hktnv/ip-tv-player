@@ -210,8 +210,8 @@ The largest source file remains under the requested 10% threshold.
 
 - `./gradlew.bat :app:compilePersonalDebugKotlin --no-daemon` passed.
 - `./gradlew.bat test --no-daemon` passed.
-- `REAL_M3U_PATH=C:/Users/EVO-MRDM/Desktop/yCEUbXB9_playlist.m3u ./gradlew.bat :data:playlist:test --tests com.evomrdm.iptvbox.data.playlist.M3uPlaylistParserTest.parsesRealLargePlaylistWhenProvided --no-daemon --rerun-tasks` passed.
-- `./gradlew.bat :app:testPersonalDebugUnitTest --tests com.evomrdm.iptvbox.RealM3uPerformanceTest --no-daemon --rerun-tasks` passed.
+- `REAL_M3U_PATH=C:/Users/EVO-MRDM/Desktop/yCEUbXB9_playlist.m3u ./gradlew.bat :data:playlist:test --tests com.hktnv.iptvbox.data.playlist.M3uPlaylistParserTest.parsesRealLargePlaylistWhenProvided --no-daemon --rerun-tasks` passed.
+- `./gradlew.bat :app:testPersonalDebugUnitTest --tests com.hktnv.iptvbox.RealM3uPerformanceTest --no-daemon --rerun-tasks` passed.
 - `./gradlew.bat :app:assemblePersonalRelease --no-daemon` passed.
 - `apksigner verify --verbose app/build/outputs/apk/personal/release/app-personal-release.apk` passed with v1/v2/v3 signatures.
 

@@ -26,7 +26,7 @@ val hasPersonalReleaseSigning = listOf(
 ).all { !signingValue(it).isNullOrBlank() }
 
 android {
-    namespace = "com.evomrdm.iptvbox"
+    namespace = "com.hktnv.iptvbox"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {

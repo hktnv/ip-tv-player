@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.evomrdm.iptvbox.core.designsystem"
+    namespace = "com.hktnv.iptvbox.core.designsystem"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {

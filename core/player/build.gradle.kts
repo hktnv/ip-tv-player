@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace = "com.evomrdm.iptvbox.core.player"
+    namespace = "com.hktnv.iptvbox.core.player"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
