@@ -218,9 +218,7 @@ internal fun restoredTab(name: String?): CatalogTab {
 }
 
 internal fun restoredScreen(name: String?, hasPlaylist: Boolean): AppScreen {
-    val screen = AppScreen.entries.firstOrNull { it.name == name } ?: if (hasPlaylist) AppScreen.HOME else AppScreen.HOME
-    val safeScreen = if (screen == AppScreen.PLAYER) AppScreen.CATALOG else screen
-    return if (!hasPlaylist && safeScreen.requiresPlaylist()) AppScreen.HOME else safeScreen
+    return AppScreen.HOME
 }
 
 internal fun AppScreen.requiresPlaylist(): Boolean {

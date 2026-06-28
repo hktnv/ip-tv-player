@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -53,6 +54,7 @@ internal fun CompactContentCard(
     val logoLike = item.kind == ContentKind.LIVE_CHANNEL || item.kind == ContentKind.RADIO
     val cardWidth = fixedWidth ?: if (logoLike) 124.dp else 108.dp
     val artworkRatio = fixedRatio ?: if (logoLike) 0.78f else item.posterRatio()
+    val title = item.compactTitle()
     Surface(
         modifier = Modifier
             .width(cardWidth)
@@ -65,9 +67,9 @@ internal fun CompactContentCard(
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
     ) {
-        Box {
+        Column {
             ContentArtwork(
-                title = item.displayTitle(),
+                title = title,
                 kind = item.kind,
                 logoUrl = item.logoUrl,
                 showBadge = true,
@@ -75,20 +77,13 @@ internal fun CompactContentCard(
             )
             Column(
                 modifier = Modifier
-                    .align(Alignment.BottomStart)
                     .fillMaxWidth()
-                    .background(
-                        Brush.verticalGradient(
-                            0f to Color.Transparent,
-                            0.35f to Color.Black.copy(alpha = 0.56f),
-                            1f to Color.Black.copy(alpha = 0.88f),
-                        ),
-                    )
-                    .padding(start = 9.dp, end = 9.dp, top = 30.dp, bottom = 9.dp),
+                    .background(Color(0xFF0C151E))
+                    .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
-                    text = item.displayTitle(),
+                    text = title,
                     color = IptvColors.TextPrimary,
                     fontSize = 12.sp,
                     lineHeight = 15.sp,
@@ -106,6 +101,11 @@ internal fun CompactContentCard(
             }
         }
     }
+}
+
+private fun CatalogItem.compactTitle(): String {
+    val clean = displayTitle()
+    return if (kind == ContentKind.MOVIE) clean.readableMovieTitle() else clean
 }
 
 @Composable
@@ -212,18 +212,32 @@ internal fun ContentArtwork(
     val performance = LocalPerformanceMode.current
     val logoLike = kind == ContentKind.LIVE_CHANNEL || kind == ContentKind.RADIO
     Box(
-        modifier = modifier.background(Color(0xFF0B141C)),
+        modifier = modifier.background(Color(0xFF0A121A)),
         contentAlignment = Alignment.Center,
     ) {
         if (performance.loadImages && !logoUrl.isNullOrBlank()) {
             if (logoLike) {
+                AsyncImage(
+                    model = logoUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .matchParentSize()
+                        .blur(18.dp),
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color(0xCC071017)),
+                )
                 Surface(
                     modifier = Modifier
                         .matchParentSize()
-                        .padding(8.dp),
-                    color = Color(0xFFF3F6F8),
-                    shape = RoundedCornerShape(16.dp),
-                    shadowElevation = 2.dp,
+                        .padding(10.dp),
+                    color = Color(0xE6131D26),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.10f)),
+                    shadowElevation = 1.dp,
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -235,6 +249,11 @@ internal fun ContentArtwork(
                             contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxSize().padding(10.dp),
                         )
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .background(Color.Black.copy(alpha = 0.16f)),
+                        )
                     }
                 }
             } else {
@@ -243,6 +262,11 @@ internal fun ContentArtwork(
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.matchParentSize(),
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color.Black.copy(alpha = 0.12f)),
                 )
             }
         } else {
