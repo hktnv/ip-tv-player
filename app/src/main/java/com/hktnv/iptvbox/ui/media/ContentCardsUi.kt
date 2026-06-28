@@ -2,17 +2,18 @@ package com.hktnv.iptvbox.ui.media
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,12 +47,14 @@ private val MediaCardShape = RoundedCornerShape(8.dp)
 internal val MediaCardCompactWidth = 110.dp
 private const val MediaCardArtworkRatio = 0.78f
 private val MediaCardRailInfoHeight = 64.dp
-private val MediaCardGridInfoHeight = 122.dp
+private val MediaCardGridInfoHeight = MediaCardRailInfoHeight
 
 @Composable
 internal fun CompactContentCard(
     item: CatalogItem,
     onClick: () -> Unit,
+    favorite: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
     fixedWidth: Dp? = null,
     fixedRatio: Float? = null,
     onFocused: () -> Unit = {},
@@ -69,17 +72,18 @@ internal fun CompactContentCard(
                 focused = it.isFocused
                 if (it.isFocused) onFocused()
             }
-            .tvClickable(onClick = onClick),
+            .tvClickable(onLongClick = onLongClick, onClick = onClick),
         color = if (focused) TvFocusPanel else IptvColors.Panel,
         shape = MediaCardShape,
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
     ) {
         Column {
-            ContentArtwork(
+            FavoriteArtworkFrame(
                 title = title,
                 kind = item.kind,
                 logoUrl = item.logoUrl,
+                favorite = favorite,
                 showBadge = true,
                 modifier = Modifier.fillMaxWidth().aspectRatio(artworkRatio),
             )
@@ -222,11 +226,12 @@ internal fun ContentCard(
     item: CatalogItem,
     favorite: Boolean,
     onOpen: () -> Unit,
-    onToggleFavorite: () -> Unit,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     onFocused: () -> Unit = {},
 ) {
     var focused by remember { mutableStateOf(false) }
+    val title = item.compactTitle()
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -236,17 +241,19 @@ internal fun ContentCard(
                 focused = it.isFocused
                 if (it.isFocused) onFocused()
             }
-            .tvClickable(onClick = onOpen),
+            .tvClickable(onLongClick = onLongClick, onClick = onOpen),
         color = if (focused) TvFocusPanel else IptvColors.Panel,
         shape = MediaCardShape,
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
     ) {
         Column {
-            ContentArtwork(
-                title = item.displayTitle(),
+            FavoriteArtworkFrame(
+                title = title,
                 kind = item.kind,
                 logoUrl = item.logoUrl,
+                favorite = favorite,
+                showBadge = true,
                 modifier = Modifier.fillMaxWidth().aspectRatio(MediaCardArtworkRatio),
             )
             Column(
@@ -254,14 +261,14 @@ internal fun ContentCard(
                     .fillMaxWidth()
                     .height(MediaCardGridInfoHeight)
                     .background(Color(0xFF0C151E))
-                    .padding(10.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                    .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
-                    text = item.displayTitle(),
+                    text = title,
                     color = IptvColors.TextPrimary,
-                    fontSize = 14.sp,
-                    lineHeight = 17.sp,
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -269,39 +276,55 @@ internal fun ContentCard(
                 Text(
                     text = item.metaLine(),
                     color = IptvColors.TextSecondary,
-                    fontSize = 11.sp,
+                    fontSize = 10.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Surface(
-                        color = if (focused) Color(0xFF10221F) else Color(0xFF0E1720),
-                        shape = RoundedCornerShape(7.dp),
-                        border = BorderStroke(1.dp, if (focused) IptvColors.Accent else Color(0xFF263240)),
-                    ) {
-                        Text(
-                            text = "OK Oynat",
-                            color = if (focused) IptvColors.Accent else IptvColors.TextSecondary,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                            maxLines = 1,
-                        )
-                    }
-                    OutlinedButton(
-                        onClick = onToggleFavorite,
-                        modifier = Modifier.weight(1f).height(30.dp),
-                        shape = RoundedCornerShape(7.dp),
-                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 3.dp),
-                    ) {
-                        Text(if (favorite) "Favoride" else "Favori", fontSize = 10.sp, maxLines = 1)
-                    }
-                }
             }
         }
+    }
+}
+
+@Composable
+private fun FavoriteArtworkFrame(
+    title: String,
+    kind: ContentKind,
+    logoUrl: String?,
+    favorite: Boolean,
+    showBadge: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier) {
+        ContentArtwork(
+            title = title,
+            kind = kind,
+            logoUrl = logoUrl,
+            showBadge = showBadge,
+            modifier = Modifier.fillMaxWidth().matchParentSize(),
+        )
+        if (favorite) {
+            FavoriteIndicator(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(7.dp),
+            )
+        }
+    }
+}
+
+@Composable
+internal fun FavoriteIndicator(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        color = Color(0xCC091017),
+        shape = RoundedCornerShape(999.dp),
+        border = BorderStroke(1.dp, Color(0x55FFFFFF)),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Favorite,
+            contentDescription = null,
+            tint = IptvColors.Accent,
+            modifier = Modifier.padding(5.dp).size(13.dp),
+        )
     }
 }

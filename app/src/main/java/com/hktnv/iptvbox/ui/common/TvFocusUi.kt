@@ -2,10 +2,17 @@ package com.hktnv.iptvbox.ui.common
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
@@ -15,7 +22,9 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.hktnv.iptvbox.ui.media.label
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 internal val TvFocusBorder = Color(0xFFE7F3FF)
 internal val TvFocusPanel = Color(0xFF17283A)
@@ -61,23 +70,56 @@ internal fun tvFocusElevation(
 
 internal fun Modifier.tvClickable(
     enabled: Boolean = true,
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ): Modifier {
-    val keyHandler = if (enabled) {
-        Modifier.onPreviewKeyEvent { event ->
-            if (event.type == KeyEventType.KeyUp && event.key.isSelectKey()) {
-                onClick()
-                true
-            } else {
-                false
+    if (!enabled) return clickable(enabled = false, onClick = onClick)
+    return composed {
+        var longClickHandled by remember { mutableStateOf(false) }
+        var longPressJob by remember { mutableStateOf<Job?>(null) }
+        val scope = rememberCoroutineScope()
+        val pressHandler = Modifier.onPreviewKeyEvent { event ->
+            if (!event.key.isSelectKey()) return@onPreviewKeyEvent false
+            when {
+                event.type == KeyEventType.KeyDown &&
+                    onLongClick != null -> {
+                    if (longPressJob == null) {
+                        longClickHandled = false
+                        longPressJob = scope.launch {
+                            delay(520L)
+                            longClickHandled = true
+                            onLongClick()
+                            longPressJob = null
+                        }
+                    }
+                    true
+                }
+                event.type == KeyEventType.KeyUp -> {
+                    longPressJob?.cancel()
+                    longPressJob = null
+                    if (longClickHandled) {
+                        longClickHandled = false
+                    } else {
+                        onClick()
+                    }
+                    true
+                }
+                else -> false
             }
         }
-    } else {
-        Modifier
+        then(pressHandler).tvPointerClickable(onClick, onLongClick)
     }
-    return this
-        .then(keyHandler)
-        .clickable(enabled = enabled, onClick = onClick)
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+private fun Modifier.tvPointerClickable(
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)?,
+): Modifier {
+    return combinedClickable(
+        onClick = onClick,
+        onLongClick = onLongClick,
+    )
 }
 
 private fun Key.isSelectKey(): Boolean {

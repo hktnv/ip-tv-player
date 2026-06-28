@@ -32,7 +32,7 @@ internal fun ContentGrid(
     items: List<CatalogItem>,
     favoriteIds: List<String>,
     onOpenItem: (CatalogItem) -> Unit,
-    onToggleFavorite: (CatalogItem) -> Unit,
+    onShowItemOptions: (CatalogItem) -> Unit,
     modifier: Modifier = Modifier,
     requestInitialFocus: Boolean = false,
     initialFocusRequester: FocusRequester? = null,
@@ -56,10 +56,9 @@ internal fun ContentGrid(
         val favoriteKey = favoriteIds.joinToString("|")
         val favoriteSet = remember(favoriteKey) { favoriteIds.toSet() }
         val minCell = when {
-            maxWidth < 600.dp -> 160.dp
-            maxWidth >= 900.dp -> 178.dp
-            maxWidth >= 600.dp -> 158.dp
-            else -> 145.dp
+            maxWidth >= 900.dp -> 112.dp
+            maxWidth >= 600.dp -> 124.dp
+            else -> 146.dp
         }
         val horizontalSpacing = 10.dp
         val columnCount = ((maxWidth.value + horizontalSpacing.value) / (minCell.value + horizontalSpacing.value))
@@ -91,7 +90,7 @@ internal fun ContentGrid(
                     item = item,
                     favorite = item.id in favoriteSet,
                     onOpen = { onOpenItem(item) },
-                    onToggleFavorite = { onToggleFavorite(item) },
+                    onLongClick = { onShowItemOptions(item) },
                     onFocused = { focusedIndex = index },
                     modifier = if (requestInitialFocus && item.id == firstItemId) {
                         Modifier.focusRequester(itemFocusRequester)

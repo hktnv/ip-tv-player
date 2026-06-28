@@ -135,6 +135,7 @@ internal fun HomeScreen(
     recentCount: Int,
     favoriteItems: List<CatalogItem>,
     recentItems: List<CatalogItem>,
+    favoriteIds: List<String>,
     onAddPlaylist: () -> Unit,
     onOpenCatalog: () -> Unit,
     onOpenCatalogTab: (CatalogTab) -> Unit,
@@ -143,6 +144,7 @@ internal fun HomeScreen(
     onOpenRecent: () -> Unit,
     onOpenSeries: (String) -> Unit,
     onOpenItem: (CatalogItem) -> Unit,
+    onShowItemOptions: (CatalogItem) -> Unit,
     onSelectPlaylist: (String) -> Unit,
     onRequestSideMenu: () -> Unit,
     contentPadding: Dp,
@@ -175,6 +177,7 @@ internal fun HomeScreen(
     val moviesRailFocus = remember { FocusRequester() }
     val showFavoritesRail = favoriteItems.isNotEmpty()
     val afterRecentFocus = if (showFavoritesRail) favoritesRailFocus else latestRailFocus
+    val favoriteIdSet = remember(favoriteIds.joinToString("|")) { favoriteIds.toSet() }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -204,9 +207,11 @@ internal fun HomeScreen(
                     emptyText = "Henüz izlenen içerik yok",
                     onOpenAll = onOpenRecent,
                     onOpenItem = onOpenItem,
+                    onShowItemOptions = onShowItemOptions,
                     headerFocusRequester = recentRailFocus,
                     nextRailFocusRequester = afterRecentFocus,
                     onRequestSideMenu = onRequestSideMenu,
+                    favoriteIds = favoriteIdSet,
                     cardRatio = 0.78f,
                 )
             }
@@ -218,9 +223,11 @@ internal fun HomeScreen(
                     emptyText = "Favori içerik yok",
                     onOpenAll = onOpenFavorites,
                     onOpenItem = onOpenItem,
+                    onShowItemOptions = onShowItemOptions,
                     headerFocusRequester = favoritesRailFocus,
                     nextRailFocusRequester = latestRailFocus,
                     onRequestSideMenu = onRequestSideMenu,
+                    favoriteIds = favoriteIdSet,
                 )
                 }
             }
@@ -231,9 +238,11 @@ internal fun HomeScreen(
                     emptyText = "Son eklenen içerik yok",
                     onOpenAll = onOpenLatest,
                     onOpenItem = onOpenItem,
+                    onShowItemOptions = onShowItemOptions,
                     headerFocusRequester = latestRailFocus,
                     nextRailFocusRequester = moviesRailFocus,
                     onRequestSideMenu = onRequestSideMenu,
+                    favoriteIds = favoriteIdSet,
                 )
             }
             item(key = "movie-row", contentType = "media-row") {
@@ -243,9 +252,11 @@ internal fun HomeScreen(
                     emptyText = "Film bulunamadı",
                     onOpenAll = { onOpenCatalogTab(CatalogTab.MOVIES) },
                     onOpenItem = onOpenItem,
+                    onShowItemOptions = onShowItemOptions,
                     headerFocusRequester = moviesRailFocus,
                     nextRailFocusRequester = liveRailFocus,
                     onRequestSideMenu = onRequestSideMenu,
+                    favoriteIds = favoriteIdSet,
                 )
             }
             item(key = "live-row", contentType = "media-row") {
@@ -255,9 +266,11 @@ internal fun HomeScreen(
                     emptyText = "Canlı kanal bulunamadı",
                     onOpenAll = { onOpenCatalogTab(CatalogTab.LIVE) },
                     onOpenItem = onOpenItem,
+                    onShowItemOptions = onShowItemOptions,
                     headerFocusRequester = liveRailFocus,
                     nextRailFocusRequester = seriesRailFocus,
                     onRequestSideMenu = onRequestSideMenu,
+                    favoriteIds = favoriteIdSet,
                 )
             }
             item(key = "series-row", contentType = "series-row") {

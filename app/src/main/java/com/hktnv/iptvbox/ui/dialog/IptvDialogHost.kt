@@ -1,5 +1,6 @@
 package com.hktnv.iptvbox.ui.dialog
 import androidx.compose.runtime.Composable
+import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.data.playlist.PlaylistLoadResult
 import com.hktnv.iptvbox.data.playlist.RemotePlaylistLoader
 import com.hktnv.iptvbox.model.AppScreen
@@ -19,6 +20,8 @@ internal fun IptvDialogHost(
     telemetry: AppPerformanceTelemetry,
     existingPlaylistNames: List<String>,
     renamingPlaylist: LoadedPlaylist?,
+    contentOptionsItem: CatalogItem?,
+    contentOptionsFavorite: Boolean,
     updateState: AppUpdateUiState,
     screen: AppScreen,
     showRecovery: Boolean,
@@ -28,6 +31,9 @@ internal fun IptvDialogHost(
     onPlaylistLoaded: (DraftPlaylist, PlaylistLoadResult) -> Unit,
     onDismissRename: () -> Unit,
     onRenamePlaylist: (LoadedPlaylist, String) -> Unit,
+    onDismissContentOptions: () -> Unit,
+    onOpenContentOptionsItem: () -> Unit,
+    onToggleContentOptionsFavorite: () -> Unit,
     onDownloadUpdate: () -> Unit,
     onOpenPermission: () -> Unit,
     onOpenInstaller: () -> Unit,
@@ -58,12 +64,23 @@ internal fun IptvDialogHost(
         )
     }
 
+    contentOptionsItem?.let { item ->
+        ContentOptionsDialog(
+            item = item,
+            favorite = contentOptionsFavorite,
+            onDismiss = onDismissContentOptions,
+            onOpen = onOpenContentOptionsItem,
+            onToggleFavorite = onToggleContentOptionsFavorite,
+        )
+    }
+
     val visibleUpdateState = updateState.takeUnless {
         it is AppUpdateUiState.Hidden ||
             screen == AppScreen.PLAYER ||
             showAddDialog ||
             showExitDialog ||
             renamingPlaylist != null ||
+            contentOptionsItem != null ||
             showRecovery
     }
     if (visibleUpdateState != null) {

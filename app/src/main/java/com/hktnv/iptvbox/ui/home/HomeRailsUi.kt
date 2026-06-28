@@ -54,9 +54,11 @@ internal fun HomeContentRow(
     emptyText: String,
     onOpenAll: () -> Unit,
     onOpenItem: (CatalogItem) -> Unit,
+    onShowItemOptions: (CatalogItem) -> Unit,
     headerFocusRequester: FocusRequester,
     nextRailFocusRequester: FocusRequester?,
     onRequestSideMenu: () -> Unit,
+    favoriteIds: Set<String> = emptySet(),
     cardWidth: Dp? = null,
     cardRatio: Float? = null,
 ) {
@@ -90,6 +92,8 @@ internal fun HomeContentRow(
                         CompactContentCard(
                             item = item,
                             onClick = { onOpenItem(item) },
+                            favorite = item.id in favoriteIds,
+                            onLongClick = { onShowItemOptions(item) },
                             fixedWidth = cardWidth,
                             fixedRatio = cardRatio,
                             onFocused = { focusedIndex = index },

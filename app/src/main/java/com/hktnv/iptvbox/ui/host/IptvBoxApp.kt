@@ -75,7 +75,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var selectedSeasonNumber by rememberSaveable { mutableStateOf<Int?>(null) }; var searchDraft by rememberSaveable { mutableStateOf("") }
     var submittedSearch by rememberSaveable { mutableStateOf("") }; var showAddDialog by rememberSaveable { mutableStateOf(false) }; var showExitDialog by rememberSaveable { mutableStateOf(false) }
     var renamingPlaylist by remember { mutableStateOf<LoadedPlaylist?>(null) }; var banner by rememberSaveable { mutableStateOf<String?>(null) }
-    var currentItem by remember { mutableStateOf<CatalogItem?>(null) }; var currentHeaders by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var currentItem by remember { mutableStateOf<CatalogItem?>(null) }; var currentHeaders by remember { mutableStateOf<Map<String, String>>(emptyMap()) }; var contentOptionsItem by remember { mutableStateOf<CatalogItem?>(null) }
     var catalogSnapshot by remember { mutableStateOf<CatalogSnapshot?>(null) }; var catalogIndexLoading by remember { mutableStateOf(false) }
     var firstDrawRecorded by remember { mutableStateOf(false) }; var updateCheckStarted by rememberSaveable { mutableStateOf(false) }
     var updateState by remember { mutableStateOf<AppUpdateUiState>(AppUpdateUiState.Hidden) }; var pendingNavigationStartedAt by remember { mutableStateOf<Long?>(null) }
@@ -125,10 +125,9 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val favoriteSignature = favoriteIds.joinToString("|")
     val recentSignature = recentIds.joinToString("|")
     CatalogSnapshotEffect(
-        selectedPlaylist = selectedPlaylist, showPlaylistEntry = showPlaylistEntry, screen = screen,
-        selectedTab = selectedTab, selectedCategory = selectedCategory, selectedSeriesTitle = selectedSeriesTitle,
-        selectedSeasonNumber = selectedSeasonNumber, favoriteIds = favoriteIds, recentIds = recentIds,
-        favoriteSignature = favoriteSignature, recentSignature = recentSignature, performanceMode = performanceMode,
+        selectedPlaylist = selectedPlaylist, showPlaylistEntry = showPlaylistEntry, screen = screen, selectedTab = selectedTab,
+        selectedCategory = selectedCategory, selectedSeriesTitle = selectedSeriesTitle, selectedSeasonNumber = selectedSeasonNumber,
+        favoriteIds = favoriteIds, recentIds = recentIds, favoriteSignature = favoriteSignature, recentSignature = recentSignature, performanceMode = performanceMode,
         catalogStore = catalogStore, catalogRepository = catalogRepository, telemetry = telemetry,
         onSnapshotChange = { catalogSnapshot = it },
         onLoadingChange = { catalogIndexLoading = it },
@@ -141,9 +140,8 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val recentItems = remember(catalogSnapshot, recentSignature) { catalogSnapshot?.itemsByIds(recentIds).orEmpty() }
     PersistAppStateEffect(
         restoredApplied = restoredApplied, showRecovery = showRecovery, playlistSignature = playlistSignature,
-        selectedPlaylist = selectedPlaylist, playlists = playlists.toList(), screen = screen,
-        showPlaylistEntry = showPlaylistEntry, selectedTab = selectedTab, selectedCategory = selectedCategory,
-        selectedSeriesTitle = selectedSeriesTitle, selectedSeasonNumber = selectedSeasonNumber,
+        selectedPlaylist = selectedPlaylist, playlists = playlists.toList(), screen = screen, showPlaylistEntry = showPlaylistEntry,
+        selectedTab = selectedTab, selectedCategory = selectedCategory, selectedSeriesTitle = selectedSeriesTitle, selectedSeasonNumber = selectedSeasonNumber,
         searchDraft = searchDraft, submittedSearch = submittedSearch, favoriteSignature = favoriteSignature,
         recentSignature = recentSignature, favoriteIds = favoriteIds.toList(), recentIds = recentIds.toList(),
         stateStore = stateStore,
@@ -317,14 +315,14 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onOpenSeries = ::openSeriesCatalog, onOpenItem = ::openItem, onReloadPlaylist = ::reloadPlaylist,
         onRenamePlaylist = { renamingPlaylist = it }, onTabSelected = { resetCatalogNavigation(tab = it, category = null) },
         onCategorySelected = { resetCatalogNavigation(category = it) }, onSeriesSelected = { selectedSeriesTitle = it; selectedSeasonNumber = null },
-        onSeasonSelected = { selectedSeasonNumber = it }, onToggleFavorite = { toggleFavorite(favoriteIds, it.id) },
+        onSeasonSelected = { selectedSeasonNumber = it }, onShowItemOptions = { contentOptionsItem = it },
         onQueryChange = { searchDraft = it }, onSearch = { submittedSearch = searchDraft.trim() },
         onOpenPlaylistEntry = ::openPlaylistEntry, onNavigate = ::navigate, onDrawerEvent = ::applyDrawerEvent,
         onRequestExitConfirmation = { showExitDialog = true }, onDismissBanner = { banner = null },
     )
     IptvDialogHost(
         showAddDialog = showAddDialog, showExitDialog = showExitDialog, loader = loader, telemetry = telemetry,
-        existingPlaylistNames = playlists.map { it.name }, renamingPlaylist = renamingPlaylist, updateState = updateState,
+        existingPlaylistNames = playlists.map { it.name }, renamingPlaylist = renamingPlaylist, contentOptionsItem = contentOptionsItem, contentOptionsFavorite = contentOptionsItem?.id?.let { it in favoriteIds } == true, updateState = updateState,
         screen = screen, showRecovery = showRecovery, onDismissAdd = { showAddDialog = false },
         onDismissExit = { showExitDialog = false }, onConfirmExit = { showExitDialog = false; activity?.finish() },
         onPlaylistLoaded = { draft, result ->
@@ -336,7 +334,9 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                     banner = "$playlistName yüklendi: $itemCount içerik"; showAddDialog = false
                 }, onFailure = { message -> banner = message; showAddDialog = false })
         },
-        onDismissRename = { renamingPlaylist = null }, onRenamePlaylist = ::renamePlaylist,
+        onDismissRename = { renamingPlaylist = null }, onRenamePlaylist = ::renamePlaylist, onDismissContentOptions = { contentOptionsItem = null },
+        onOpenContentOptionsItem = { contentOptionsItem?.let { item -> contentOptionsItem = null; openItem(item) } },
+        onToggleContentOptionsFavorite = { contentOptionsItem?.let { item -> val wasFavorite = item.id in favoriteIds; toggleFavorite(favoriteIds, item.id); contentOptionsItem = null; banner = if (wasFavorite) "Favoriden \u00e7\u0131kar\u0131ld\u0131" else "Favorilere eklendi" } },
         onDownloadUpdate = { updateState.pendingUpdate()?.let(::startUpdateDownload) },
         onOpenPermission = { updateInstaller.openInstallPermissionSettings() },
         onOpenInstaller = {
