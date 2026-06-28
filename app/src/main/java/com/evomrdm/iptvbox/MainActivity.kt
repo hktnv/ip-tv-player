@@ -1,9 +1,6 @@
 ﻿package com.evomrdm.iptvbox
 
-import android.os.Bundle
 import android.os.SystemClock
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -15,25 +12,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
-import com.evomrdm.iptvbox.core.designsystem.IptvTheme
 import com.evomrdm.iptvbox.core.model.CatalogItem
 import com.evomrdm.iptvbox.data.playlist.RemotePlaylistLoader
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val telemetry = AppPerformanceTelemetry(this)
-        telemetry.mark("cold_start_on_create")
-        setContent {
-            IptvTheme {
-                IptvBoxApp(telemetry)
-            }
-        }
-    }
-}
-
 @Composable
-private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
+internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val context = LocalContext.current.applicationContext
     val loader = remember { RemotePlaylistLoader() }
     val catalogStore = remember(context) { CatalogStore(context) }
@@ -51,7 +34,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var selectedPlaylistId by rememberSaveable { mutableStateOf<String?>(null) }
     var screen by rememberSaveable { mutableStateOf(AppScreen.HOME) }
     var showPlaylistEntry by rememberSaveable { mutableStateOf(true) }
-    var drawerState by rememberSaveable { mutableStateOf(NavigationDrawerState.Collapsed) }
+    var drawerState by rememberSaveable { mutableStateOf(NavigationDrawerState.Collapsed) }; var drawerFocusExpansion by rememberSaveable { mutableStateOf(NavigationDrawerFocusExpansion.Enabled) }
     var returnScreen by rememberSaveable { mutableStateOf(AppScreen.CATALOG) }
     var selectedTab by rememberSaveable { mutableStateOf(CatalogTab.LIVE) }
     var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }; var selectedSeriesTitle by rememberSaveable { mutableStateOf<String?>(null) }
@@ -68,6 +51,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var initialContentFocusApplied by rememberSaveable { mutableStateOf(false) }
     val favoriteIds = remember { mutableStateListOf<String>() }; val recentIds = remember { mutableStateListOf<String>() }
     val contentInitialFocusRequester = remember { FocusRequester() }
+    val drawerModel = NavigationDrawerModel(drawerState, drawerFocusExpansion)
     RestoreAppStateEffect(
         stateStore = stateStore, telemetry = telemetry,
         onSuccess = { restoredState, hadCatalogProblem ->
@@ -147,9 +131,12 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         recentSignature = recentSignature, favoriteIds = favoriteIds.toList(), recentIds = recentIds.toList(),
         stateStore = stateStore,
     )
+    fun applyDrawerEvent(event: NavigationDrawerEvent) {
+        val next = drawerModel.reduce(event).model; drawerState = next.state; drawerFocusExpansion = next.focusExpansion
+    }
 
     fun requestContentFocus() {
-        drawerState = NavigationDrawerState.Collapsed
+        applyDrawerEvent(NavigationDrawerEvent.CollapseForContentFocus)
         contentFocusRequest += 1
     }
 
@@ -189,7 +176,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     fun openPlaylistEntry() {
         screen = AppScreen.PLAYLISTS
         showPlaylistEntry = true
-        drawerState = NavigationDrawerState.Collapsed
+        applyDrawerEvent(NavigationDrawerEvent.CollapseForContentFocus)
     }
 
     fun navigate(target: AppScreen) {
@@ -337,33 +324,20 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         selectedTab = selectedTab, selectedCategory = selectedCategory, selectedSeriesTitle = selectedSeriesTitle,
         selectedSeasonNumber = selectedSeasonNumber, favoriteIds = favoriteIds, recentIds = recentIds,
         favoriteItems = favoriteItems, recentItems = recentItems, diagnostics = diagnostics, banner = banner,
-        sideMenuExpanded = drawerState.expanded, contentFocusRequest = contentFocusRequest,
+        sideMenuExpanded = drawerModel.state.expanded, contentFocusRequest = contentFocusRequest,
         contentInitialFocusRequester = contentInitialFocusRequester, catalogRepository = catalogRepository,
         telemetry = telemetry, searchDraft = searchDraft, submittedSearch = submittedSearch,
-        onPlayerBack = {
-            screen = returnScreen
-            currentItem = null
-        },
+        onPlayerBack = { screen = returnScreen; currentItem = null },
         onSeriesBack = {
-            if (selectedSeasonNumber != null) {
-                selectedSeasonNumber = null
-            } else {
-                selectedSeriesTitle = null
-            }
+            if (selectedSeasonNumber != null) selectedSeasonNumber = null else selectedSeriesTitle = null
         },
-        onRecoveryContinue = {
-            showRecovery = false
-            bootError = null
-        },
+        onRecoveryContinue = { showRecovery = false; bootError = null },
         onRecoveryReload = {
-            showRecovery = false
-            bootError = null
+            showRecovery = false; bootError = null
             selectedPlaylist?.let(::reloadPlaylist) ?: run { showAddDialog = true }
         },
         onRecoveryRemove = ::clearBrokenState, onOpenLastPlaylist = {
-            selectedPlaylist?.let { openPlaylistCatalog(it.id) } ?: run {
-                showAddDialog = true
-            }
+            selectedPlaylist?.let { openPlaylistCatalog(it.id) } ?: run { showAddDialog = true }
         },
         onAddPlaylist = { showAddDialog = true }, onSelectPlaylist = ::openPlaylistCatalog,
         onOpenSettingsFromEntry = ::openSettingsFromEntry, onOpenCatalog = { openCatalogRoot() },
@@ -372,14 +346,11 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onOpenSeries = ::openSeriesCatalog, onOpenItem = ::openItem, onReloadPlaylist = ::reloadPlaylist,
         onRenamePlaylist = { renamingPlaylist = it }, onTabSelected = { resetCatalogNavigation(tab = it, category = null) },
         onCategorySelected = { resetCatalogNavigation(category = it) },
-        onSeriesSelected = {
-            selectedSeriesTitle = it
-            selectedSeasonNumber = null
-        },
+        onSeriesSelected = { selectedSeriesTitle = it; selectedSeasonNumber = null },
         onSeasonSelected = { selectedSeasonNumber = it }, onToggleFavorite = { toggleFavorite(favoriteIds, it.id) },
         onQueryChange = { searchDraft = it }, onSearch = { submittedSearch = searchDraft.trim() },
         onOpenPlaylistEntry = ::openPlaylistEntry, onNavigate = ::navigate,
-        onSideMenuExpandedChange = { drawerState = NavigationDrawerState.fromExpanded(it) },
+        onDrawerEvent = ::applyDrawerEvent,
         onDismissBanner = { banner = null },
     )
 
@@ -397,29 +368,20 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                     playlists += stored
                     selectedPlaylistId = stored.id
                     selectedTab = firstAvailableTab(stored)
-                    selectedCategory = null
-                    selectedSeriesTitle = null
-                    selectedSeasonNumber = null
-                    submittedSearch = ""
-                    screen = AppScreen.HOME
-                    showPlaylistEntry = false
+                    selectedCategory = null; selectedSeriesTitle = null; selectedSeasonNumber = null
+                    submittedSearch = ""; screen = AppScreen.HOME; showPlaylistEntry = false
                     requestContentFocus()
                     banner = "$playlistName yüklendi: $itemCount içerik"
                     showAddDialog = false
                 },
-                onFailure = { message ->
-                    banner = message
-                    showAddDialog = false
-                },
+                onFailure = { message -> banner = message; showAddDialog = false },
             )
         },
         onDismissRename = { renamingPlaylist = null }, onRenamePlaylist = ::renamePlaylist,
         onDownloadUpdate = {
             val update = when (val state = updateState) {
-                is AppUpdateUiState.Available -> state.update
-                is AppUpdateUiState.Downloading -> state.update
-                is AppUpdateUiState.PermissionRequired -> state.update
-                else -> null
+                is AppUpdateUiState.Available -> state.update; is AppUpdateUiState.Downloading -> state.update
+                is AppUpdateUiState.PermissionRequired -> state.update; else -> null
             }
             if (update != null) startUpdateDownload(update)
         },

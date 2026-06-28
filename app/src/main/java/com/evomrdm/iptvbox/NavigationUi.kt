@@ -65,7 +65,7 @@ internal fun SideNavigation(
     hasPlaylist: Boolean,
     stats: PlaylistStats?,
     expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
+    onDrawerEvent: (NavigationDrawerEvent) -> Unit,
     onNavigate: (AppScreen) -> Unit,
     onOpenTab: (CatalogTab) -> Unit,
 ) {
@@ -111,7 +111,7 @@ internal fun SideNavigation(
                         true
                     }
                     Key.DirectionRight -> {
-                        onExpandedChange(false)
+                        onDrawerEvent(NavigationDrawerEvent.CollapseForContentFocus)
                         focusManager.moveFocus(FocusDirection.Right)
                         true
                     }
@@ -120,7 +120,7 @@ internal fun SideNavigation(
                             focusedIndex = focusedIndex,
                             settingsIndex = settingsIndex,
                             entries = entries,
-                            onExpandedChange = onExpandedChange,
+                            onDrawerEvent = onDrawerEvent,
                             onNavigate = onNavigate,
                             onOpenTab = onOpenTab,
                         )
@@ -132,7 +132,7 @@ internal fun SideNavigation(
                 if (state.hasFocus) {
                     focusedIndex = selectedIndex
                     if (!expanded) {
-                        onExpandedChange(true)
+                        onDrawerEvent(NavigationDrawerEvent.DrawerFocused)
                     }
                 }
             }
@@ -174,7 +174,7 @@ internal fun SideNavigation(
                     interactive = expanded,
                     onFocused = { focusedIndex = index },
                     onClick = {
-                        onExpandedChange(false)
+                        onDrawerEvent(NavigationDrawerEvent.CollapseForNavigation)
                         entry.tab?.let(onOpenTab)
                         entry.screen?.let(onNavigate)
                     },
@@ -193,7 +193,7 @@ internal fun SideNavigation(
             compact = true,
             onFocused = { focusedIndex = settingsIndex },
             onClick = {
-                onExpandedChange(false)
+                onDrawerEvent(NavigationDrawerEvent.CollapseForNavigation)
                 onNavigate(AppScreen.SETTINGS)
             },
         )
@@ -331,18 +331,18 @@ private fun activateMenuItem(
     focusedIndex: Int,
     settingsIndex: Int,
     entries: List<NavEntry>,
-    onExpandedChange: (Boolean) -> Unit,
+    onDrawerEvent: (NavigationDrawerEvent) -> Unit,
     onNavigate: (AppScreen) -> Unit,
     onOpenTab: (CatalogTab) -> Unit,
 ): Boolean {
     if (focusedIndex == settingsIndex) {
-        onExpandedChange(false)
+        onDrawerEvent(NavigationDrawerEvent.CollapseForNavigation)
         onNavigate(AppScreen.SETTINGS)
         return true
     }
     val entry = entries.getOrNull(focusedIndex) ?: return false
     if (!entry.enabled) return false
-    onExpandedChange(false)
+    onDrawerEvent(NavigationDrawerEvent.CollapseForNavigation)
     entry.tab?.let(onOpenTab)
     entry.screen?.let(onNavigate)
     return true

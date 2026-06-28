@@ -60,7 +60,7 @@ internal fun PlaylistContentScaffold(
     onSearch: () -> Unit,
     onOpenPlaylistEntry: () -> Unit,
     onNavigate: (AppScreen) -> Unit,
-    onSideMenuExpandedChange: (Boolean) -> Unit,
+    onDrawerEvent: (NavigationDrawerEvent) -> Unit,
     onDismissBanner: () -> Unit,
 ) {
     Box(
@@ -122,7 +122,7 @@ internal fun PlaylistContentScaffold(
                     onQueryChange = onQueryChange,
                     onSearch = onSearch,
                     onOpenPlaylistEntry = onOpenPlaylistEntry,
-                    onRequestSideMenu = { onSideMenuExpandedChange(true) },
+                    onRequestSideMenu = { onDrawerEvent(NavigationDrawerEvent.OpenByUserNavigation) },
                 )
             }
             if (!wide) {
@@ -143,7 +143,7 @@ internal fun PlaylistContentScaffold(
                 hasPlaylist = selectedPlaylist != null,
                 stats = selectedPlaylist?.stats(),
                 expanded = sideMenuExpanded,
-                onExpandedChange = onSideMenuExpandedChange,
+                onDrawerEvent = onDrawerEvent,
                 onNavigate = onNavigate,
                 onOpenTab = onOpenCatalogTab,
             )

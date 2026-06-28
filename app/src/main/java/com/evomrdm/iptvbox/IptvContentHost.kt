@@ -81,7 +81,7 @@ internal fun IptvContentHost(
     onSearch: () -> Unit,
     onOpenPlaylistEntry: () -> Unit,
     onNavigate: (AppScreen) -> Unit,
-    onSideMenuExpandedChange: (Boolean) -> Unit,
+    onDrawerEvent: (NavigationDrawerEvent) -> Unit,
     onDismissBanner: () -> Unit,
 ) {
     CompositionLocalProvider(LocalPerformanceMode provides performanceMode) {
@@ -108,12 +108,12 @@ internal fun IptvContentHost(
             LaunchedEffect(contentFocusRequest) {
                 if (contentFocusRequest > 0 && wide && !showPlaylistEntry && screen != AppScreen.PLAYER) {
                     withFrameNanos { }
-                    onSideMenuExpandedChange(false)
+                    onDrawerEvent(NavigationDrawerEvent.CollapseForContentFocus)
                     focusManager.clearFocus(force = true)
                     delay(120L)
                     runCatching { contentInitialFocusRequester.requestFocus() }
                     delay(40L)
-                    onSideMenuExpandedChange(false)
+                    onDrawerEvent(NavigationDrawerEvent.ContentFocusRestored)
                 }
             }
 
@@ -185,7 +185,7 @@ internal fun IptvContentHost(
                     onSearch = onSearch,
                     onOpenPlaylistEntry = onOpenPlaylistEntry,
                     onNavigate = onNavigate,
-                    onSideMenuExpandedChange = onSideMenuExpandedChange,
+                    onDrawerEvent = onDrawerEvent,
                     onDismissBanner = onDismissBanner,
                 )
             }
