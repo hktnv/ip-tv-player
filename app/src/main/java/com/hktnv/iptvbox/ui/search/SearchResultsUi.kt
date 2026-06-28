@@ -26,7 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -35,7 +39,6 @@ import androidx.compose.ui.zIndex
 import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentKind
-import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.model.ScreenBottomPadding
 import com.hktnv.iptvbox.ui.catalog.badgeLabel
 import com.hktnv.iptvbox.ui.catalog.tint
@@ -47,15 +50,19 @@ import com.hktnv.iptvbox.ui.common.tvFocusElevation
 import com.hktnv.iptvbox.ui.common.tvFocusLift
 import com.hktnv.iptvbox.ui.media.ContentArtwork
 import com.hktnv.iptvbox.ui.media.FavoriteIndicator
-import com.hktnv.iptvbox.ui.media.displayTitle
-import com.hktnv.iptvbox.ui.media.metaLine
+
+private val SearchResultRowHeight = 118.dp
+private val SearchResultArtworkWidth = 104.dp
+private val SearchResultArtworkHeight = 94.dp
 
 @Composable
 internal fun SearchResultsList(
     items: List<CatalogItem>,
     favoriteIds: List<String>,
     onOpenItem: (CatalogItem) -> Unit,
+    onOpenSeries: (String) -> Unit,
     onShowItemOptions: (CatalogItem) -> Unit,
+    onRequestSideMenu: () -> Unit,
     initialFocusRequester: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
@@ -73,8 +80,12 @@ internal fun SearchResultsList(
             SearchResultRow(
                 item = item,
                 favorite = item.id in favoriteSet,
-                onOpen = { onOpenItem(item) },
+                onOpen = {
+                    val seriesTitle = item.searchSeriesTitleOrNull()
+                    if (seriesTitle == null) onOpenItem(item) else onOpenSeries(seriesTitle)
+                },
                 onLongClick = { onShowItemOptions(item) },
+                onRequestSideMenu = onRequestSideMenu,
                 modifier = if (index == 0 && item.id == firstItemId) {
                     Modifier.focusRequester(initialFocusRequester)
                 } else {
@@ -91,16 +102,27 @@ private fun SearchResultRow(
     favorite: Boolean,
     onOpen: () -> Unit,
     onLongClick: () -> Unit,
+    onRequestSideMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var focused by remember { mutableStateOf(false) }
-    val liveLike = item.kind in CatalogTab.LIVE.kinds
+    val title = item.searchResultTitle()
+    val displayKind = item.searchResultKind()
     Surface(
         modifier = modifier
             .fillMaxWidth()
+            .height(SearchResultRowHeight)
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.015f, liftPx = -3f)
             .onFocusChanged { focused = it.isFocused }
+            .onPreviewKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft) {
+                    onRequestSideMenu()
+                    true
+                } else {
+                    false
+                }
+            }
             .tvClickable(onLongClick = onLongClick, onClick = onOpen),
         color = if (focused) TvFocusPanel else IptvColors.Panel,
         shape = RoundedCornerShape(8.dp),
@@ -114,13 +136,13 @@ private fun SearchResultRow(
         ) {
             Box {
                 ContentArtwork(
-                    title = item.displayTitle(),
-                    kind = item.kind,
+                    title = title,
+                    kind = displayKind,
                     logoUrl = item.logoUrl,
                     showBadge = false,
                     modifier = Modifier
-                        .width(if (liveLike) 78.dp else 64.dp)
-                        .height(if (liveLike) 58.dp else 86.dp),
+                        .width(SearchResultArtworkWidth)
+                        .height(SearchResultArtworkHeight),
                 )
                 if (favorite) {
                     FavoriteIndicator(
@@ -130,19 +152,24 @@ private fun SearchResultRow(
                     )
                 }
             }
-            SearchResultText(item = item, modifier = Modifier.weight(1f))
+            SearchResultText(item = item, title = title, kind = displayKind, modifier = Modifier.weight(1f))
         }
     }
 }
 
 @Composable
-private fun SearchResultText(item: CatalogItem, modifier: Modifier = Modifier) {
+private fun SearchResultText(
+    item: CatalogItem,
+    title: String,
+    kind: ContentKind,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         Text(
-            text = item.displayTitle(),
+            text = title,
             color = IptvColors.TextPrimary,
             fontSize = 14.sp,
             lineHeight = 17.sp,
@@ -154,9 +181,9 @@ private fun SearchResultText(item: CatalogItem, modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.spacedBy(7.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SearchKindPill(item.kind)
+            SearchKindPill(kind)
             Text(
-                text = item.metaLine(),
+                text = item.searchResultMetaLine(),
                 color = IptvColors.TextSecondary,
                 fontSize = 12.sp,
                 maxLines = 1,

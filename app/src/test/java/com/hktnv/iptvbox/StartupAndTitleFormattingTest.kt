@@ -1,10 +1,16 @@
 package com.hktnv.iptvbox
 
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import com.hktnv.iptvbox.core.model.CatalogItem
+import com.hktnv.iptvbox.core.model.ContentKind
 import com.hktnv.iptvbox.model.AppScreen
+import com.hktnv.iptvbox.ui.media.readableContentTitle
 import com.hktnv.iptvbox.ui.media.readableMovieTitle
 import com.hktnv.iptvbox.ui.media.restoredScreen
+import com.hktnv.iptvbox.ui.search.collapseSeriesSearchResults
+import com.hktnv.iptvbox.ui.search.searchResultKind
+import com.hktnv.iptvbox.ui.search.searchResultTitle
+import org.junit.Assert.assertEquals
+import org.junit.Test
 
 class StartupAndTitleFormattingTest {
     @Test
@@ -21,8 +27,57 @@ class StartupAndTitleFormattingTest {
 
     @Test
     fun movieTitleCaseKeepsReadableMixedCaseAndFormatsAllCaps() {
-        assertEquals("Sihirbazlar Çetesi: Daha", "SİHİRBAZLAR ÇETESİ: DAHA".readableMovieTitle())
+        assertEquals(
+            "Sihirbazlar \u00C7etesi: Daha",
+            "S\u0130H\u0130RBAZLAR \u00C7ETES\u0130: DAHA".readableMovieTitle(),
+        )
         assertEquals("The Electric State - 2025", "THE ELECTRIC STATE - 2025".readableMovieTitle())
         assertEquals("The Electric State - 2025", "The Electric State - 2025".readableMovieTitle())
+    }
+
+    @Test
+    fun contentTitleCaseFormatsAllCapsAcrossKinds() {
+        assertEquals("Trt 1 Hd", "TRT 1 HD".readableContentTitle())
+        assertEquals("The Electric State - 2025", "THE ELECTRIC STATE - 2025".readableContentTitle())
+    }
+
+    @Test
+    fun searchCollapsesEpisodesIntoSingleSeriesResult() {
+        val results = listOf(
+            testEpisode("episode-1", 1),
+            testEpisode("episode-2", 2),
+            testMovie(),
+        ).collapseSeriesSearchResults()
+
+        assertEquals(2, results.size)
+        assertEquals("Prens", results.first().searchResultTitle())
+        assertEquals(ContentKind.SERIES, results.first().searchResultKind())
+        assertEquals(ContentKind.MOVIE, results.last().searchResultKind())
+    }
+
+    private fun testEpisode(id: String, episode: Int): CatalogItem {
+        return CatalogItem(
+            id = id,
+            sourceId = "source",
+            kind = ContentKind.EPISODE,
+            title = "PRENS S1 E$episode",
+            streamUrl = "http://example.com/series/prens/$episode.mkv",
+            category = "Diziler",
+            seriesTitle = "PRENS",
+            seasonNumber = 1,
+            episodeNumber = episode,
+            providerOrder = episode,
+        )
+    }
+
+    private fun testMovie(): CatalogItem {
+        return CatalogItem(
+            id = "movie-1",
+            sourceId = "source",
+            kind = ContentKind.MOVIE,
+            title = "THE ELECTRIC STATE - 2025",
+            streamUrl = "http://example.com/movie/1.mp4",
+            category = "Filmler",
+        )
     }
 }

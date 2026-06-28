@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.ui.media
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,6 +23,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.hktnv.iptvbox.core.model.CatalogItem
 import kotlinx.coroutines.delay
@@ -39,6 +41,8 @@ internal fun ContentGrid(
     onRequestSideMenu: (() -> Unit)? = null,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val configuration = LocalConfiguration.current
+        val television = configuration.uiMode and Configuration.UI_MODE_TYPE_MASK == Configuration.UI_MODE_TYPE_TELEVISION
         val fallbackFocusRequester = remember { FocusRequester() }
         val itemFocusRequester = initialFocusRequester ?: fallbackFocusRequester
         var focusedIndex by remember(items) { mutableStateOf(0) }
@@ -61,11 +65,17 @@ internal fun ContentGrid(
             else -> 146.dp
         }
         val horizontalSpacing = 10.dp
-        val columnCount = ((maxWidth.value + horizontalSpacing.value) / (minCell.value + horizontalSpacing.value))
-            .toInt()
-            .coerceAtLeast(1)
+        val wideTvGrid = television && maxWidth >= 700.dp
+        val wideTvColumnCount = 6
+        val columnCount = if (wideTvGrid) {
+            wideTvColumnCount
+        } else {
+            ((maxWidth.value + horizontalSpacing.value) / (minCell.value + horizontalSpacing.value))
+                .toInt()
+                .coerceAtLeast(1)
+        }
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minCell),
+            columns = if (wideTvGrid) GridCells.Fixed(wideTvColumnCount) else GridCells.Adaptive(minCell),
             modifier = Modifier
                 .fillMaxSize()
                 .onPreviewKeyEvent { event ->

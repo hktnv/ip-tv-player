@@ -2,6 +2,10 @@ package com.hktnv.iptvbox.ui.media
 import java.util.Locale
 
 internal fun String.readableMovieTitle(): String {
+    return readableContentTitle()
+}
+
+internal fun String.readableContentTitle(): String {
     val clean = cleanUiTitle()
     val letters = clean.filter { it.isLetter() }
     if (letters.length < 4 || letters.any { it.isLowerCase() }) return clean

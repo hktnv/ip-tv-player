@@ -117,8 +117,7 @@ internal fun CompactContentCard(
 }
 
 private fun CatalogItem.compactTitle(): String {
-    val clean = displayTitle()
-    return if (kind == ContentKind.MOVIE) clean.readableMovieTitle() else clean
+    return displayTitle()
 }
 
 @Composable
@@ -129,6 +128,7 @@ internal fun SeriesGroupCard(
     onFocused: () -> Unit = {},
 ) {
     var focused by remember { mutableStateOf(false) }
+    val title = group.title.readableContentTitle()
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -146,7 +146,7 @@ internal fun SeriesGroupCard(
     ) {
         Column {
             ContentArtwork(
-                title = group.title,
+                title = title,
                 kind = ContentKind.SERIES,
                 logoUrl = group.logoUrl,
                 modifier = Modifier.fillMaxWidth().aspectRatio(MediaCardArtworkRatio),
@@ -160,7 +160,7 @@ internal fun SeriesGroupCard(
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
-                    text = group.title,
+                    text = title,
                     color = IptvColors.TextPrimary,
                     fontSize = 11.sp,
                     lineHeight = 14.sp,
@@ -188,6 +188,7 @@ internal fun SeasonCard(
     onFocused: () -> Unit = {},
 ) {
     var focused by remember { mutableStateOf(false) }
+    val title = season.title.readableContentTitle()
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -205,7 +206,7 @@ internal fun SeasonCard(
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(
-                text = season.title,
+                text = title,
                 color = IptvColors.TextPrimary,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,

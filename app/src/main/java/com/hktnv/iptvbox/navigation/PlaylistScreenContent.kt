@@ -127,6 +127,7 @@ internal fun PlaylistScreenContent(
             onQueryChange = onQueryChange,
             onSearch = onSearch,
             onOpenItem = onOpenItem,
+            onOpenSeries = onOpenSeries,
             favoriteIds = favoriteIds,
             onShowItemOptions = onShowItemOptions,
             onAddPlaylist = onAddPlaylist,

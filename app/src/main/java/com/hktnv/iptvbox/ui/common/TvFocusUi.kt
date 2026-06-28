@@ -83,7 +83,7 @@ internal fun Modifier.tvClickable(
             when {
                 event.type == KeyEventType.KeyDown &&
                     onLongClick != null -> {
-                    if (longPressJob == null) {
+                    if (longPressJob == null && !longClickHandled) {
                         longClickHandled = false
                         longPressJob = scope.launch {
                             delay(520L)

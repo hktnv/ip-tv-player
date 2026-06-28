@@ -145,15 +145,16 @@ internal fun LoadedPlaylist.seriesPreview(limit: Int): List<SeriesGroup> {
 
 internal fun CatalogItem.seriesDisplayTitle(): String {
     val explicit = seriesTitle?.cleanUiTitle().orEmpty()
-    if (explicit.isNotBlank()) return explicit
+    if (explicit.isNotBlank()) return explicit.readableContentTitle()
     val marker = Regex("""(?i)\bS\d{1,2}\s*E\d{1,3}\b""").find(title)
     val inferred = if (marker == null) title else title.substring(0, marker.range.first)
-    return inferred.cleanUiTitle().ifBlank { displayTitle() }
+    return inferred.cleanUiTitle().ifBlank { displayTitle() }.readableContentTitle()
 }
 
 internal fun CatalogItem.displayTitle(): String = title.cleanUiTitle()
     .ifBlank { tvgName?.cleanUiTitle().orEmpty() }
     .ifBlank { kind.label() }
+    .readableContentTitle()
 
 internal fun CatalogItem.metaLine(): String {
     val cleanCategory = category?.cleanUiTitle().orEmpty()

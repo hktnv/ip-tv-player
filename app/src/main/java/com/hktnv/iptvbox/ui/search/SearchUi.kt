@@ -64,6 +64,7 @@ internal fun SearchScreen(
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     onOpenItem: (CatalogItem) -> Unit,
+    onOpenSeries: (String) -> Unit,
     favoriteIds: List<String>,
     onShowItemOptions: (CatalogItem) -> Unit,
     onAddPlaylist: () -> Unit,
@@ -123,9 +124,10 @@ internal fun SearchScreen(
         } else {
             searchLoading = true
             val searchStartedAt = android.os.SystemClock.elapsedRealtime()
-            results = withContext(Dispatchers.IO) {
+            val rawResults = withContext(Dispatchers.IO) {
                 catalogRepository.search(snapshot, normalizedQuery, performanceMode.searchResultLimit)
             }
+            results = rawResults.collapseSeriesSearchResults()
             telemetry.recordDuration("search_first_result_ms", searchStartedAt)
             searchLoading = false
         }
@@ -248,7 +250,9 @@ internal fun SearchScreen(
                 items = results,
                 favoriteIds = favoriteIds,
                 onOpenItem = onOpenItem,
+                onOpenSeries = onOpenSeries,
                 onShowItemOptions = onShowItemOptions,
+                onRequestSideMenu = onRequestSideMenu,
                 initialFocusRequester = firstResultFocusRequester,
                 modifier = Modifier.weight(1f),
             )
