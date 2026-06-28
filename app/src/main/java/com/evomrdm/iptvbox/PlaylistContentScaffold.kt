@@ -247,6 +247,7 @@ private fun PlaylistScreenContent(
             onOpenSeries = onOpenSeries,
             onOpenItem = onOpenItem,
             onSelectPlaylist = onSelectPlaylist,
+            onRequestSideMenu = onRequestSideMenu,
             contentPadding = contentPadding,
             initialFocusRequester = contentInitialFocusRequester,
         )
@@ -307,6 +308,7 @@ private fun PlaylistScreenContent(
             onAddPlaylist = onAddPlaylist,
             contentPadding = contentPadding,
             initialFocusRequester = contentInitialFocusRequester,
+            onRequestSideMenu = onRequestSideMenu,
         )
         AppScreen.FAVORITES -> SavedItemsScreen(
             title = "Favoriler",
@@ -321,6 +323,7 @@ private fun PlaylistScreenContent(
             onAddPlaylist = onAddPlaylist,
             contentPadding = contentPadding,
             initialFocusRequester = contentInitialFocusRequester,
+            onRequestSideMenu = onRequestSideMenu,
         )
         AppScreen.RECENT -> SavedItemsScreen(
             title = "Son izlenenler",
@@ -335,6 +338,7 @@ private fun PlaylistScreenContent(
             onAddPlaylist = onAddPlaylist,
             contentPadding = contentPadding,
             initialFocusRequester = contentInitialFocusRequester,
+            onRequestSideMenu = onRequestSideMenu,
         )
         AppScreen.SETTINGS -> SettingsScreen(
             playlist = selectedPlaylist,
@@ -343,6 +347,8 @@ private fun PlaylistScreenContent(
             onAddPlaylist = onAddPlaylist,
             onOpenPlaylistEntry = onOpenPlaylistEntry,
             contentPadding = contentPadding,
+            initialFocusRequester = contentInitialFocusRequester,
+            onRequestSideMenu = onRequestSideMenu,
         )
         AppScreen.PLAYER -> Unit
     }

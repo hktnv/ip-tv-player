@@ -2,14 +2,10 @@
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -27,18 +23,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import coil3.compose.AsyncImage
 import com.evomrdm.iptvbox.core.designsystem.IptvColors
 import com.evomrdm.iptvbox.core.model.CatalogItem
 import com.evomrdm.iptvbox.core.model.ContentKind
@@ -49,18 +41,21 @@ internal fun CompactContentCard(
     onClick: () -> Unit,
     fixedWidth: Dp? = null,
     fixedRatio: Float? = null,
+    onFocused: () -> Unit = {},
 ) {
     var focused by remember { mutableStateOf(false) }
-    val logoLike = item.kind == ContentKind.LIVE_CHANNEL || item.kind == ContentKind.RADIO
-    val cardWidth = fixedWidth ?: if (logoLike) 124.dp else 108.dp
-    val artworkRatio = fixedRatio ?: if (logoLike) 0.78f else item.posterRatio()
+    val cardWidth = fixedWidth ?: 136.dp
+    val artworkRatio = fixedRatio ?: 0.78f
     val title = item.compactTitle()
     Surface(
         modifier = Modifier
             .width(cardWidth)
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -5f)
-            .onFocusChanged { focused = it.isFocused }
+            .onFocusChanged {
+                focused = it.isFocused
+                if (it.isFocused) onFocused()
+            }
             .tvClickable(onClick = onClick),
         color = if (focused) TvFocusPanel else IptvColors.Panel,
         shape = RoundedCornerShape(8.dp),
@@ -85,8 +80,8 @@ internal fun CompactContentCard(
                 Text(
                     text = title,
                     color = IptvColors.TextPrimary,
-                    fontSize = 12.sp,
-                    lineHeight = 15.sp,
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -94,7 +89,7 @@ internal fun CompactContentCard(
                 Text(
                     text = item.metaLine(),
                     color = IptvColors.TextSecondary,
-                    fontSize = 11.sp,
+                    fontSize = 10.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -136,7 +131,7 @@ internal fun SeriesGroupCard(
                 title = group.title,
                 kind = ContentKind.SERIES,
                 logoUrl = group.logoUrl,
-                modifier = Modifier.fillMaxWidth().aspectRatio(2f / 3f),
+                modifier = Modifier.fillMaxWidth().aspectRatio(0.78f),
             )
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(
@@ -202,107 +197,6 @@ internal fun SeasonCard(
 }
 
 @Composable
-internal fun ContentArtwork(
-    title: String,
-    kind: ContentKind,
-    logoUrl: String?,
-    modifier: Modifier = Modifier,
-    showBadge: Boolean = true,
-) {
-    val performance = LocalPerformanceMode.current
-    val logoLike = kind == ContentKind.LIVE_CHANNEL || kind == ContentKind.RADIO
-    Box(
-        modifier = modifier.background(Color(0xFF0A121A)),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (performance.loadImages && !logoUrl.isNullOrBlank()) {
-            if (logoLike) {
-                AsyncImage(
-                    model = logoUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .matchParentSize()
-                        .blur(18.dp),
-                )
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(Color(0xCC071017)),
-                )
-                Surface(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .padding(10.dp),
-                    color = Color(0xE6131D26),
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.10f)),
-                    shadowElevation = 1.dp,
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        AsyncImage(
-                            model = logoUrl,
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize().padding(10.dp),
-                        )
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .background(Color.Black.copy(alpha = 0.16f)),
-                        )
-                    }
-                }
-            } else {
-                AsyncImage(
-                    model = logoUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.matchParentSize(),
-                )
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(Color.Black.copy(alpha = 0.12f)),
-                )
-            }
-        } else {
-            Surface(
-                color = kind.tint().copy(alpha = 0.16f),
-                shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, kind.tint().copy(alpha = 0.30f)),
-            ) {
-                Text(
-                    text = title.initials(),
-                    color = IptvColors.TextPrimary,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                )
-            }
-        }
-        if (showBadge) {
-            Surface(
-                modifier = Modifier.align(Alignment.TopStart).padding(7.dp),
-                color = Color.Black.copy(alpha = 0.42f),
-                shape = RoundedCornerShape(5.dp),
-            ) {
-                Text(
-                    text = kind.badgeLabel(),
-                    color = Color.White,
-                    fontSize = 8.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
 internal fun ContentCard(
     item: CatalogItem,
     favorite: Boolean,
@@ -332,7 +226,7 @@ internal fun ContentCard(
                 title = item.displayTitle(),
                 kind = item.kind,
                 logoUrl = item.logoUrl,
-                modifier = Modifier.fillMaxWidth().aspectRatio(item.posterRatio()),
+                modifier = Modifier.fillMaxWidth().aspectRatio(0.78f),
             )
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(

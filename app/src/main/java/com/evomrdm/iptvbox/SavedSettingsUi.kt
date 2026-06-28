@@ -9,11 +9,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.FocusRequester
@@ -25,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.evomrdm.iptvbox.core.designsystem.IptvColors
 import com.evomrdm.iptvbox.core.model.CatalogItem
+import kotlinx.coroutines.launch
 
 @Composable
 internal fun SavedItemsScreen(
@@ -40,6 +46,7 @@ internal fun SavedItemsScreen(
     onAddPlaylist: () -> Unit,
     contentPadding: Dp,
     initialFocusRequester: FocusRequester? = null,
+    onRequestSideMenu: (() -> Unit)? = null,
 ) {
     if (playlist == null) {
         EmptyCatalog(onAddPlaylist, contentPadding)
@@ -72,6 +79,7 @@ internal fun SavedItemsScreen(
                 modifier = Modifier.weight(1f),
                 requestInitialFocus = initialFocusRequester != null,
                 initialFocusRequester = initialFocusRequester,
+                onRequestSideMenu = onRequestSideMenu,
             )
         }
     }
@@ -88,6 +96,7 @@ internal fun LatestItemsScreen(
     onAddPlaylist: () -> Unit,
     contentPadding: Dp,
     initialFocusRequester: FocusRequester? = null,
+    onRequestSideMenu: (() -> Unit)? = null,
 ) {
     if (playlist == null) {
         EmptyCatalog(onAddPlaylist, contentPadding)
@@ -124,6 +133,7 @@ internal fun LatestItemsScreen(
                 modifier = Modifier.weight(1f),
                 requestInitialFocus = true,
                 initialFocusRequester = initialFocusRequester,
+                onRequestSideMenu = onRequestSideMenu,
             )
         }
     }
@@ -137,8 +147,26 @@ internal fun SettingsScreen(
     onAddPlaylist: () -> Unit,
     onOpenPlaylistEntry: () -> Unit,
     contentPadding: Dp,
+    initialFocusRequester: FocusRequester? = null,
+    onRequestSideMenu: (() -> Unit)? = null,
 ) {
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val startFocusRequester = initialFocusRequester ?: remember { FocusRequester() }
+    val privacyFocusRequester = remember { FocusRequester() }
+    val diagnosticsFocusRequester = remember { FocusRequester() }
+    val playlistFocusRequester = remember { FocusRequester() }
+    fun scrollTo(index: Int) {
+        scope.launch { listState.animateScrollToItem(index) }
+    }
+    LaunchedEffect(initialFocusRequester) {
+        if (initialFocusRequester != null) {
+            withFrameNanos { }
+            runCatching { startFocusRequester.requestFocus() }
+        }
+    }
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = contentPadding),
@@ -146,183 +174,88 @@ internal fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
-            InfoPanel(
-                title = "Başlangıç",
-                body = "Son oynatma listesi, favoriler ve son izlenenler bu cihazda hatırlanır.",
-                actionLabel = "Liste seçimine dön",
-                onAction = onOpenPlaylistEntry,
-            )
-        }
-        item {
-            InfoPanel(
-                title = "Gizlilik",
-                body = "Oynatma listesi bilgileri yalnızca bu cihazda saklanır.",
-            )
-        }
-        item {
-            DiagnosticsPanel(diagnostics = diagnostics, playlist = playlist)
-        }
-        item {
-            if (playlist == null) {
-                EmptyState(
-                    title = "Oynatma listesi yok",
-                    body = "Liste eklediğinizde yenileme ve katalog bilgileri burada görünür.",
-                    actionLabel = "Liste Ekle",
-                    onAction = onAddPlaylist,
+            SettingsFocusPanel(
+                focusRequester = startFocusRequester,
+                previousFocusRequester = null,
+                nextFocusRequester = privacyFocusRequester,
+                onFocused = { scrollTo(0) },
+                onRequestSideMenu = onRequestSideMenu,
+            ) {
+                InfoPanelContent(
+                    title = "Başlangıç",
+                    body = "Son oynatma listesi, favoriler ve son izlenenler bu cihazda hatırlanır.",
+                    actionLabel = "Liste seçimine dön",
+                    onAction = onOpenPlaylistEntry,
                 )
-            } else {
-                InfoPanel(
-                    title = playlist.name,
-                    body = playlist.catalogSummary(),
-                    actionLabel = "Yenile",
-                    onAction = onReload,
+            }
+        }
+        item {
+            SettingsFocusPanel(
+                focusRequester = privacyFocusRequester,
+                previousFocusRequester = startFocusRequester,
+                nextFocusRequester = diagnosticsFocusRequester,
+                onFocused = { scrollTo(1) },
+                onRequestSideMenu = onRequestSideMenu,
+            ) {
+                InfoPanelContent(
+                    title = "Gizlilik",
+                    body = "Oynatma listesi bilgileri yalnızca bu cihazda saklanır.",
                 )
+            }
+        }
+        item {
+            SettingsFocusPanel(
+                focusRequester = diagnosticsFocusRequester,
+                previousFocusRequester = privacyFocusRequester,
+                nextFocusRequester = playlistFocusRequester,
+                onFocused = { scrollTo(2) },
+                onRequestSideMenu = onRequestSideMenu,
+            ) {
+                DiagnosticsPanelContent(diagnostics = diagnostics, playlist = playlist)
+            }
+        }
+        item {
+            SettingsFocusPanel(
+                focusRequester = playlistFocusRequester,
+                previousFocusRequester = diagnosticsFocusRequester,
+                nextFocusRequester = null,
+                onFocused = { scrollTo(3) },
+                onRequestSideMenu = onRequestSideMenu,
+            ) {
+                if (playlist == null) {
+                    InfoPanelContent(
+                        title = "Oynatma listesi yok",
+                        body = "Liste eklediğinizde yenileme ve katalog bilgileri burada görünür.",
+                        actionLabel = "Liste Ekle",
+                        onAction = onAddPlaylist,
+                    )
+                } else {
+                    InfoPanelContent(
+                        title = playlist.name,
+                        body = playlist.catalogSummary(),
+                        actionLabel = "Yenile",
+                        onAction = onReload,
+                    )
+                }
             }
         }
     }
 }
 
-private fun diagnosticsText(
-    diagnostics: PerformanceDiagnostics,
-    playlist: LoadedPlaylist?,
-): String {
-    val stats = playlist?.stats()
-    val itemCount = playlist?.cachedItemCount ?: playlist?.items?.size
-    val playlistText = if (playlist == null || itemCount == null) {
-        "Liste yok"
-    } else {
-        "$itemCount içerik (${stats?.live ?: 0} canlı, ${stats?.movies ?: 0} film, ${stats?.series ?: 0} dizi)"
-    }
-
-    return buildString {
-        appendLine("Uygulama açılış süresi: ${diagnostics.appOpenMs()}")
-        appendLine("Oynatma listesi ekleme süresi: ${diagnostics.ms("playlist_import_total_ms")}")
-        appendLine("Katalog hazır olma süresi: ${diagnostics.ms("catalog_screen_ready_ms")}")
-        appendLine("Arama ilk sonuç süresi: ${diagnostics.ms("search_first_result_ms")}")
-        appendLine("Yaklaşık RAM kullanımı: ${diagnostics.mb("ram_mb")}")
-        appendLine("Son hata / çökme bilgisi: ${diagnostics.lastError ?: "Son hata yok"}")
-        append("Yüklü oynatma listesi içerik sayısı: $playlistText")
-    }
-}
-
 @Composable
-private fun DiagnosticsPanel(
-    diagnostics: PerformanceDiagnostics,
-    playlist: LoadedPlaylist?,
+private fun InfoPanelContent(
+    title: String,
+    body: String,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
 ) {
-    PremiumPanel {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                text = "Performans / Tanılama",
-                color = IptvColors.TextPrimary,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            diagnosticsRows(diagnostics, playlist).forEach { row ->
-                DiagnosticRow(label = row.first, value = row.second)
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(title, color = IptvColors.TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text(body, color = IptvColors.TextSecondary, fontSize = 14.sp, lineHeight = 19.sp)
+        if (actionLabel != null && onAction != null) {
+            OutlinedButton(onClick = onAction, shape = RoundedCornerShape(8.dp)) {
+                Text(actionLabel)
             }
         }
-    }
-}
-
-@Composable
-private fun DiagnosticRow(label: String, value: String) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFF101923),
-        shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(1.dp, TvRestingBorder),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = label,
-                color = IptvColors.TextSecondary,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.weight(0.42f),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = value,
-                color = IptvColors.TextPrimary,
-                fontSize = 13.sp,
-                lineHeight = 17.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(0.58f),
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
-
-private fun diagnosticsRows(
-    diagnostics: PerformanceDiagnostics,
-    playlist: LoadedPlaylist?,
-): List<Pair<String, String>> {
-    val stats = playlist?.stats()
-    val itemCount = playlist?.cachedItemCount ?: playlist?.items?.size
-    val playlistText = if (playlist == null || itemCount == null) {
-        "Liste yok"
-    } else {
-        "$itemCount içerik (${stats?.live ?: 0} canlı, ${stats?.movies ?: 0} film, ${stats?.series ?: 0} dizi)"
-    }
-
-    return listOf(
-        "Uygulama açılışı" to diagnostics.appOpenMs(),
-        "Ana ekran ilk gösterim" to diagnostics.ms("home_first_draw_ms"),
-        "Oynatma listesi ekleme" to diagnostics.ms("playlist_import_total_ms"),
-        "Katalog hazır olma" to diagnostics.ms("catalog_screen_ready_ms"),
-        "Menü geçişleri" to diagnostics.menuTransitionsText(),
-        "Arama ilk sonuç" to diagnostics.ms("search_first_result_ms"),
-        "Yaklaşık RAM" to diagnostics.mb("ram_mb"),
-        "Son hata / çökme" to (diagnostics.lastError ?: "Son hata yok"),
-        "Yüklü içerik" to playlistText,
-    )
-}
-
-private fun PerformanceDiagnostics.appOpenMs(): String {
-    return msValue("home_first_draw_ms")
-        ?: msValue("cold_start_restore_state_ms")
-        ?: msValue("cold_start_on_create_ms")
-        ?: "Henüz ölçülmedi"
-}
-
-private fun PerformanceDiagnostics.ms(key: String): String = msValue(key) ?: "Henüz ölçülmedi"
-
-private fun PerformanceDiagnostics.mb(key: String): String {
-    return values[key]?.toLongOrNull()?.let { "$it MB" } ?: "Henüz ölçülmedi"
-}
-
-private fun PerformanceDiagnostics.msValue(key: String): String? {
-    return values[key]?.toLongOrNull()?.let { "$it ms" }
-}
-
-private fun PerformanceDiagnostics.menuTransitionsText(): String {
-    val transitions = values
-        .filterKeys { it.startsWith("menu_transition_") && it.endsWith("_ms") }
-        .toSortedMap()
-    if (transitions.isEmpty()) return "Henüz ölçülmedi"
-    return transitions.entries.joinToString(" · ") { (key, value) ->
-        "${menuLabel(key)} ${value.toLongOrNull()?.let { "$it ms" } ?: value}"
-    }
-}
-
-private fun menuLabel(key: String): String {
-    return when (key.removePrefix("menu_transition_").removeSuffix("_ms")) {
-        "home" -> "Ana"
-        "playlists" -> "Listeler"
-        "catalog" -> "Katalog"
-        "search" -> "Ara"
-        "favorites" -> "Favoriler"
-        "recent" -> "Son izlenenler"
-        "settings" -> "Ayarlar"
-        else -> "Menü"
     }
 }

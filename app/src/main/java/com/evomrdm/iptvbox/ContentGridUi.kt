@@ -25,7 +25,6 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import com.evomrdm.iptvbox.core.model.CatalogItem
-import com.evomrdm.iptvbox.core.model.ContentKind
 import kotlinx.coroutines.delay
 
 @Composable
@@ -54,15 +53,10 @@ internal fun ContentGrid(
                 }
             }
         }
-        val mostlyLive = remember(items) {
-            val sample = items.take(18)
-            sample.isNotEmpty() && sample.count { it.kind in CatalogTab.LIVE.kinds } >= sample.size * 2 / 3
-        }
         val favoriteKey = favoriteIds.joinToString("|")
         val favoriteSet = remember(favoriteKey) { favoriteIds.toSet() }
         val minCell = when {
             maxWidth < 600.dp -> 160.dp
-            mostlyLive -> 150.dp
             maxWidth >= 900.dp -> 178.dp
             maxWidth >= 600.dp -> 158.dp
             else -> 145.dp

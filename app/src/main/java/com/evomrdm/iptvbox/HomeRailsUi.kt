@@ -47,23 +47,31 @@ internal fun HomeContentRow(
     onOpenItem: (CatalogItem) -> Unit,
     headerFocusRequester: FocusRequester,
     nextRailFocusRequester: FocusRequester?,
+    onRequestSideMenu: () -> Unit,
     cardWidth: Dp? = null,
     cardRatio: Float? = null,
 ) {
+    var focusedIndex by remember(items) { mutableStateOf(0) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         HomeRailHeader(
             title = title,
             onOpenAll = onOpenAll,
             focusRequester = headerFocusRequester,
+            onRequestSideMenu = onRequestSideMenu,
         )
         if (items.isEmpty()) {
             Text(emptyText, color = IptvColors.TextSecondary, fontSize = 13.sp)
         } else {
             LazyRow(
+                modifier = Modifier.homeRailHorizontalNavigation(
+                    focusedIndex = focusedIndex,
+                    onRequestSideMenu = onRequestSideMenu,
+                ),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(horizontal = 2.dp),
             ) {
                 items(items, key = { it.id }, contentType = { it.kind.name }) { item ->
+                    val index = items.indexOf(item)
                     Box(
                         modifier = Modifier.homeRailItemVerticalNavigation(
                             headerFocusRequester = headerFocusRequester,
@@ -75,6 +83,7 @@ internal fun HomeContentRow(
                             onClick = { onOpenItem(item) },
                             fixedWidth = cardWidth,
                             fixedRatio = cardRatio,
+                            onFocused = { focusedIndex = index },
                         )
                     }
                 }
@@ -92,21 +101,29 @@ internal fun HomeSeriesRow(
     onOpenSeries: (String) -> Unit,
     headerFocusRequester: FocusRequester,
     nextRailFocusRequester: FocusRequester?,
+    onRequestSideMenu: () -> Unit,
 ) {
+    var focusedIndex by remember(groups) { mutableStateOf(0) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         HomeRailHeader(
             title = title,
             onOpenAll = onOpenAll,
             focusRequester = headerFocusRequester,
+            onRequestSideMenu = onRequestSideMenu,
         )
         if (groups.isEmpty()) {
             Text(emptyText, color = IptvColors.TextSecondary, fontSize = 13.sp)
         } else {
             LazyRow(
+                modifier = Modifier.homeRailHorizontalNavigation(
+                    focusedIndex = focusedIndex,
+                    onRequestSideMenu = onRequestSideMenu,
+                ),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(horizontal = 2.dp),
             ) {
                 items(groups, key = { it.id }, contentType = { "series-card" }) { group ->
+                    val index = groups.indexOf(group)
                     Box(
                         modifier = Modifier.homeRailItemVerticalNavigation(
                             headerFocusRequester = headerFocusRequester,
@@ -116,7 +133,8 @@ internal fun HomeSeriesRow(
                         SeriesGroupCard(
                             group = group,
                             onClick = { onOpenSeries(group.title) },
-                            modifier = Modifier.width(132.dp),
+                            modifier = Modifier.width(136.dp),
+                            onFocused = { focusedIndex = index },
                         )
                     }
                 }
@@ -130,12 +148,18 @@ internal fun HomeRailHeader(
     title: String,
     onOpenAll: () -> Unit,
     focusRequester: FocusRequester,
+    onRequestSideMenu: () -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .focusRequester(focusRequester)
+            .onPreviewKeyEvent { event ->
+                event.type == KeyEventType.KeyDown &&
+                    event.key == Key.DirectionLeft &&
+                    onRequestSideMenu().let { true }
+            }
             .tvFocusLift(focused = focused, scale = 1.01f, liftPx = -3f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onOpenAll),
@@ -196,6 +220,24 @@ private fun Modifier.homeRailItemVerticalNavigation(
             Key.DirectionDown -> nextRailFocusRequester.requestFocusSafely()
             Key.DirectionUp -> headerFocusRequester.requestFocusSafely()
             else -> false
+        }
+    }
+}
+
+private fun Modifier.homeRailHorizontalNavigation(
+    focusedIndex: Int,
+    onRequestSideMenu: () -> Unit,
+): Modifier {
+    return onPreviewKeyEvent { event ->
+        if (
+            event.type == KeyEventType.KeyDown &&
+            event.key == Key.DirectionLeft &&
+            focusedIndex <= 0
+        ) {
+            onRequestSideMenu()
+            true
+        } else {
+            false
         }
     }
 }

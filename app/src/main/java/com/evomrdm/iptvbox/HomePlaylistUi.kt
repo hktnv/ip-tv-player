@@ -133,6 +133,7 @@ internal fun HomeScreen(
     onOpenSeries: (String) -> Unit,
     onOpenItem: (CatalogItem) -> Unit,
     onSelectPlaylist: (String) -> Unit,
+    onRequestSideMenu: () -> Unit,
     contentPadding: Dp,
     initialFocusRequester: FocusRequester? = null,
 ) {
@@ -194,6 +195,7 @@ internal fun HomeScreen(
                     onOpenItem = onOpenItem,
                     headerFocusRequester = recentRailFocus,
                     nextRailFocusRequester = afterRecentFocus,
+                    onRequestSideMenu = onRequestSideMenu,
                     cardWidth = 136.dp,
                     cardRatio = 0.78f,
                 )
@@ -208,6 +210,7 @@ internal fun HomeScreen(
                     onOpenItem = onOpenItem,
                     headerFocusRequester = favoritesRailFocus,
                     nextRailFocusRequester = latestRailFocus,
+                    onRequestSideMenu = onRequestSideMenu,
                 )
                 }
             }
@@ -220,6 +223,7 @@ internal fun HomeScreen(
                     onOpenItem = onOpenItem,
                     headerFocusRequester = latestRailFocus,
                     nextRailFocusRequester = moviesRailFocus,
+                    onRequestSideMenu = onRequestSideMenu,
                 )
             }
             item(key = "movie-row", contentType = "media-row") {
@@ -231,6 +235,7 @@ internal fun HomeScreen(
                     onOpenItem = onOpenItem,
                     headerFocusRequester = moviesRailFocus,
                     nextRailFocusRequester = liveRailFocus,
+                    onRequestSideMenu = onRequestSideMenu,
                 )
             }
             item(key = "live-row", contentType = "media-row") {
@@ -242,6 +247,7 @@ internal fun HomeScreen(
                     onOpenItem = onOpenItem,
                     headerFocusRequester = liveRailFocus,
                     nextRailFocusRequester = seriesRailFocus,
+                    onRequestSideMenu = onRequestSideMenu,
                 )
             }
             item(key = "series-row", contentType = "series-row") {
@@ -253,6 +259,7 @@ internal fun HomeScreen(
                     onOpenSeries = onOpenSeries,
                     headerFocusRequester = seriesRailFocus,
                     nextRailFocusRequester = null,
+                    onRequestSideMenu = onRequestSideMenu,
                 )
             }
         }

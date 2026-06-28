@@ -75,7 +75,7 @@ internal fun countDrawerWidthTransitions(
 internal fun shouldExpandCollapsedDrawerOnFocus(
     nowMs: Long,
     lastUserLeftIntentMs: Long,
-    thresholdMs: Long = 450L,
+    thresholdMs: Long = 1_400L,
 ): Boolean {
     return lastUserLeftIntentMs > 0L && nowMs - lastUserLeftIntentMs in 0L..thresholdMs
 }

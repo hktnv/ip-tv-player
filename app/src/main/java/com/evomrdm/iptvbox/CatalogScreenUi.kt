@@ -166,7 +166,7 @@ internal fun CatalogScreen(
         }
         if (snapshot == null || catalogIndexLoading) {
             LoadingPanel(
-                text = "Katalog hazırlanıyor",
+                text = "Katalog hazÄ±rlanÄ±yor",
                 modifier = Modifier.padding(top = 18.dp),
             )
         } else if (selectedTab == CatalogTab.SERIES) {
@@ -188,7 +188,7 @@ internal fun CatalogScreen(
         } else if (visibleItems.isEmpty()) {
             EmptyState(
                 title = selectedTab.emptyLabel,
-                body = "Başka kategori seç veya farklı bir oynatma listesi yükle.",
+                body = "BaÅŸka kategori seÃ§ veya farklÄ± bir oynatma listesi yÃ¼kle.",
                 actionLabel = null,
                 onAction = null,
                 modifier = Modifier.padding(top = 18.dp),
@@ -207,8 +207,6 @@ internal fun CatalogScreen(
         }
     }
 }
-
-
 @Composable
 internal fun ContentTabs(
     stats: PlaylistStats,
@@ -289,7 +287,7 @@ internal fun MainSectionButton(
 }
 
 @Composable
-internal fun CategoryStrip(
+private fun LegacyCategoryStrip(
     categories: List<String>,
     selected: String?,
     onSelected: (String?) -> Unit,
@@ -327,7 +325,7 @@ internal fun CategoryStrip(
     ) {
         item {
             CategoryButton(
-                label = "Tüm kategoriler",
+                label = "TÃ¼m kategoriler",
                 selected = selected == null,
                 onClick = { onSelected(null) },
                 onFocused = { focusedIndex = 0 },
@@ -340,56 +338,6 @@ internal fun CategoryStrip(
                 selected = selected == category,
                 onClick = { onSelected(category) },
                 onFocused = { focusedIndex = categoryIndex },
-            )
-        }
-    }
-}
-
-@Composable
-internal fun CategoryButton(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    onFocused: () -> Unit = {},
-) {
-    var focused by remember { mutableStateOf(false) }
-    Surface(
-        modifier = Modifier
-            .height(34.dp)
-            .zIndex(if (focused) 1f else 0f)
-            .tvFocusLift(focused = focused, scale = 1.025f, liftPx = -3f)
-            .onFocusChanged {
-                focused = it.isFocused
-                if (it.isFocused) onFocused()
-            }
-            .tvClickable(onClick = onClick),
-        color = when {
-            focused -> TvFocusPanel
-            selected -> IptvColors.Accent.copy(alpha = 0.12f)
-            else -> Color(0xFF101720)
-        },
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(
-            1.dp,
-            when {
-                focused -> TvFocusBorder
-                selected -> TvRestingBorder.copy(alpha = 0.35f)
-                else -> TvRestingBorder
-            },
-        ),
-        shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 10.dp),
-    ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 11.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = label,
-                color = if (selected) IptvColors.TextPrimary else IptvColors.TextSecondary,
-                fontSize = 12.sp,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
         }
     }

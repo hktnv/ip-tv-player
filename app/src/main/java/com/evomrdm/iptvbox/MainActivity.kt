@@ -14,7 +14,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
 import com.evomrdm.iptvbox.core.model.CatalogItem
 import com.evomrdm.iptvbox.data.playlist.RemotePlaylistLoader
-
 @Composable
 internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val localContext = LocalContext.current; val context = localContext.applicationContext; val activity = localContext as? android.app.Activity
@@ -89,7 +88,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onUpdateCheckStarted = { updateCheckStarted = true },
         onUpdateAvailable = { updateState = AppUpdateUiState.Available(it) },
     )
-
     val selectedPlaylist = playlists.firstOrNull { it.id == selectedPlaylistId } ?: playlists.firstOrNull()
     SelectedPlaylistRepairEffect(
         restoredApplied = restoredApplied, selectedPlaylist = selectedPlaylist, selectedPlaylistId = selectedPlaylistId,
@@ -99,7 +97,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             showPlaylistEntry = true
         },
     )
-
     val playlistSignature = catalogSignature(playlists)
     val favoriteSignature = favoriteIds.joinToString("|")
     val recentSignature = recentIds.joinToString("|")
@@ -134,12 +131,10 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     fun applyDrawerEvent(event: NavigationDrawerEvent) {
         val next = drawerModel.reduce(event).model; drawerState = next.state; drawerFocusExpansion = next.focusExpansion
     }
-
     fun requestContentFocus() {
         applyDrawerEvent(NavigationDrawerEvent.CollapseForContentFocus)
         contentFocusRequest += 1
     }
-
     fun openCatalogRoot(tab: CatalogTab = selectedPlaylist?.let(::firstAvailableTab) ?: CatalogTab.LIVE) {
         selectedTab = tab
         selectedCategory = null
@@ -149,7 +144,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         showPlaylistEntry = false
         requestContentFocus()
     }
-
     fun openHomeRailScreen(target: AppScreen) {
         pendingNavigationStartedAt = SystemClock.elapsedRealtime()
         screen = target
@@ -158,7 +152,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         selectedSeasonNumber = null
         requestContentFocus()
     }
-
     fun openPlaylistCatalog(playlistId: String) {
         val playlist = playlists.firstOrNull { it.id == playlistId }
         selectedPlaylistId = playlistId
@@ -172,13 +165,11 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         showPlaylistEntry = false
         requestContentFocus()
     }
-
     fun openPlaylistEntry() {
         screen = AppScreen.PLAYLISTS
         showPlaylistEntry = true
         applyDrawerEvent(NavigationDrawerEvent.CollapseForContentFocus)
     }
-
     fun navigate(target: AppScreen) {
         pendingNavigationStartedAt = SystemClock.elapsedRealtime()
         if (!showPlaylistEntry && target == screen && target != AppScreen.CATALOG) {
@@ -199,7 +190,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             }
         }
     }
-
     InitialContentFocusEffect(
         restoredApplied = restoredApplied,
         selectedPlaylist = selectedPlaylist,
@@ -209,7 +199,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onApplied = { initialContentFocusApplied = true },
         requestContentFocus = ::requestContentFocus,
     )
-
     NavigationTimingEffect(
         restoredApplied = restoredApplied,
         screen = screen,
@@ -217,7 +206,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         telemetry = telemetry,
         onRecorded = { pendingNavigationStartedAt = null },
     )
-
     AutoDismissBannerEffect(
         banner = banner,
         onDismiss = { banner = null },
@@ -232,7 +220,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         returnScreen = screen.takeIf { it != AppScreen.PLAYER } ?: AppScreen.CATALOG
         screen = AppScreen.PLAYER
     }
-
     fun reloadPlaylist(playlist: LoadedPlaylist) {
         scope.reloadPlaylistAction(
             playlist = playlist,
@@ -246,7 +233,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             },
         )
     }
-
     fun startUpdateDownload(update: AppUpdateInfo) {
         scope.startUpdateDownloadAction(
             context = context,
@@ -257,7 +243,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             onUpdateState = { updateState = it },
         )
     }
-
     fun renamePlaylist(playlist: LoadedPlaylist, requestedName: String) {
         scope.renamePlaylistAction(
             playlist = playlist,
@@ -273,7 +258,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             },
         )
     }
-
     fun clearBrokenState() {
         scope.clearBrokenStateAction(stateStore) {
             playlists.clear()
@@ -292,7 +276,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             banner = "Sorunlu liste kaldırıldı"
         }
     }
-
     fun openSettingsFromEntry() {
         screen = AppScreen.SETTINGS
         showPlaylistEntry = false
@@ -364,15 +347,10 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                 draft = draft, result = result, telemetry = telemetry, catalogStore = catalogStore,
                 onSaving = { banner = "Oynatma listesi kaydediliyor" },
                 onStored = { stored, itemCount, playlistName ->
-                    playlists.removeAll { it.id == stored.id }
-                    playlists += stored
-                    selectedPlaylistId = stored.id
-                    selectedTab = firstAvailableTab(stored)
-                    selectedCategory = null; selectedSeriesTitle = null; selectedSeasonNumber = null
-                    submittedSearch = ""; screen = AppScreen.HOME; showPlaylistEntry = false
-                    requestContentFocus()
-                    banner = "$playlistName yüklendi: $itemCount içerik"
-                    showAddDialog = false
+                    playlists.removeAll { it.id == stored.id }; playlists += stored; selectedPlaylistId = stored.id
+                    selectedTab = firstAvailableTab(stored); selectedCategory = null; selectedSeriesTitle = null
+                    selectedSeasonNumber = null; submittedSearch = ""; screen = AppScreen.HOME; showPlaylistEntry = false
+                    requestContentFocus(); banner = "$playlistName yüklendi: $itemCount içerik"; showAddDialog = false
                 },
                 onFailure = { message -> banner = message; showAddDialog = false },
             )
@@ -387,14 +365,9 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         },
         onOpenPermission = { updateInstaller.openInstallPermissionSettings() }, onOpenInstaller = {
             val state = updateState as? AppUpdateUiState.PermissionRequired
-            if (state != null) {
-                if (updateInstaller.canInstallPackages()) {
-                    updateInstaller.openInstaller(state.file)
-                    updateState = AppUpdateUiState.Hidden
-                } else {
-                    updateInstaller.openInstallPermissionSettings()
-                }
-            }
+            if (state != null && updateInstaller.canInstallPackages()) {
+                updateInstaller.openInstaller(state.file); updateState = AppUpdateUiState.Hidden
+            } else if (state != null) updateInstaller.openInstallPermissionSettings()
         }, onDismissUpdate = { updateState = AppUpdateUiState.Hidden },
     )
 }

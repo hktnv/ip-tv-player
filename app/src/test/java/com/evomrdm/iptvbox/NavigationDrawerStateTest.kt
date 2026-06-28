@@ -100,7 +100,13 @@ class NavigationDrawerStateTest {
     @Test
     fun collapsedDrawerFocusExpandsOnlyAfterFreshLeftIntent() {
         assertEquals(true, shouldExpandCollapsedDrawerOnFocus(nowMs = 1_200L, lastUserLeftIntentMs = 1_000L))
-        assertEquals(false, shouldExpandCollapsedDrawerOnFocus(nowMs = 1_600L, lastUserLeftIntentMs = 1_000L))
+        assertEquals(true, shouldExpandCollapsedDrawerOnFocus(nowMs = 2_300L, lastUserLeftIntentMs = 1_000L))
+        assertEquals(false, shouldExpandCollapsedDrawerOnFocus(nowMs = 2_500L, lastUserLeftIntentMs = 1_000L))
         assertEquals(false, shouldExpandCollapsedDrawerOnFocus(nowMs = 1_000L, lastUserLeftIntentMs = 0L))
+    }
+
+    @Test
+    fun firstLeftAfterReturningFromExpandedDrawerStillOpensMenu() {
+        assertEquals(true, shouldExpandCollapsedDrawerOnFocus(nowMs = 5_950L, lastUserLeftIntentMs = 4_700L))
     }
 }
