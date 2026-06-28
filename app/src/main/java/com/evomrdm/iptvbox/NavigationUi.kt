@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -128,9 +129,11 @@ internal fun SideNavigation(
                 }
             }
             .onFocusChanged { state ->
-                if (state.hasFocus && !expanded) {
+                if (state.hasFocus) {
                     focusedIndex = selectedIndex
-                    onExpandedChange(true)
+                    if (!expanded) {
+                        onExpandedChange(true)
+                    }
                 }
             }
             .focusable()
@@ -168,6 +171,7 @@ internal fun SideNavigation(
                     visualFocused = expanded && focusedIndex == index,
                     enabled = entry.enabled,
                     expanded = expanded,
+                    interactive = expanded,
                     onFocused = { focusedIndex = index },
                     onClick = {
                         onExpandedChange(false)
@@ -185,6 +189,7 @@ internal fun SideNavigation(
             visualFocused = expanded && focusedIndex == settingsIndex,
             enabled = true,
             expanded = expanded,
+            interactive = expanded,
             compact = true,
             onFocused = { focusedIndex = settingsIndex },
             onClick = {
@@ -205,24 +210,29 @@ internal fun NavigationButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
+    interactive: Boolean = true,
     visualFocused: Boolean = false,
     focusRequester: FocusRequester? = null,
     onFocused: (() -> Unit)? = null,
 ) {
     var focused by remember { mutableStateOf(false) }
     val showFocus = focused || visualFocused
+    LaunchedEffect(interactive) {
+        if (!interactive) focused = false
+    }
     Surface(
         modifier = modifier
             .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
+            .focusProperties { canFocus = interactive }
             .fillMaxWidth()
             .height(if (compact) 38.dp else 44.dp)
             .zIndex(if (showFocus) 1f else 0f)
             .tvFocusLift(focused = showFocus, scale = 1.035f, liftPx = -4f)
             .onFocusChanged {
-                focused = it.isFocused
-                if (it.isFocused) onFocused?.invoke()
+                focused = interactive && it.isFocused
+                if (interactive && it.isFocused) onFocused?.invoke()
             }
-            .tvClickable(enabled = enabled, onClick = onClick),
+            .then(if (interactive) Modifier.tvClickable(enabled = enabled, onClick = onClick) else Modifier),
         color = when {
             showFocus -> TvFocusPanel
             selected -> TvSelectedPanel

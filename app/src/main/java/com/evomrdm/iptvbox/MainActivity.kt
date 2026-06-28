@@ -51,7 +51,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var selectedPlaylistId by rememberSaveable { mutableStateOf<String?>(null) }
     var screen by rememberSaveable { mutableStateOf(AppScreen.HOME) }
     var showPlaylistEntry by rememberSaveable { mutableStateOf(true) }
-    var sideMenuExpanded by rememberSaveable { mutableStateOf(false) }
+    var drawerState by rememberSaveable { mutableStateOf(NavigationDrawerState.Collapsed) }
     var returnScreen by rememberSaveable { mutableStateOf(AppScreen.CATALOG) }
     var selectedTab by rememberSaveable { mutableStateOf(CatalogTab.LIVE) }
     var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }; var selectedSeriesTitle by rememberSaveable { mutableStateOf<String?>(null) }
@@ -149,7 +149,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     )
 
     fun requestContentFocus() {
-        sideMenuExpanded = false
+        drawerState = NavigationDrawerState.Collapsed
         contentFocusRequest += 1
     }
 
@@ -189,7 +189,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     fun openPlaylistEntry() {
         screen = AppScreen.PLAYLISTS
         showPlaylistEntry = true
-        sideMenuExpanded = false
+        drawerState = NavigationDrawerState.Collapsed
     }
 
     fun navigate(target: AppScreen) {
@@ -337,7 +337,7 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         selectedTab = selectedTab, selectedCategory = selectedCategory, selectedSeriesTitle = selectedSeriesTitle,
         selectedSeasonNumber = selectedSeasonNumber, favoriteIds = favoriteIds, recentIds = recentIds,
         favoriteItems = favoriteItems, recentItems = recentItems, diagnostics = diagnostics, banner = banner,
-        sideMenuExpanded = sideMenuExpanded, contentFocusRequest = contentFocusRequest,
+        sideMenuExpanded = drawerState.expanded, contentFocusRequest = contentFocusRequest,
         contentInitialFocusRequester = contentInitialFocusRequester, catalogRepository = catalogRepository,
         telemetry = telemetry, searchDraft = searchDraft, submittedSearch = submittedSearch,
         onPlayerBack = {
@@ -379,7 +379,8 @@ private fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onSeasonSelected = { selectedSeasonNumber = it }, onToggleFavorite = { toggleFavorite(favoriteIds, it.id) },
         onQueryChange = { searchDraft = it }, onSearch = { submittedSearch = searchDraft.trim() },
         onOpenPlaylistEntry = ::openPlaylistEntry, onNavigate = ::navigate,
-        onSideMenuExpandedChange = { sideMenuExpanded = it }, onDismissBanner = { banner = null },
+        onSideMenuExpandedChange = { drawerState = NavigationDrawerState.fromExpanded(it) },
+        onDismissBanner = { banner = null },
     )
 
     IptvDialogHost(
