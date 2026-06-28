@@ -250,6 +250,7 @@ private fun PlaylistScreenContent(
             onOpenItem = onOpenItem,
             onToggleFavorite = onToggleFavorite,
             onAddPlaylist = onAddPlaylist,
+            onRequestSideMenu = onRequestSideMenu,
             contentPadding = contentPadding,
             initialFocusRequester = contentInitialFocusRequester,
         )

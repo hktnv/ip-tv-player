@@ -59,4 +59,18 @@ class NavigationDrawerStateTest {
             events.fold(initial) { model, event -> model.reduce(event).model }.state,
         )
     }
+
+    @Test
+    fun explicitUserDrawerEntryExpandsEvenAfterNavigationGuard() {
+        val blocked = NavigationDrawerModel(
+            state = NavigationDrawerState.Collapsed,
+            focusExpansion = NavigationDrawerFocusExpansion.BlockedAfterNavigation,
+        )
+
+        assertEquals(1, countDrawerWidthTransitions(blocked, listOf(NavigationDrawerEvent.OpenByUserNavigation)))
+        assertEquals(
+            NavigationDrawerState.ExpandedByUserNavigation,
+            blocked.reduce(NavigationDrawerEvent.OpenByUserNavigation).model.state,
+        )
+    }
 }

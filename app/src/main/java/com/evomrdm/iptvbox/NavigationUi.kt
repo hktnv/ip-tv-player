@@ -101,6 +101,15 @@ internal fun SideNavigation(
                 if (event.type != KeyEventType.KeyDown) {
                     return@onPreviewKeyEvent false
                 }
+                if (!expanded) {
+                    return@onPreviewKeyEvent when (event.key) {
+                        Key.DirectionLeft, Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> {
+                            onDrawerEvent(NavigationDrawerEvent.OpenByUserNavigation)
+                            true
+                        }
+                        else -> false
+                    }
+                }
                 when (event.key) {
                     Key.DirectionUp -> {
                         focusedIndex = previousEnabledMenuIndex(focusedIndex, entries)

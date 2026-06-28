@@ -93,6 +93,7 @@ internal fun SeriesGroupCard(
     group: SeriesGroup,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onFocused: () -> Unit = {},
 ) {
     var focused by remember { mutableStateOf(false) }
     Surface(
@@ -100,7 +101,10 @@ internal fun SeriesGroupCard(
             .fillMaxWidth()
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.03f, liftPx = -5f)
-            .onFocusChanged { focused = it.isFocused }
+            .onFocusChanged {
+                focused = it.isFocused
+                if (it.isFocused) onFocused()
+            }
             .tvClickable(onClick = onClick),
         color = if (focused) TvFocusPanel else IptvColors.Panel,
         shape = RoundedCornerShape(8.dp),
@@ -140,14 +144,19 @@ internal fun SeriesGroupCard(
 internal fun SeasonCard(
     season: SeasonGroup,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onFocused: () -> Unit = {},
 ) {
     var focused by remember { mutableStateOf(false) }
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.02f, liftPx = -4f)
-            .onFocusChanged { focused = it.isFocused }
+            .onFocusChanged {
+                focused = it.isFocused
+                if (it.isFocused) onFocused()
+            }
             .tvClickable(onClick = onClick),
         color = if (focused) TvFocusPanel else IptvColors.Panel,
         shape = RoundedCornerShape(8.dp),
@@ -256,6 +265,7 @@ internal fun ContentCard(
     onOpen: () -> Unit,
     onToggleFavorite: () -> Unit,
     modifier: Modifier = Modifier,
+    onFocused: () -> Unit = {},
 ) {
     var focused by remember { mutableStateOf(false) }
     Surface(
@@ -263,7 +273,10 @@ internal fun ContentCard(
             .fillMaxWidth()
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.025f, liftPx = -5f)
-            .onFocusChanged { focused = it.isFocused }
+            .onFocusChanged {
+                focused = it.isFocused
+                if (it.isFocused) onFocused()
+            }
             .tvClickable(onClick = onOpen),
         color = if (focused) TvFocusPanel else IptvColors.Panel,
         shape = RoundedCornerShape(8.dp),

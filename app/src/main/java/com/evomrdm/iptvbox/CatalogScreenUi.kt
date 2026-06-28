@@ -69,9 +69,15 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -126,6 +132,7 @@ internal fun CatalogScreen(
     onOpenItem: (CatalogItem) -> Unit,
     onToggleFavorite: (CatalogItem) -> Unit,
     onAddPlaylist: () -> Unit,
+    onRequestSideMenu: () -> Unit,
     contentPadding: Dp,
     initialFocusRequester: FocusRequester? = null,
 ) {
@@ -138,6 +145,8 @@ internal fun CatalogScreen(
     val visibleItems = remember(snapshot, selectedTab, selectedCategory) {
         snapshot?.visibleItems(selectedTab, selectedCategory).orEmpty()
     }
+    val fallbackContentFocusRequester = remember { FocusRequester() }
+    val contentFocusRequester = initialFocusRequester ?: fallbackContentFocusRequester
 
     Column(
         modifier = Modifier
@@ -148,6 +157,8 @@ internal fun CatalogScreen(
             categories = categories,
             selected = selectedCategory,
             onSelected = onCategorySelected,
+            contentFocusRequester = contentFocusRequester,
+            onRequestSideMenu = onRequestSideMenu,
             modifier = Modifier.padding(top = 16.dp),
         )
         if (playlist.warnings.isNotEmpty()) {
@@ -170,6 +181,9 @@ internal fun CatalogScreen(
                 onOpenItem = onOpenItem,
                 onToggleFavorite = onToggleFavorite,
                 modifier = Modifier.weight(1f),
+                requestInitialFocus = initialFocusRequester != null,
+                initialFocusRequester = contentFocusRequester,
+                onRequestSideMenu = onRequestSideMenu,
             )
         } else if (visibleItems.isEmpty()) {
             EmptyState(
@@ -185,9 +199,10 @@ internal fun CatalogScreen(
                 favoriteIds = favoriteIds,
                 onOpenItem = onOpenItem,
                 onToggleFavorite = onToggleFavorite,
+                onRequestSideMenu = onRequestSideMenu,
                 modifier = Modifier.weight(1f),
                 requestInitialFocus = initialFocusRequester != null,
-                initialFocusRequester = initialFocusRequester,
+                initialFocusRequester = contentFocusRequester,
             )
         }
     }
@@ -278,15 +293,34 @@ internal fun CategoryStrip(
     categories: List<String>,
     selected: String?,
     onSelected: (String?) -> Unit,
+    contentFocusRequester: FocusRequester,
+    onRequestSideMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val rowState = rememberLazyListState()
+    val selectedIndex = if (selected == null) 0 else categories.indexOf(selected).takeIf { it >= 0 }?.plus(1) ?: 0
+    var focusedIndex by remember(categories, selected) { mutableStateOf(selectedIndex) }
     LaunchedEffect(categories, selected) {
-        val index = if (selected == null) 0 else categories.indexOf(selected).takeIf { it >= 0 }?.plus(1) ?: 0
-        rowState.scrollToItem(index)
+        rowState.scrollToItem(selectedIndex)
     }
     LazyRow(
-        modifier = modifier.padding(bottom = 6.dp),
+        modifier = modifier
+            .padding(bottom = 6.dp)
+            .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                when (event.key) {
+                    Key.DirectionLeft -> {
+                        if (focusedIndex <= 0) {
+                            onRequestSideMenu()
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    Key.DirectionDown -> runCatching { contentFocusRequester.requestFocus() }.getOrDefault(false)
+                    else -> false
+                }
+            },
         state = rowState,
         horizontalArrangement = Arrangement.spacedBy(7.dp),
         contentPadding = PaddingValues(horizontal = 2.dp),
@@ -296,13 +330,16 @@ internal fun CategoryStrip(
                 label = "Tüm kategoriler",
                 selected = selected == null,
                 onClick = { onSelected(null) },
+                onFocused = { focusedIndex = 0 },
             )
         }
         items(categories, key = { it }) { category ->
+            val categoryIndex = categories.indexOf(category) + 1
             CategoryButton(
                 label = category,
                 selected = selected == category,
                 onClick = { onSelected(category) },
+                onFocused = { focusedIndex = categoryIndex },
             )
         }
     }
@@ -313,6 +350,7 @@ internal fun CategoryButton(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
+    onFocused: () -> Unit = {},
 ) {
     var focused by remember { mutableStateOf(false) }
     Surface(
@@ -320,11 +358,14 @@ internal fun CategoryButton(
             .height(34.dp)
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.025f, liftPx = -3f)
-            .onFocusChanged { focused = it.isFocused }
+            .onFocusChanged {
+                focused = it.isFocused
+                if (it.isFocused) onFocused()
+            }
             .tvClickable(onClick = onClick),
         color = when {
             focused -> TvFocusPanel
-            selected -> TvSelectedPanel
+            selected -> Color(0xFF13211D)
             else -> Color(0xFF101720)
         },
         shape = RoundedCornerShape(8.dp),
@@ -332,7 +373,7 @@ internal fun CategoryButton(
             1.dp,
             when {
                 focused -> TvFocusBorder
-                selected -> IptvColors.Accent
+                selected -> Color(0xFF3A4642)
                 else -> TvRestingBorder
             },
         ),
