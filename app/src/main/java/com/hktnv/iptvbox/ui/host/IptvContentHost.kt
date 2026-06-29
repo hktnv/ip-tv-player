@@ -30,6 +30,7 @@ import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.LocalPerformanceMode
 import com.hktnv.iptvbox.navigation.NavigationDrawerEvent
+import com.hktnv.iptvbox.navigation.NavigationDrawerFocusExpansion
 import com.hktnv.iptvbox.navigation.PlaylistContentScaffold
 import com.hktnv.iptvbox.player.PlayerScreen
 import com.hktnv.iptvbox.telemetry.AppPerformanceTelemetry
@@ -63,6 +64,7 @@ internal fun IptvContentHost(
     diagnostics: PerformanceDiagnostics,
     banner: String?,
     sideMenuExpanded: Boolean,
+    drawerFocusExpansion: NavigationDrawerFocusExpansion,
     contentFocusRequest: Int,
     contentInitialFocusRequester: FocusRequester,
     catalogRepository: AppCatalogRepository,
@@ -189,6 +191,7 @@ internal fun IptvContentHost(
                     diagnostics = diagnostics,
                     banner = banner,
                     sideMenuExpanded = sideMenuExpanded,
+                    drawerFocusExpansion = drawerFocusExpansion,
                     contentInitialFocusRequester = contentInitialFocusRequester,
                     catalogRepository = catalogRepository,
                     telemetry = telemetry,

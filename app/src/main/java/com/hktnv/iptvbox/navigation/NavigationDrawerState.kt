@@ -76,10 +76,28 @@ internal fun countDrawerWidthTransitions(
     return count
 }
 
+internal fun consumeUserLeftIntentAfterDrawerEvent(
+    lastUserLeftIntentMs: Long,
+    event: NavigationDrawerEvent,
+): Long {
+    return when (event) {
+        NavigationDrawerEvent.OpenByUserNavigation,
+        NavigationDrawerEvent.CollapseForNavigation,
+        NavigationDrawerEvent.CollapseForContentFocus,
+        -> 0L
+        NavigationDrawerEvent.DrawerFocused,
+        NavigationDrawerEvent.ContentFocusRestored,
+        -> lastUserLeftIntentMs
+    }
+}
+
 internal fun shouldExpandCollapsedDrawerOnFocus(
     nowMs: Long,
     lastUserLeftIntentMs: Long,
+    focusExpansion: NavigationDrawerFocusExpansion = NavigationDrawerFocusExpansion.Enabled,
     thresholdMs: Long = 1_400L,
 ): Boolean {
-    return lastUserLeftIntentMs > 0L && nowMs - lastUserLeftIntentMs in 0L..thresholdMs
+    return focusExpansion == NavigationDrawerFocusExpansion.Enabled &&
+        lastUserLeftIntentMs > 0L &&
+        nowMs - lastUserLeftIntentMs in 0L..thresholdMs
 }

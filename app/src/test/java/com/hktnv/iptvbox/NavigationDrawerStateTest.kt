@@ -3,6 +3,7 @@ package com.hktnv.iptvbox
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import com.hktnv.iptvbox.navigation.countDrawerWidthTransitions
+import com.hktnv.iptvbox.navigation.consumeUserLeftIntentAfterDrawerEvent
 import com.hktnv.iptvbox.navigation.NavigationDrawerEvent
 import com.hktnv.iptvbox.navigation.NavigationDrawerFocusExpansion
 import com.hktnv.iptvbox.navigation.NavigationDrawerModel
@@ -72,6 +73,41 @@ class NavigationDrawerStateTest {
     }
 
     @Test
+    fun menuNavigationConsumesStaleLeftIntentAndCannotFlickerOpen() {
+        val initial = NavigationDrawerModel(
+            state = NavigationDrawerState.ExpandedByUserNavigation,
+        )
+        var staleLeftIntentAt = 1_000L
+        val events = mutableListOf(
+            NavigationDrawerEvent.CollapseForNavigation,
+            NavigationDrawerEvent.CollapseForContentFocus,
+            NavigationDrawerEvent.ContentFocusRestored,
+        )
+        events.forEach { event ->
+            staleLeftIntentAt = consumeUserLeftIntentAfterDrawerEvent(staleLeftIntentAt, event)
+        }
+        val modelAfterFocusRestore = events.fold(initial) { model, event -> model.reduce(event).model }
+        val focusEvent = if (shouldExpandCollapsedDrawerOnFocus(
+                nowMs = 1_300L,
+                lastUserLeftIntentMs = staleLeftIntentAt,
+                focusExpansion = modelAfterFocusRestore.focusExpansion,
+            )
+        ) {
+            NavigationDrawerEvent.OpenByUserNavigation
+        } else {
+            NavigationDrawerEvent.DrawerFocused
+        }
+        val fullSequence = events + focusEvent
+
+        assertEquals(0L, staleLeftIntentAt)
+        assertEquals(1, countDrawerWidthTransitions(initial, fullSequence))
+        assertEquals(
+            NavigationDrawerState.Collapsed,
+            fullSequence.fold(initial) { model, event -> model.reduce(event).model }.state,
+        )
+    }
+
+    @Test
     fun explicitUserDrawerEntryExpandsEvenAfterNavigationGuard() {
         val blocked = NavigationDrawerModel(
             state = NavigationDrawerState.Collapsed,
@@ -110,6 +146,14 @@ class NavigationDrawerStateTest {
         assertEquals(true, shouldExpandCollapsedDrawerOnFocus(nowMs = 2_300L, lastUserLeftIntentMs = 1_000L))
         assertEquals(false, shouldExpandCollapsedDrawerOnFocus(nowMs = 2_500L, lastUserLeftIntentMs = 1_000L))
         assertEquals(false, shouldExpandCollapsedDrawerOnFocus(nowMs = 1_000L, lastUserLeftIntentMs = 0L))
+        assertEquals(
+            false,
+            shouldExpandCollapsedDrawerOnFocus(
+                nowMs = 1_200L,
+                lastUserLeftIntentMs = 1_000L,
+                focusExpansion = NavigationDrawerFocusExpansion.BlockedAfterNavigation,
+            ),
+        )
     }
 
     @Test

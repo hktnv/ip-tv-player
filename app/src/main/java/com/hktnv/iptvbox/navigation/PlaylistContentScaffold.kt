@@ -61,6 +61,7 @@ internal fun PlaylistContentScaffold(
     diagnostics: PerformanceDiagnostics,
     banner: String?,
     sideMenuExpanded: Boolean,
+    drawerFocusExpansion: NavigationDrawerFocusExpansion,
     contentInitialFocusRequester: FocusRequester,
     catalogRepository: AppCatalogRepository,
     telemetry: AppPerformanceTelemetry,
@@ -91,6 +92,13 @@ internal fun PlaylistContentScaffold(
     onDismissBanner: () -> Unit,
 ) {
     var lastCollapsedMenuIntentAt by remember { mutableLongStateOf(0L) }
+    fun handleDrawerEvent(event: NavigationDrawerEvent) {
+        lastCollapsedMenuIntentAt = consumeUserLeftIntentAfterDrawerEvent(
+            lastUserLeftIntentMs = lastCollapsedMenuIntentAt,
+            event = event,
+        )
+        onDrawerEvent(event)
+    }
     Box(
         Modifier
             .fillMaxSize()
@@ -158,7 +166,7 @@ internal fun PlaylistContentScaffold(
                     onQueryChange = onQueryChange,
                     onSearch = onSearch,
                     onOpenPlaylistEntry = onOpenPlaylistEntry,
-                    onRequestSideMenu = { onDrawerEvent(NavigationDrawerEvent.OpenByUserNavigation) },
+                    onRequestSideMenu = { handleDrawerEvent(NavigationDrawerEvent.OpenByUserNavigation) },
                 )
             }
             if (!wide) {
@@ -179,7 +187,8 @@ internal fun PlaylistContentScaffold(
                 hasPlaylist = selectedPlaylist != null,
                 stats = selectedPlaylist?.stats(),
                 expanded = sideMenuExpanded,
-                onDrawerEvent = onDrawerEvent,
+                focusExpansion = drawerFocusExpansion,
+                onDrawerEvent = ::handleDrawerEvent,
                 onNavigate = onNavigate,
                 onOpenTab = onOpenCatalogTab,
                 lastCollapsedMenuIntentAt = lastCollapsedMenuIntentAt,

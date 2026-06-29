@@ -299,7 +299,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         currentHeaders = currentHeaders, playlists = playlists, catalogSnapshot = catalogSnapshot, catalogIndexLoading = catalogIndexLoading,
         selectedTab = selectedTab, selectedCategory = selectedCategory, selectedSeriesTitle = selectedSeriesTitle,
         selectedSeasonNumber = selectedSeasonNumber, favoriteIds = favoriteIds, recentIds = recentIds, favoriteItems = favoriteItems,
-        recentItems = recentItems, diagnostics = diagnostics, banner = banner, sideMenuExpanded = drawerModel.state.expanded,
+        recentItems = recentItems, diagnostics = diagnostics, banner = banner, sideMenuExpanded = drawerModel.state.expanded, drawerFocusExpansion = drawerModel.focusExpansion,
         contentFocusRequest = contentFocusRequest, contentInitialFocusRequester = contentInitialFocusRequester,
         catalogRepository = catalogRepository, telemetry = telemetry, searchDraft = searchDraft, submittedSearch = submittedSearch,
         onPlayerBack = { screen = returnScreen; currentItem = null },
