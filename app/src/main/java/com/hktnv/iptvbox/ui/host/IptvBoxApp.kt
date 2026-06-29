@@ -71,7 +71,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var screen by rememberSaveable { mutableStateOf(AppScreen.HOME) }; var showPlaylistEntry by rememberSaveable { mutableStateOf(true) }
     var drawerState by rememberSaveable { mutableStateOf(NavigationDrawerState.Collapsed) }; var drawerFocusExpansion by rememberSaveable { mutableStateOf(NavigationDrawerFocusExpansion.Enabled) }
     var returnScreen by rememberSaveable { mutableStateOf(AppScreen.CATALOG) }; var selectedTab by rememberSaveable { mutableStateOf(CatalogTab.LIVE) }
-    var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }; var selectedSeriesTitle by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }; var showCatalogCategoryLanding by rememberSaveable { mutableStateOf(true) }; var selectedSeriesTitle by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedSeasonNumber by rememberSaveable { mutableStateOf<Int?>(null) }; var searchDraft by rememberSaveable { mutableStateOf("") }
     var submittedSearch by rememberSaveable { mutableStateOf("") }; var showAddDialog by rememberSaveable { mutableStateOf(false) }; var showExitDialog by rememberSaveable { mutableStateOf(false) }
     var renamingPlaylist by remember { mutableStateOf<LoadedPlaylist?>(null) }; var banner by rememberSaveable { mutableStateOf<String?>(null) }
@@ -124,9 +124,10 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val playlistSignature = catalogSignature(playlists)
     val favoriteSignature = favoriteIds.joinToString("|")
     val recentSignature = recentIds.joinToString("|")
+    val selectedContentCategory = if (showCatalogCategoryLanding) null else selectedCategory
     CatalogSnapshotEffect(
         selectedPlaylist = selectedPlaylist, showPlaylistEntry = showPlaylistEntry, screen = screen, selectedTab = selectedTab,
-        selectedCategory = selectedCategory, selectedSeriesTitle = selectedSeriesTitle, selectedSeasonNumber = selectedSeasonNumber,
+        selectedCategory = selectedContentCategory, selectedSeriesTitle = selectedSeriesTitle, selectedSeasonNumber = selectedSeasonNumber,
         favoriteIds = favoriteIds, recentIds = recentIds, favoriteSignature = favoriteSignature, recentSignature = recentSignature, performanceMode = performanceMode,
         catalogStore = catalogStore, catalogRepository = catalogRepository, telemetry = telemetry,
         onSnapshotChange = { catalogSnapshot = it },
@@ -154,12 +155,9 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         contentFocusRequest += 1
     }
     fun openCatalogRoot(tab: CatalogTab = selectedPlaylist?.let(::firstAvailableTab) ?: CatalogTab.LIVE) {
-        selectedTab = tab
-        selectedCategory = null
-        selectedSeriesTitle = null
-        selectedSeasonNumber = null
-        screen = AppScreen.CATALOG
-        showPlaylistEntry = false
+        selectedTab = tab; selectedCategory = null; showCatalogCategoryLanding = true
+        selectedSeriesTitle = null; selectedSeasonNumber = null
+        screen = AppScreen.CATALOG; showPlaylistEntry = false
         requestContentFocus()
     }
     fun openHomeRailScreen(target: AppScreen) {
@@ -172,15 +170,10 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     }
     fun openPlaylistCatalog(playlistId: String) {
         val playlist = playlists.firstOrNull { it.id == playlistId }
-        selectedPlaylistId = playlistId
-        selectedTab = playlist?.let(::firstAvailableTab) ?: CatalogTab.LIVE
-        selectedCategory = null
-        selectedSeriesTitle = null
-        selectedSeasonNumber = null
-        submittedSearch = ""
-        searchDraft = ""
-        screen = AppScreen.HOME
-        showPlaylistEntry = false
+        selectedPlaylistId = playlistId; selectedTab = playlist?.let(::firstAvailableTab) ?: CatalogTab.LIVE
+        selectedCategory = null; showCatalogCategoryLanding = true
+        selectedSeriesTitle = null; selectedSeasonNumber = null
+        submittedSearch = ""; searchDraft = ""; screen = AppScreen.HOME; showPlaylistEntry = false
         requestContentFocus()
     }
     fun openPlaylistEntry() {
@@ -274,6 +267,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             playlists.clear()
             favoriteIds.clear(); recentIds.clear()
             selectedPlaylistId = null; selectedCategory = null
+            showCatalogCategoryLanding = true
             selectedSeriesTitle = null; selectedSeasonNumber = null
             submittedSearch = ""; searchDraft = ""
             screen = AppScreen.PLAYLISTS; showPlaylistEntry = true
@@ -286,24 +280,30 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     }
     fun openSeriesCatalog(title: String) {
         selectedTab = CatalogTab.SERIES; selectedCategory = null; selectedSeriesTitle = title
-        selectedSeasonNumber = null; screen = AppScreen.CATALOG; showPlaylistEntry = false
+        selectedSeasonNumber = null; showCatalogCategoryLanding = false; screen = AppScreen.CATALOG; showPlaylistEntry = false
         requestContentFocus()
     }
-    fun resetCatalogNavigation(tab: CatalogTab? = null, category: String? = selectedCategory) {
-        tab?.let { selectedTab = it }
-        selectedCategory = category; selectedSeriesTitle = null; selectedSeasonNumber = null
+    fun selectCatalogTab(tab: CatalogTab) {
+        selectedTab = tab; selectedCategory = null; showCatalogCategoryLanding = true; selectedSeriesTitle = null; selectedSeasonNumber = null; requestContentFocus()
+    }
+    fun selectCatalogCategory(category: String?) {
+        selectedCategory = category; showCatalogCategoryLanding = false; selectedSeriesTitle = null; selectedSeasonNumber = null; requestContentFocus()
+    }
+    fun showCatalogCategories() {
+        selectedSeriesTitle = null; selectedSeasonNumber = null; showCatalogCategoryLanding = true; requestContentFocus()
     }
     IptvContentHost(
         performanceMode = performanceMode, restoredApplied = restoredApplied, showRecovery = showRecovery, bootError = bootError,
         selectedPlaylist = selectedPlaylist, screen = screen, showPlaylistEntry = showPlaylistEntry, currentItem = currentItem,
         currentHeaders = currentHeaders, playlists = playlists, catalogSnapshot = catalogSnapshot, catalogIndexLoading = catalogIndexLoading,
-        selectedTab = selectedTab, selectedCategory = selectedCategory, selectedSeriesTitle = selectedSeriesTitle,
+        selectedTab = selectedTab, selectedCategory = selectedCategory, showCatalogCategoryLanding = showCatalogCategoryLanding, selectedSeriesTitle = selectedSeriesTitle,
         selectedSeasonNumber = selectedSeasonNumber, favoriteIds = favoriteIds, recentIds = recentIds, favoriteItems = favoriteItems,
         recentItems = recentItems, diagnostics = diagnostics, banner = banner, sideMenuExpanded = drawerModel.state.expanded, drawerFocusExpansion = drawerModel.focusExpansion,
         contentFocusRequest = contentFocusRequest, contentInitialFocusRequester = contentInitialFocusRequester,
         catalogRepository = catalogRepository, telemetry = telemetry, searchDraft = searchDraft, submittedSearch = submittedSearch,
         onPlayerBack = { screen = returnScreen; currentItem = null },
         onSeriesBack = { if (selectedSeasonNumber != null) selectedSeasonNumber = null else selectedSeriesTitle = null },
+        onShowCatalogCategories = ::showCatalogCategories,
         onRecoveryContinue = { showRecovery = false; bootError = null },
         onRecoveryReload = { showRecovery = false; bootError = null; selectedPlaylist?.let(::reloadPlaylist) ?: run { showAddDialog = true } },
         onRecoveryRemove = ::clearBrokenState,
@@ -313,8 +313,8 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onOpenCatalogTab = { openCatalogRoot(it) }, onOpenLatest = { openHomeRailScreen(AppScreen.LATEST) },
         onOpenFavorites = { openHomeRailScreen(AppScreen.FAVORITES) }, onOpenRecent = { openHomeRailScreen(AppScreen.RECENT) },
         onOpenSeries = ::openSeriesCatalog, onOpenItem = ::openItem, onReloadPlaylist = ::reloadPlaylist,
-        onRenamePlaylist = { renamingPlaylist = it }, onTabSelected = { resetCatalogNavigation(tab = it, category = null) },
-        onCategorySelected = { resetCatalogNavigation(category = it) }, onSeriesSelected = { selectedSeriesTitle = it; selectedSeasonNumber = null },
+        onRenamePlaylist = { renamingPlaylist = it }, onTabSelected = ::selectCatalogTab,
+        onCategorySelected = ::selectCatalogCategory, onSeriesSelected = { selectedSeriesTitle = it; selectedSeasonNumber = null },
         onSeasonSelected = { selectedSeasonNumber = it }, onShowItemOptions = { contentOptionsItem = it },
         onQueryChange = { searchDraft = it }, onSearch = { submittedSearch = searchDraft.trim() },
         onOpenPlaylistEntry = ::openPlaylistEntry, onNavigate = ::navigate, onDrawerEvent = ::applyDrawerEvent,
@@ -329,7 +329,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             scope.saveLoadedPlaylistAction(draft, result, telemetry, catalogStore, onSaving = { banner = "Oynatma listesi kaydediliyor" },
                 onStored = { stored, itemCount, playlistName ->
                     playlists.removeAll { it.id == stored.id }; playlists += stored; selectedPlaylistId = stored.id
-                    selectedTab = firstAvailableTab(stored); selectedCategory = null; selectedSeriesTitle = null; selectedSeasonNumber = null
+                    selectedTab = firstAvailableTab(stored); selectedCategory = null; showCatalogCategoryLanding = true; selectedSeriesTitle = null; selectedSeasonNumber = null
                     submittedSearch = ""; screen = AppScreen.HOME; showPlaylistEntry = false; requestContentFocus()
                     banner = "$playlistName yüklendi: $itemCount içerik"; showAddDialog = false
                 }, onFailure = { message -> banner = message; showAddDialog = false })

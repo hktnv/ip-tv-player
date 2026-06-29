@@ -32,6 +32,8 @@ import com.hktnv.iptvbox.model.LocalPerformanceMode
 import com.hktnv.iptvbox.navigation.NavigationDrawerEvent
 import com.hktnv.iptvbox.navigation.NavigationDrawerFocusExpansion
 import com.hktnv.iptvbox.navigation.PlaylistContentScaffold
+import com.hktnv.iptvbox.navigation.shouldHandleSeriesBack
+import com.hktnv.iptvbox.navigation.shouldReturnToCatalogCategories
 import com.hktnv.iptvbox.player.PlayerScreen
 import com.hktnv.iptvbox.telemetry.AppPerformanceTelemetry
 import com.hktnv.iptvbox.telemetry.PerformanceDiagnostics
@@ -55,6 +57,7 @@ internal fun IptvContentHost(
     catalogIndexLoading: Boolean,
     selectedTab: CatalogTab,
     selectedCategory: String?,
+    showCatalogCategoryLanding: Boolean,
     selectedSeriesTitle: String?,
     selectedSeasonNumber: Int?,
     favoriteIds: List<String>,
@@ -73,6 +76,7 @@ internal fun IptvContentHost(
     submittedSearch: String,
     onPlayerBack: () -> Unit,
     onSeriesBack: () -> Unit,
+    onShowCatalogCategories: () -> Unit,
     onRecoveryContinue: () -> Unit,
     onRecoveryReload: () -> Unit,
     onRecoveryRemove: () -> Unit,
@@ -107,11 +111,25 @@ internal fun IptvContentHost(
             onPlayerBack()
         }
         BackHandler(
-            screen == AppScreen.CATALOG &&
-                selectedTab == CatalogTab.SERIES &&
-                (selectedSeasonNumber != null || selectedSeriesTitle != null),
+            shouldHandleSeriesBack(
+                screen = screen,
+                selectedTab = selectedTab,
+                showCategoryLanding = showCatalogCategoryLanding,
+                selectedSeriesTitle = selectedSeriesTitle,
+                selectedSeasonNumber = selectedSeasonNumber,
+            ),
         ) {
             onSeriesBack()
+        }
+        BackHandler(
+            shouldReturnToCatalogCategories(
+                screen = screen,
+                showCategoryLanding = showCatalogCategoryLanding,
+                selectedSeriesTitle = selectedSeriesTitle,
+                selectedSeasonNumber = selectedSeasonNumber,
+            ),
+        ) {
+            onShowCatalogCategories()
         }
         BoxWithConstraints(
             modifier = Modifier
@@ -125,9 +143,19 @@ internal fun IptvContentHost(
                 enabled = wide &&
                     !showPlaylistEntry &&
                     screen != AppScreen.PLAYER &&
-                    !(screen == AppScreen.CATALOG &&
-                        selectedTab == CatalogTab.SERIES &&
-                        (selectedSeasonNumber != null || selectedSeriesTitle != null)),
+                    !shouldHandleSeriesBack(
+                        screen = screen,
+                        selectedTab = selectedTab,
+                        showCategoryLanding = showCatalogCategoryLanding,
+                        selectedSeriesTitle = selectedSeriesTitle,
+                        selectedSeasonNumber = selectedSeasonNumber,
+                    ) &&
+                    !shouldReturnToCatalogCategories(
+                        screen = screen,
+                        showCategoryLanding = showCatalogCategoryLanding,
+                        selectedSeriesTitle = selectedSeriesTitle,
+                        selectedSeasonNumber = selectedSeasonNumber,
+                    ),
             ) {
                 if (sideMenuExpanded) {
                     onRequestExitConfirmation()
@@ -182,6 +210,7 @@ internal fun IptvContentHost(
                     catalogIndexLoading = catalogIndexLoading,
                     selectedTab = selectedTab,
                     selectedCategory = selectedCategory,
+                    showCatalogCategoryLanding = showCatalogCategoryLanding,
                     selectedSeriesTitle = selectedSeriesTitle,
                     selectedSeasonNumber = selectedSeasonNumber,
                     favoriteIds = favoriteIds,

@@ -329,37 +329,3 @@ class RemotePlaylistLoader(
 
     private fun elapsedMs(startedNs: Long): Long = (System.nanoTime() - startedNs) / 1_000_000L
 }
-
-private data class TextFetchResult(
-    val text: String,
-    val finalUrl: String,
-    val warnings: List<String> = emptyList(),
-    val urlNormalizeMs: Long = 0L,
-    val connectionOpenMs: Long = 0L,
-    val downloadMs: Long = 0L,
-)
-
-private data class FetchPayload(
-    val text: String,
-    val connectionOpenMs: Long,
-    val downloadMs: Long,
-)
-
-private data class M3uFetchResult(
-    val parsed: ParsedM3uPlaylist,
-    val warnings: List<String> = emptyList(),
-    val urlNormalizeMs: Long = 0L,
-    val connectionOpenMs: Long = 0L,
-    val downloadMs: Long = 0L,
-)
-
-private data class M3uFetchPayload(
-    val parsed: ParsedM3uPlaylist,
-    val connectionOpenMs: Long,
-    val downloadMs: Long,
-)
-
-private class TimedFetchException(
-    cause: Throwable,
-    val connectionOpenMs: Long,
-) : IOException(cause)

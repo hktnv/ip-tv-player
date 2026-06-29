@@ -65,6 +65,55 @@ class M3uPlaylistParserTest {
     }
 
     @Test
+    fun keepsLiveSeriesNamedChannelsOutOfSeriesCatalog() {
+        val playlist = M3uPlaylistParser().parse(
+            sourceId = "source-1",
+            text = """
+                #EXTM3U
+                #EXTINF:-1 tvg-name="TR: BEIN SERIES 1 HD" group-title="Türk Sinema",TR: BEIN SERIES 1 HD
+                http://example.com/live/user/pass/channel.ts
+            """.trimIndent(),
+        )
+
+        val item = playlist.items.first()
+        assertEquals(ContentKind.LIVE_CHANNEL, item.kind)
+        assertEquals(null, item.seriesTitle)
+    }
+
+    @Test
+    fun keepsBeinSportsChannelsOutOfMovieCatalog() {
+        val playlist = M3uPlaylistParser().parse(
+            sourceId = "source-1",
+            text = """
+                #EXTM3U
+                #EXTINF:-1 tvg-name="TR:BEINSPORTS 1 HQ (VODAFONE-TURKCELL-TURKIYE)" group-title="Türk Spor",TR:BEINSPORTS 1 HQ (VODAFONE-TURKCELL-TURKIYE)
+                http://example.com/live/user/pass/beinsports-1.ts
+            """.trimIndent(),
+        )
+
+        val item = playlist.items.first()
+        assertEquals(ContentKind.LIVE_CHANNEL, item.kind)
+        assertEquals("Türk Spor", item.category)
+        assertEquals(null, item.seriesTitle)
+    }
+
+    @Test
+    fun keepsMovieTitlesWithEpisodeWordsOutOfSeriesCatalog() {
+        val playlist = M3uPlaylistParser().parse(
+            sourceId = "source-1",
+            text = """
+                #EXTM3U
+                #EXTINF:-1 tvg-name="DUNE: ÇÖL GEZEGENİ BÖLÜM İKİ 2024" group-title="Türk Bilim Kurgu & Fantastik",DUNE: ÇÖL GEZEGENİ BÖLÜM İKİ 2024
+                http://example.com/movie/user/pass/dune-part-two.mp4
+            """.trimIndent(),
+        )
+
+        val item = playlist.items.first()
+        assertEquals(ContentKind.MOVIE, item.kind)
+        assertEquals(null, item.seriesTitle)
+    }
+
+    @Test
     fun parsesRealLargePlaylistWhenProvided() {
         val path = System.getProperty("realM3uPath").orEmpty()
             .ifBlank { System.getenv("REAL_M3U_PATH").orEmpty() }

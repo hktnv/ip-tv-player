@@ -5,8 +5,10 @@ import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentKind
 import com.hktnv.iptvbox.data.catalog.CatalogStore
 import com.hktnv.iptvbox.data.catalog.categories
+import com.hktnv.iptvbox.data.catalog.categoryCounts
 import com.hktnv.iptvbox.data.catalog.episodes
 import com.hktnv.iptvbox.data.catalog.seasons
+import com.hktnv.iptvbox.data.catalog.seriesCategoryCounts
 import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.PlaylistStats
@@ -30,7 +32,20 @@ internal class AppCatalogRepository(
         val store = catalogStore ?: return buildSnapshot(playlist)
         if (playlist.items.isNotEmpty()) return buildSnapshot(playlist)
 
-        val categories = CatalogTab.entries.associateWith { store.categories(playlist.id, it) }
+        val categoryCounts = CatalogTab.entries.associateWith { tab ->
+            if (tab == CatalogTab.SERIES) {
+                store.seriesCategoryCounts(playlist.id)
+            } else {
+                store.categoryCounts(playlist.id, tab)
+            }
+        }
+        val categories = CatalogTab.entries.associateWith { tab ->
+            if (tab == CatalogTab.SERIES) {
+                categoryCounts.getValue(tab).keys.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it })
+            } else {
+                store.categories(playlist.id, tab)
+            }
+        }
         val currentItems = if (selectedTab == CatalogTab.SERIES) {
             emptyList()
         } else {
@@ -83,6 +98,7 @@ internal class AppCatalogRepository(
             stats = playlist.cachedStats(),
             tabItems = tabItems,
             categoriesByTab = categories,
+            categoryCountsByTab = categoryCounts,
             itemsByCategory = itemsByCategory,
             seriesGroupsAll = seriesGroups,
             episodesBySeries = episodesBySeries,
@@ -145,6 +161,12 @@ internal class AppCatalogRepository(
             )
         }.sortedWith(compareBy<SeriesGroup> { it.firstOrder }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.title })
 
+        val seriesCategoryCounts = seriesGroups
+            .mapNotNull { group -> group.category?.takeIf(String::isNotBlank) }
+            .groupingBy { it }
+            .eachCount()
+        val itemCategoryCounts = byCategory.mapValues { (_, map) -> map.mapValues { it.value.size } }
+        val categoryCounts = itemCategoryCounts + mapOf(CatalogTab.SERIES to seriesCategoryCounts)
         val episodesBySeries = seriesBuckets.mapValues { (_, episodes) ->
             episodes.sortedWith(compareBy<CatalogItem> { it.seasonNumber ?: 1 }.thenBy { it.episodeNumber ?: it.providerOrder })
         }
@@ -170,6 +192,7 @@ internal class AppCatalogRepository(
             stats = PlaylistStats(live = liveCount, movies = movieCount, series = seriesGroups.size),
             tabItems = tabItems.mapValues { it.value.toList() },
             categoriesByTab = categories.mapValues { it.value.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { value -> value }) },
+            categoryCountsByTab = categoryCounts,
             itemsByCategory = byCategory.mapValues { (_, map) -> map.mapValues { it.value.toList() } },
             seriesGroupsAll = seriesGroups,
             episodesBySeries = episodesBySeries,
@@ -218,6 +241,7 @@ internal data class CatalogSnapshot(
     val stats: PlaylistStats,
     val tabItems: Map<CatalogTab, List<CatalogItem>>,
     val categoriesByTab: Map<CatalogTab, List<String>>,
+    val categoryCountsByTab: Map<CatalogTab, Map<String, Int>>,
     val itemsByCategory: Map<CatalogTab, Map<String, List<CatalogItem>>>,
     val seriesGroupsAll: List<SeriesGroup>,
     val episodesBySeries: Map<String, List<CatalogItem>>,
@@ -229,6 +253,10 @@ internal data class CatalogSnapshot(
     fun items(tab: CatalogTab): List<CatalogItem> = tabItems[tab].orEmpty()
 
     fun categories(tab: CatalogTab): List<String> = categoriesByTab[tab].orEmpty()
+
+    fun categoryCount(tab: CatalogTab, category: String?): Int {
+        return if (category == null) stats.count(tab) else categoryCountsByTab[tab]?.get(category).orEmptyCount()
+    }
 
     fun visibleItems(tab: CatalogTab, category: String?): List<CatalogItem> {
         return if (category == null) items(tab) else itemsByCategory[tab]?.get(category).orEmpty()
@@ -248,6 +276,8 @@ internal data class CatalogSnapshot(
         return if (seasonNumber == null) episodes else episodes.filter { (it.seasonNumber ?: 1) == seasonNumber }
     }
 }
+
+private fun Int?.orEmptyCount(): Int = this ?: 0
 
 private fun CatalogItem.searchTextForIndex(): String {
     return SearchNormalizer.normalize(

@@ -9,7 +9,11 @@ import com.hktnv.iptvbox.navigation.NavigationDrawerFocusExpansion
 import com.hktnv.iptvbox.navigation.NavigationDrawerModel
 import com.hktnv.iptvbox.navigation.NavigationDrawerState
 import com.hktnv.iptvbox.navigation.reduce
+import com.hktnv.iptvbox.navigation.shouldHandleSeriesBack
 import com.hktnv.iptvbox.navigation.shouldExpandCollapsedDrawerOnFocus
+import com.hktnv.iptvbox.navigation.shouldReturnToCatalogCategories
+import com.hktnv.iptvbox.model.AppScreen
+import com.hktnv.iptvbox.model.CatalogTab
 
 class NavigationDrawerStateTest {
     @Test
@@ -159,5 +163,51 @@ class NavigationDrawerStateTest {
     @Test
     fun firstLeftAfterReturningFromExpandedDrawerStillOpensMenu() {
         assertEquals(true, shouldExpandCollapsedDrawerOnFocus(nowMs = 5_950L, lastUserLeftIntentMs = 4_700L))
+    }
+
+    @Test
+    fun catalogContentBackReturnsToCategoriesBeforeDrawer() {
+        assertEquals(
+            true,
+            shouldReturnToCatalogCategories(
+                screen = AppScreen.CATALOG,
+                showCategoryLanding = false,
+                selectedSeriesTitle = null,
+                selectedSeasonNumber = null,
+            ),
+        )
+        assertEquals(
+            false,
+            shouldReturnToCatalogCategories(
+                screen = AppScreen.CATALOG,
+                showCategoryLanding = true,
+                selectedSeriesTitle = null,
+                selectedSeasonNumber = null,
+            ),
+        )
+    }
+
+    @Test
+    fun seriesDetailBackIsSeparateFromCategoryLandingBack() {
+        assertEquals(
+            true,
+            shouldHandleSeriesBack(
+                screen = AppScreen.CATALOG,
+                selectedTab = CatalogTab.SERIES,
+                showCategoryLanding = false,
+                selectedSeriesTitle = "Prens",
+                selectedSeasonNumber = null,
+            ),
+        )
+        assertEquals(
+            false,
+            shouldHandleSeriesBack(
+                screen = AppScreen.CATALOG,
+                selectedTab = CatalogTab.SERIES,
+                showCategoryLanding = true,
+                selectedSeriesTitle = "Prens",
+                selectedSeasonNumber = null,
+            ),
+        )
     }
 }

@@ -28,6 +28,12 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
         db.execSQL("PRAGMA temp_store=MEMORY")
     }
 
+    override fun onOpen(db: SQLiteDatabase) {
+        super.onOpen(db)
+        db.ensureCatalogMeta()
+        db.repairStrongUrlKindHintsOnce()
+    }
+
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             """
@@ -70,6 +76,7 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
             """.trimIndent(),
         )
         db.createCatalogIndexes()
+        db.ensureCatalogMeta()
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {

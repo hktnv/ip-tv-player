@@ -160,15 +160,19 @@ class M3uPlaylistParser {
         val normalizedGroup = info.normalizedGroupTitle
         val normalizedTvg = info.normalizedTvgName
         return when {
+            streamUrl.contains("/live/", ignoreCase = true) ||
+                M3uPlaylistPatterns.liveExtensionRegex.containsMatchIn(streamUrl) ->
+                KindGuess(ContentKind.LIVE_CHANNEL, 0.94, "live url")
+
+            streamUrl.contains("/movie/", ignoreCase = true) ||
+                M3uPlaylistPatterns.movieExtensionRegex.containsMatchIn(streamUrl) ||
+                containsMovieMarker(normalizedTitle, normalizedGroup, normalizedTvg) ->
+                KindGuess(ContentKind.MOVIE, 0.86, "movie markers")
+
             streamUrl.contains("/series/", ignoreCase = true) ||
                 (title.mayContainEpisodeInfo() && M3uPlaylistPatterns.seriesRegexes.any { it.containsMatchIn(title) }) ||
                 containsSeriesMarker(normalizedTitle, normalizedGroup, normalizedTvg) ->
                 KindGuess(ContentKind.EPISODE, 0.88, "series markers")
-
-            streamUrl.contains("/movie/", ignoreCase = true) ||
-                M3uPlaylistPatterns.mediaExtensionRegex.containsMatchIn(streamUrl) ||
-                containsMovieMarker(normalizedTitle, normalizedGroup, normalizedTvg) ->
-                KindGuess(ContentKind.MOVIE, 0.86, "movie markers")
 
             containsRadioMarker(normalizedTitle, normalizedGroup, normalizedTvg) ->
                 KindGuess(ContentKind.RADIO, 0.70, "radio markers")
