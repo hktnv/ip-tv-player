@@ -75,7 +75,7 @@ internal fun reducePlayerInput(
             PlayerInputState.Watching -> PlayerInputResult(PlayerInputState.ContentListVisible)
             PlayerInputState.ControlsVisible -> PlayerInputResult(
                 state = PlayerInputState.ControlsVisible,
-                showControls = true,
+                consumeInput = false,
             )
             else -> PlayerInputResult(state, consumeInput = false)
         }

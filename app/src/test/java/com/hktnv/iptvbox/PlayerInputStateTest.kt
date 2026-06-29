@@ -22,6 +22,8 @@ class PlayerInputStateTest {
 
         assertEquals(PlayerInputState.ContentListVisible, watchingResult.state)
         assertEquals(PlayerInputState.ControlsVisible, controlsResult.state)
+        assertTrue(watchingResult.consumeInput)
+        assertFalse(controlsResult.consumeInput)
         assertFalse(controlsResult.togglePlayback)
         assertFalse(controlsResult.selectNextItem)
         assertFalse(controlsResult.selectPreviousItem)

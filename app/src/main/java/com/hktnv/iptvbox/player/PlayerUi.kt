@@ -91,6 +91,11 @@ internal fun PlayerScreen(
         return applyInputResult(reducePlayerInput(inputState, action), playerView)
     }
 
+    fun shouldHandleRemoteKey(keyCode: Int): Boolean {
+        val action = playerRemoteCommandForKeyCode(keyCode).toInputAction() ?: return false
+        return reducePlayerInput(inputState, action).consumeInput
+    }
+
     BackHandler(enabled = contentListVisible) {
         applyInputResult(reducePlayerInput(inputState, PlayerInputAction.BackPressed))
     }
@@ -112,9 +117,10 @@ internal fun PlayerScreen(
                     isFocusable = true
                     isFocusableInTouchMode = true
                     setControllerVisibilityListener(controllerVisibilityListener)
-                    shouldInterceptRemoteKeys = {
+                    shouldInterceptRemoteKey = { keyCode ->
                         inputState != PlayerInputState.ContentListVisible &&
-                            inputState != PlayerInputState.ExitConfirmVisible
+                            inputState != PlayerInputState.ExitConfirmVisible &&
+                            shouldHandleRemoteKey(keyCode)
                     }
                     onRemoteKeyUp = { keyCode ->
                         handleRemoteCommand(
@@ -129,9 +135,10 @@ internal fun PlayerScreen(
                 view.player = player
                 view.setControllerVisibilityListener(controllerVisibilityListener)
                 view.apply {
-                    shouldInterceptRemoteKeys = {
+                    shouldInterceptRemoteKey = { keyCode ->
                         inputState != PlayerInputState.ContentListVisible &&
-                            inputState != PlayerInputState.ExitConfirmVisible
+                            inputState != PlayerInputState.ExitConfirmVisible &&
+                            shouldHandleRemoteKey(keyCode)
                     }
                     onRemoteKeyUp = { keyCode ->
                         handleRemoteCommand(
@@ -178,7 +185,7 @@ internal fun PlayerScreen(
 }
 
 private class TvRemotePlayerView(context: Context) : PlayerView(context) {
-    var shouldInterceptRemoteKeys: () -> Boolean = { true }
+    var shouldInterceptRemoteKey: (Int) -> Boolean = { true }
     var onRemoteKeyUp: (keyCode: Int) -> Boolean = { false }
 
     init {
@@ -187,7 +194,7 @@ private class TvRemotePlayerView(context: Context) : PlayerView(context) {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val command = playerRemoteCommandForKeyCode(event.keyCode)
-        if (command != PlayerRemoteCommand.None && shouldInterceptRemoteKeys()) {
+        if (command != PlayerRemoteCommand.None && shouldInterceptRemoteKey(event.keyCode)) {
             if (event.action == KeyEvent.ACTION_DOWN) return true
             if (event.action == KeyEvent.ACTION_UP) return onRemoteKeyUp(event.keyCode)
         }
