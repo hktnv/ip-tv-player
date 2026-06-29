@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import com.hktnv.iptvbox.core.designsystem.mediaCardRadius
 import com.hktnv.iptvbox.core.model.ContentKind
 import com.hktnv.iptvbox.model.LocalPerformanceMode
 import com.hktnv.iptvbox.ui.catalog.badgeContainerColor
@@ -79,7 +80,7 @@ private fun PosterArtwork(logoUrl: String) {
 private fun PlaceholderArtwork(title: String, kind: ContentKind) {
     Surface(
         color = kind.badgeContainerColor(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(mediaCardRadius),
     ) {
         Text(
             text = title.initials(),

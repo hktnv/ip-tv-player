@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.hktnv.iptvbox.core.designsystem.cardTitleSurface
+import com.hktnv.iptvbox.core.designsystem.mediaCardRadius
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentKind
 import com.hktnv.iptvbox.model.SeasonGroup
@@ -43,7 +44,7 @@ import com.hktnv.iptvbox.ui.common.tvFocusLift
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
 import com.hktnv.iptvbox.ui.common.TvRestingBorder
 
-private val MediaCardShape = RoundedCornerShape(8.dp)
+private val MediaCardShape = RoundedCornerShape(mediaCardRadius)
 internal val MediaCardCompactWidth = 110.dp
 private const val MediaCardArtworkRatio = 0.78f
 private val MediaCardRailInfoHeight = 64.dp

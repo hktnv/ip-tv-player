@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hktnv.iptvbox.core.designsystem.mediaCardSpacing
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.model.SeriesGroup
 import com.hktnv.iptvbox.ui.common.tvClickable
@@ -78,7 +79,7 @@ internal fun HomeContentRow(
                     focusedIndex = focusedIndex,
                     onRequestSideMenu = onRequestSideMenu,
                 ),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(mediaCardSpacing),
                 contentPadding = PaddingValues(horizontal = 2.dp),
             ) {
                 items(items, key = { it.id }, contentType = { it.kind.name }) { item ->
@@ -132,7 +133,7 @@ internal fun HomeSeriesRow(
                     focusedIndex = focusedIndex,
                     onRequestSideMenu = onRequestSideMenu,
                 ),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(mediaCardSpacing),
                 contentPadding = PaddingValues(horizontal = 2.dp),
             ) {
                 items(groups, key = { it.id }, contentType = { "series-card" }) { group ->

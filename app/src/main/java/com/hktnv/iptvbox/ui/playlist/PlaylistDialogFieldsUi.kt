@@ -45,6 +45,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hktnv.iptvbox.core.designsystem.focusBorder
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
@@ -208,7 +209,7 @@ internal fun DialogPrimaryAction(
         },
         shape = RoundedCornerShape(10.dp),
         border = when {
-            focused && enabled -> BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface)
+            focused && enabled -> BorderStroke(2.dp, MaterialTheme.colorScheme.focusBorder)
             !enabled -> BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceBorder)
             else -> null
         },

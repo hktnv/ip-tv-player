@@ -78,6 +78,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hktnv.iptvbox.core.designsystem.focusBorder
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.media3.common.MediaItem
@@ -290,7 +291,7 @@ internal fun FocusAwarePrimaryLabel(
         modifier = modifier.defaultMinSize(minWidth = 148.dp),
         color = MaterialTheme.colorScheme.primaryContainer,
         shape = RoundedCornerShape(10.dp),
-        border = if (focused) BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface) else null,
+        border = if (focused) BorderStroke(2.dp, MaterialTheme.colorScheme.focusBorder) else null,
     ) {
         Text(
             text = text,

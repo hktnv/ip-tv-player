@@ -33,6 +33,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.hktnv.iptvbox.core.designsystem.mediaCardRadius
+import com.hktnv.iptvbox.core.designsystem.mediaCardSpacing
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentKind
 import com.hktnv.iptvbox.ui.catalog.badgeContainerColor
@@ -121,13 +123,13 @@ private fun SearchResultRow(
             }
             .tvClickable(onLongClick = onLongClick, onClick = onOpen),
         color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(mediaCardRadius),
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
     ) {
         Row(
             modifier = Modifier.padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(mediaCardSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box {

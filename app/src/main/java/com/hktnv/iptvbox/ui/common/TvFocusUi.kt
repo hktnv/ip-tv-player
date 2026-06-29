@@ -25,13 +25,14 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hktnv.iptvbox.core.designsystem.accentSubtle
+import com.hktnv.iptvbox.core.designsystem.focusBorder
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 internal val TvFocusBorder: Color
-    @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f)
+    @Composable get() = MaterialTheme.colorScheme.focusBorder
 
 internal val TvFocusPanel: Color
     @Composable get() = MaterialTheme.colorScheme.surfaceVariant

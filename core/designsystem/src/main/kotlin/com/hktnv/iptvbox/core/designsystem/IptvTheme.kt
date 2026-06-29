@@ -71,7 +71,7 @@ fun FocusPanel(
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(
             if (focused) 2.dp else 1.dp,
-            if (focused) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceBorder,
+            if (focused) MaterialTheme.colorScheme.focusBorder else MaterialTheme.colorScheme.surfaceBorder,
         ),
         tonalElevation = if (focused) 6.dp else 1.dp,
     ) {

@@ -36,16 +36,17 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hktnv.iptvbox.core.designsystem.searchControlHeight
+import com.hktnv.iptvbox.core.designsystem.searchControlRadius
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
 import com.hktnv.iptvbox.ui.common.TvRestingBorder
 import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.tvFocusElevation
 import com.hktnv.iptvbox.ui.common.tvFocusLift
-
-private val SearchControlHeight = 64.dp
 
 @Composable
 internal fun SearchControls(
@@ -65,6 +66,7 @@ internal fun SearchControls(
     keyboardController: SoftwareKeyboardController?,
     onQueryFocusChanged: (Boolean) -> Unit,
     onKeyboardRequestedChange: (Boolean) -> Unit,
+    onKeyboardBackPressed: () -> Boolean,
     onRequestSideMenu: () -> Unit,
 ) {
     if (compact) {
@@ -90,6 +92,7 @@ internal fun SearchControls(
                 keyboardController = keyboardController,
                 onQueryFocusChanged = onQueryFocusChanged,
                 onKeyboardRequestedChange = onKeyboardRequestedChange,
+                onKeyboardBackPressed = onKeyboardBackPressed,
                 onRequestSideMenu = onRequestSideMenu,
             )
             SearchSubmitButton(
@@ -123,6 +126,7 @@ internal fun SearchControls(
                 keyboardController = keyboardController,
                 onQueryFocusChanged = onQueryFocusChanged,
                 onKeyboardRequestedChange = onKeyboardRequestedChange,
+                onKeyboardBackPressed = onKeyboardBackPressed,
                 onRequestSideMenu = onRequestSideMenu,
             )
             SearchSubmitButton(
@@ -151,13 +155,14 @@ private fun SearchQueryField(
     keyboardController: SoftwareKeyboardController?,
     onQueryFocusChanged: (Boolean) -> Unit,
     onKeyboardRequestedChange: (Boolean) -> Unit,
+    onKeyboardBackPressed: () -> Boolean,
     onRequestSideMenu: () -> Unit,
 ) {
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
         modifier = modifier
-            .height(SearchControlHeight)
+            .height(searchControlHeight)
             .focusRequester(inputFocusRequester)
             .focusProperties {
                 right = searchButtonFocusRequester
@@ -168,7 +173,6 @@ private fun SearchQueryField(
                 if (television && queryFocused && event.type == KeyEventType.KeyDown) {
                     handleSearchInputKey(
                         eventKey = event.key,
-                        query = query,
                         keyboardActivationReady = keyboardActivationReady,
                         hasResults = hasResults,
                         searchButtonFocusRequester = searchButtonFocusRequester,
@@ -176,16 +180,23 @@ private fun SearchQueryField(
                         focusManager = focusManager,
                         keyboardController = keyboardController,
                         onKeyboardRequestedChange = onKeyboardRequestedChange,
+                        onKeyboardBackPressed = onKeyboardBackPressed,
                         onRequestSideMenu = onRequestSideMenu,
                     )
                 } else {
                     false
                 }
             },
-        label = { Text("Kanal, film, dizi veya kategori ara") },
+        placeholder = { Text("Kanal, film, dizi veya kategori ara") },
         readOnly = television && !keyboardRequested,
         singleLine = true,
         keyboardOptions = KeyboardOptions.Default.copy(showKeyboardOnFocus = !television || keyboardRequested),
+        textStyle = TextStyle(
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 16.sp,
+            lineHeight = 20.sp,
+        ),
+        shape = RoundedCornerShape(searchControlRadius),
         colors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -197,6 +208,8 @@ private fun SearchQueryField(
             unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
             focusedTextColor = MaterialTheme.colorScheme.onSurface,
             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+            focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
             cursorColor = MaterialTheme.colorScheme.primary,
         ),
     )
@@ -204,7 +217,6 @@ private fun SearchQueryField(
 
 private fun handleSearchInputKey(
     eventKey: Key,
-    query: String,
     keyboardActivationReady: Boolean,
     hasResults: Boolean,
     searchButtonFocusRequester: FocusRequester,
@@ -212,6 +224,7 @@ private fun handleSearchInputKey(
     focusManager: FocusManager,
     keyboardController: SoftwareKeyboardController?,
     onKeyboardRequestedChange: (Boolean) -> Unit,
+    onKeyboardBackPressed: () -> Boolean,
     onRequestSideMenu: () -> Unit,
 ): Boolean {
     return when (eventKey) {
@@ -241,6 +254,9 @@ private fun handleSearchInputKey(
             if (keyboardActivationReady) onKeyboardRequestedChange(true)
             true
         }
+        Key.Back -> {
+            onKeyboardBackPressed()
+        }
         else -> false
     }
 }
@@ -268,14 +284,14 @@ private fun SearchSubmitButton(
     }
     Surface(
         modifier = modifier
-            .height(SearchControlHeight)
+            .height(searchControlHeight)
             .widthIn(min = if (compact) 76.dp else 104.dp)
             .focusRequester(focusRequester)
             .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -4f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(enabled = enabled, onClick = onSearch),
         color = panelColor,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(searchControlRadius),
         border = BorderStroke(if (focused) 2.dp else 1.dp, borderColor),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
     ) {

@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.hktnv.iptvbox.core.designsystem.focusBorder
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
@@ -69,7 +70,7 @@ internal fun EmptyPrimaryAction(
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         shape = RoundedCornerShape(18.dp),
-        border = if (focused) BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface) else null,
+        border = if (focused) BorderStroke(2.dp, MaterialTheme.colorScheme.focusBorder) else null,
         shadowElevation = elevation,
     ) {
         Row(

@@ -27,6 +27,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.hktnv.iptvbox.core.designsystem.mediaCardSpacing
 import com.hktnv.iptvbox.model.ScreenBottomPadding
 import kotlinx.coroutines.delay
 
@@ -109,7 +110,7 @@ private data class MediaGridMetrics(
 )
 
 private fun mediaGridMetrics(maxWidth: Dp, television: Boolean): MediaGridMetrics {
-    val spacing = 10.dp
+    val spacing = mediaCardSpacing
     val minCell = when {
         maxWidth >= 900.dp -> 112.dp
         maxWidth >= 600.dp -> 124.dp

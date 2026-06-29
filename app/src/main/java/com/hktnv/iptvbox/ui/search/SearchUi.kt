@@ -4,7 +4,9 @@ import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.ime
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,6 +24,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.Dp
@@ -71,12 +74,16 @@ internal fun SearchScreen(
     val television = configuration.uiMode and Configuration.UI_MODE_TYPE_MASK == Configuration.UI_MODE_TYPE_TELEVISION
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    val density = LocalDensity.current
+    val imeVisible = WindowInsets.ime.getBottom(density) > 0
     val compactSearchControls = !television && configuration.screenWidthDp < 600
     var results by remember(playlist.id) { mutableStateOf<List<CatalogItem>>(emptyList()) }
     var searchLoading by remember(playlist.id) { mutableStateOf(false) }
     var queryFocused by remember { mutableStateOf(false) }
     var keyboardRequested by remember { mutableStateOf(false) }
     var keyboardActivationReady by remember { mutableStateOf(false) }
+    var keyboardWasVisible by remember { mutableStateOf(false) }
+    var pendingKeyboardCloseAfterClear by remember { mutableStateOf(false) }
     val inputFocusRequester = initialFocusRequester ?: remember { FocusRequester() }
     val searchButtonFocusRequester = remember { FocusRequester() }
     val firstResultFocusRequester = remember { FocusRequester() }
@@ -102,10 +109,59 @@ internal fun SearchScreen(
         }
     }
 
-    BackHandler(enabled = television && keyboardRequested) {
-        keyboardRequested = false
-        keyboardController?.hide()
-        focusManager.clearFocus(force = true)
+    LaunchedEffect(imeVisible, queryFocused, keyboardRequested, query) {
+        if (
+            television &&
+            queryFocused &&
+            keyboardRequested &&
+            keyboardWasVisible &&
+            !imeVisible &&
+            query.isNotEmpty()
+        ) {
+            onQueryChange("")
+            pendingKeyboardCloseAfterClear = true
+            withFrameNanos { }
+            keyboardController?.show()
+        }
+        keyboardWasVisible = imeVisible
+    }
+
+    fun handleSearchKeyboardBack(): Boolean {
+        if (query.isNotEmpty()) {
+            onQueryChange("")
+            keyboardRequested = true
+            pendingKeyboardCloseAfterClear = true
+            return true
+        }
+        if (keyboardRequested || pendingKeyboardCloseAfterClear) {
+            keyboardRequested = false
+            pendingKeyboardCloseAfterClear = false
+            keyboardController?.hide()
+            runCatching { inputFocusRequester.requestFocus() }
+            return true
+        }
+        return false
+    }
+
+    BackHandler(
+        enabled = television &&
+            queryFocused &&
+            (keyboardRequested || pendingKeyboardCloseAfterClear || query.isNotEmpty()),
+    ) {
+        if (!handleSearchKeyboardBack()) {
+            keyboardRequested = false
+            pendingKeyboardCloseAfterClear = false
+        }
+    }
+    SearchKeyboardBackGuard(
+        enabled = television && queryFocused && keyboardRequested && query.isNotEmpty(),
+        onBack = { handleSearchKeyboardBack() },
+    )
+
+    LaunchedEffect(queryFocused) {
+        if (!queryFocused) {
+            pendingKeyboardCloseAfterClear = false
+        }
     }
 
     LaunchedEffect(snapshot, submittedQuery, performanceMode.searchResultLimit) {
@@ -166,6 +222,7 @@ internal fun SearchScreen(
                 if (!it) keyboardRequested = false
             },
             onKeyboardRequestedChange = { keyboardRequested = it },
+            onKeyboardBackPressed = { handleSearchKeyboardBack() },
             onRequestSideMenu = onRequestSideMenu,
         )
         Text(

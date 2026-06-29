@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
+import com.hktnv.iptvbox.core.designsystem.mediaCardSpacing
 import com.hktnv.iptvbox.model.ScreenBottomPadding
 
 internal const val HorizontalMediaGridColumnCount = 2
@@ -29,8 +30,8 @@ internal fun <T> HorizontalMediaCardGrid(
         columns = GridCells.Fixed(HorizontalMediaGridColumnCount),
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(top = 4.dp, bottom = ScreenBottomPadding),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(mediaCardSpacing),
+        horizontalArrangement = Arrangement.spacedBy(mediaCardSpacing),
     ) {
         itemsIndexed(
             items = items,
