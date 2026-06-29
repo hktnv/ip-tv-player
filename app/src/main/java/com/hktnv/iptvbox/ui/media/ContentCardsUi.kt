@@ -124,6 +124,7 @@ private fun CatalogItem.compactTitle(): String {
 internal fun SeriesGroupCard(
     group: SeriesGroup,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     onFocused: () -> Unit = {},
 ) {
@@ -138,7 +139,7 @@ internal fun SeriesGroupCard(
                 focused = it.isFocused
                 if (it.isFocused) onFocused()
             }
-            .tvClickable(onClick = onClick),
+            .tvClickable(onLongClick = onLongClick, onClick = onClick),
         color = if (focused) TvFocusPanel else IptvColors.Panel,
         shape = MediaCardShape,
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
@@ -184,6 +185,7 @@ internal fun SeriesGroupCard(
 internal fun SeasonCard(
     season: SeasonGroup,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     onFocused: () -> Unit = {},
 ) {
@@ -198,7 +200,7 @@ internal fun SeasonCard(
                 focused = it.isFocused
                 if (it.isFocused) onFocused()
             }
-            .tvClickable(onClick = onClick),
+            .tvClickable(onLongClick = onLongClick, onClick = onClick),
         color = if (focused) TvFocusPanel else IptvColors.Panel,
         shape = MediaCardShape,
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),

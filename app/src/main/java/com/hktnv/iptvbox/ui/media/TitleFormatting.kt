@@ -11,8 +11,15 @@ internal fun String.readableContentTitle(): String {
     if (letters.length < 4 || letters.any { it.isLowerCase() }) return clean
 
     return clean.split(' ')
-        .joinToString(" ") { token -> token.titleCaseToken() }
+        .joinToString(" ") { token ->
+            if (token.shouldKeepAllCapsToken()) token else token.titleCaseToken()
+        }
         .trim()
+}
+
+private fun String.shouldKeepAllCapsToken(): Boolean {
+    val letterCount = count { it.isLetter() }
+    return letterCount in 1..3
 }
 
 private fun String.titleCaseToken(): String {

@@ -1,30 +1,12 @@
 package com.hktnv.iptvbox.ui.catalog
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -37,6 +19,7 @@ import com.hktnv.iptvbox.model.SeriesGroup
 import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
 import com.hktnv.iptvbox.ui.common.EmptyState
 import com.hktnv.iptvbox.ui.media.ContentGrid
+import com.hktnv.iptvbox.ui.media.MediaCardGrid
 import com.hktnv.iptvbox.ui.media.SeasonCard
 import com.hktnv.iptvbox.ui.media.SeriesGroupCard
 
@@ -78,6 +61,9 @@ internal fun SeriesCatalogContent(
             SeriesGroupGrid(
                 groups = seriesGroups,
                 onOpen = { onSeriesSelected(it.title) },
+                onLongClick = { group ->
+                    snapshot.episodes(group.title, null).firstOrNull()?.let(onShowItemOptions)
+                },
                 modifier = modifier,
                 requestInitialFocus = requestInitialFocus,
                 initialFocusRequester = initialFocusRequester,
@@ -89,6 +75,9 @@ internal fun SeriesCatalogContent(
                 seasons = seasons,
                 seriesTitle = selectedSeriesTitle,
                 onOpen = { onSeasonSelected(it.seasonNumber) },
+                onLongClick = { season ->
+                    snapshot.episodes(selectedSeriesTitle, season.seasonNumber).firstOrNull()?.let(onShowItemOptions)
+                },
                 modifier = modifier,
                 requestInitialFocus = requestInitialFocus,
                 initialFocusRequester = initialFocusRequester,
@@ -125,61 +114,27 @@ internal fun SeriesCatalogContent(
 internal fun SeriesGroupGrid(
     groups: List<SeriesGroup>,
     onOpen: (SeriesGroup) -> Unit,
+    onLongClick: ((SeriesGroup) -> Unit)? = null,
     modifier: Modifier = Modifier,
     requestInitialFocus: Boolean = false,
     initialFocusRequester: FocusRequester? = null,
     onRequestSideMenu: (() -> Unit)? = null,
 ) {
-    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val fallbackFocusRequester = remember { FocusRequester() }
-        val itemFocusRequester = initialFocusRequester ?: fallbackFocusRequester
-        val firstGroupId = groups.firstOrNull()?.id
-        var focusedIndex by remember(groups) { mutableStateOf(0) }
-        LaunchedEffect(requestInitialFocus, firstGroupId) {
-            if (requestInitialFocus && firstGroupId != null) {
-                withFrameNanos { }
-                runCatching { itemFocusRequester.requestFocus() }
-            }
-        }
-        val minCell = if (maxWidth >= 700.dp) 190.dp else 145.dp
-        val horizontalSpacing = 12.dp
-        val columnCount = ((maxWidth.value + horizontalSpacing.value) / (minCell.value + horizontalSpacing.value))
-            .toInt()
-            .coerceAtLeast(1)
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minCell),
-            modifier = Modifier
-                .fillMaxSize()
-                .onPreviewKeyEvent { event ->
-                    if (
-                        event.type == KeyEventType.KeyDown &&
-                        event.key == Key.DirectionLeft &&
-                        onRequestSideMenu != null &&
-                        focusedIndex % columnCount == 0
-                    ) {
-                        onRequestSideMenu()
-                        true
-                    } else {
-                        false
-                    }
-                },
-            contentPadding = PaddingValues(top = 8.dp, bottom = ScreenBottomPadding),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            itemsIndexed(groups, key = { _, group -> group.id }) { index, group ->
-                SeriesGroupCard(
-                    group = group,
-                    onClick = { onOpen(group) },
-                    onFocused = { focusedIndex = index },
-                    modifier = if (requestInitialFocus && group.id == firstGroupId) {
-                        Modifier.focusRequester(itemFocusRequester)
-                    } else {
-                        Modifier
-                    },
-                )
-            }
-        }
+    MediaCardGrid(
+        items = groups,
+        itemKey = { it.id },
+        modifier = modifier,
+        requestInitialFocus = requestInitialFocus,
+        initialFocusRequester = initialFocusRequester,
+        onRequestSideMenu = onRequestSideMenu,
+    ) { group, itemModifier, onFocused ->
+        SeriesGroupCard(
+            group = group,
+            onClick = { onOpen(group) },
+            onLongClick = onLongClick?.let { { it(group) } },
+            onFocused = onFocused,
+            modifier = itemModifier,
+        )
     }
 }
 
@@ -188,6 +143,7 @@ internal fun SeasonGroupGrid(
     seasons: List<SeasonGroup>,
     seriesTitle: String,
     onOpen: (SeasonGroup) -> Unit,
+    onLongClick: ((SeasonGroup) -> Unit)? = null,
     modifier: Modifier = Modifier,
     requestInitialFocus: Boolean = false,
     initialFocusRequester: FocusRequester? = null,
@@ -203,56 +159,21 @@ internal fun SeasonGroupGrid(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            val fallbackFocusRequester = remember { FocusRequester() }
-            val itemFocusRequester = initialFocusRequester ?: fallbackFocusRequester
-            val firstSeasonId = seasons.firstOrNull()?.id
-            var focusedIndex by remember(seasons) { mutableStateOf(0) }
-            LaunchedEffect(requestInitialFocus, firstSeasonId) {
-                if (requestInitialFocus && firstSeasonId != null) {
-                    withFrameNanos { }
-                    runCatching { itemFocusRequester.requestFocus() }
-                }
-            }
-            val minCell = if (maxWidth >= 700.dp) 190.dp else 145.dp
-            val horizontalSpacing = 12.dp
-            val columnCount = ((maxWidth.value + horizontalSpacing.value) / (minCell.value + horizontalSpacing.value))
-                .toInt()
-                .coerceAtLeast(1)
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minCell),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .onPreviewKeyEvent { event ->
-                        if (
-                            event.type == KeyEventType.KeyDown &&
-                            event.key == Key.DirectionLeft &&
-                            onRequestSideMenu != null &&
-                            focusedIndex % columnCount == 0
-                        ) {
-                            onRequestSideMenu()
-                            true
-                        } else {
-                            false
-                        }
-                    },
-                contentPadding = PaddingValues(top = 8.dp, bottom = ScreenBottomPadding),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                itemsIndexed(seasons, key = { _, season -> season.id }) { index, season ->
-                    SeasonCard(
-                        season = season,
-                        onClick = { onOpen(season) },
-                        onFocused = { focusedIndex = index },
-                        modifier = if (requestInitialFocus && season.id == firstSeasonId) {
-                            Modifier.focusRequester(itemFocusRequester)
-                        } else {
-                            Modifier
-                        },
-                    )
-                }
-            }
+        MediaCardGrid(
+            items = seasons,
+            itemKey = { it.id },
+            modifier = Modifier.weight(1f),
+            requestInitialFocus = requestInitialFocus,
+            initialFocusRequester = initialFocusRequester,
+            onRequestSideMenu = onRequestSideMenu,
+        ) { season, itemModifier, onFocused ->
+            SeasonCard(
+                season = season,
+                onClick = { onOpen(season) },
+                onLongClick = onLongClick?.let { { it(season) } },
+                onFocused = onFocused,
+                modifier = itemModifier,
+            )
         }
     }
 }

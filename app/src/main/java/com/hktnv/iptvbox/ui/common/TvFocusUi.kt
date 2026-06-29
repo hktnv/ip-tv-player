@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.ui.common
+import android.os.SystemClock
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -75,20 +76,31 @@ internal fun Modifier.tvClickable(
 ): Modifier {
     if (!enabled) return clickable(enabled = false, onClick = onClick)
     return composed {
-        var longClickHandled by remember { mutableStateOf(false) }
         var longPressJob by remember { mutableStateOf<Job?>(null) }
+        val clickGuard = remember { TvLongPressClickGuard() }
         val scope = rememberCoroutineScope()
+        fun dispatchLongClick() {
+            clickGuard.markLongClick(SystemClock.uptimeMillis())
+            onLongClick?.invoke()
+        }
+        fun dispatchClickIfAllowed() {
+            if (clickGuard.consumeClick(SystemClock.uptimeMillis())) onClick()
+        }
         val pressHandler = Modifier.onPreviewKeyEvent { event ->
             if (!event.key.isSelectKey()) return@onPreviewKeyEvent false
             when {
                 event.type == KeyEventType.KeyDown &&
                     onLongClick != null -> {
-                    if (longPressJob == null && !longClickHandled) {
-                        longClickHandled = false
+                    if (event.isNativeLongSelectPress() && !clickGuard.longClickHandled) {
+                        longPressJob?.cancel()
+                        longPressJob = null
+                        dispatchLongClick()
+                        return@onPreviewKeyEvent true
+                    }
+                    if (longPressJob == null && !clickGuard.longClickHandled) {
                         longPressJob = scope.launch {
-                            delay(520L)
-                            longClickHandled = true
-                            onLongClick()
+                            delay(360L)
+                            dispatchLongClick()
                             longPressJob = null
                         }
                     }
@@ -97,17 +109,37 @@ internal fun Modifier.tvClickable(
                 event.type == KeyEventType.KeyUp -> {
                     longPressJob?.cancel()
                     longPressJob = null
-                    if (longClickHandled) {
-                        longClickHandled = false
-                    } else {
-                        onClick()
-                    }
+                    dispatchClickIfAllowed()
                     true
                 }
                 else -> false
             }
         }
-        then(pressHandler).tvPointerClickable(onClick, onLongClick)
+        then(pressHandler).tvPointerClickable(
+            onClick = { dispatchClickIfAllowed() },
+            onLongClick = onLongClick?.let { { dispatchLongClick() } },
+        )
+    }
+}
+
+internal class TvLongPressClickGuard(
+    private val suppressWindowMs: Long = 900L,
+) {
+    var longClickHandled: Boolean = false
+        private set
+    private var suppressClickUntilMs: Long = 0L
+
+    fun markLongClick(nowMs: Long) {
+        longClickHandled = true
+        suppressClickUntilMs = nowMs + suppressWindowMs
+    }
+
+    fun consumeClick(nowMs: Long): Boolean {
+        if (longClickHandled || nowMs < suppressClickUntilMs) {
+            longClickHandled = false
+            return false
+        }
+        return true
     }
 }
 
@@ -126,4 +158,8 @@ private fun Key.isSelectKey(): Boolean {
     return this == Key.DirectionCenter ||
         this == Key.Enter ||
         this == Key.NumPadEnter
+}
+
+private fun androidx.compose.ui.input.key.KeyEvent.isNativeLongSelectPress(): Boolean {
+    return nativeKeyEvent.isLongPress || nativeKeyEvent.repeatCount > 0
 }

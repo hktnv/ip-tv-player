@@ -4,15 +4,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -39,7 +35,6 @@ import androidx.compose.ui.zIndex
 import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentKind
-import com.hktnv.iptvbox.model.ScreenBottomPadding
 import com.hktnv.iptvbox.ui.catalog.badgeLabel
 import com.hktnv.iptvbox.ui.catalog.tint
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
@@ -50,6 +45,7 @@ import com.hktnv.iptvbox.ui.common.tvFocusElevation
 import com.hktnv.iptvbox.ui.common.tvFocusLift
 import com.hktnv.iptvbox.ui.media.ContentArtwork
 import com.hktnv.iptvbox.ui.media.FavoriteIndicator
+import com.hktnv.iptvbox.ui.media.HorizontalMediaCardGrid
 
 private val SearchResultRowHeight = 118.dp
 private val SearchResultArtworkWidth = 104.dp
@@ -68,31 +64,25 @@ internal fun SearchResultsList(
 ) {
     val favoriteKey = favoriteIds.joinToString("|")
     val favoriteSet = remember(favoriteKey) { favoriteIds.toSet() }
-    val firstItemId = items.firstOrNull()?.id
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(top = 4.dp, bottom = ScreenBottomPadding),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        itemsIndexed(items, key = { _, item -> item.id }, contentType = { _, item -> "search-${item.kind.name}" }) { index, item ->
-            SearchResultRow(
-                item = item,
-                favorite = item.id in favoriteSet,
-                onOpen = {
-                    val seriesTitle = item.searchSeriesTitleOrNull()
-                    if (seriesTitle == null) onOpenItem(item) else onOpenSeries(seriesTitle)
-                },
-                onLongClick = { onShowItemOptions(item) },
-                onRequestSideMenu = onRequestSideMenu,
-                modifier = if (index == 0 && item.id == firstItemId) {
-                    Modifier.focusRequester(initialFocusRequester)
-                } else {
-                    Modifier
-                },
-            )
-        }
+    HorizontalMediaCardGrid(
+        items = items,
+        itemKey = { it.id },
+        modifier = modifier,
+        initialFocusRequester = initialFocusRequester,
+        contentType = { "search-${it.kind.name}" },
+    ) { item, requestSideMenuOnLeft, itemModifier ->
+        SearchResultRow(
+            item = item,
+            favorite = item.id in favoriteSet,
+            onOpen = {
+                val seriesTitle = item.searchSeriesTitleOrNull()
+                if (seriesTitle == null) onOpenItem(item) else onOpenSeries(seriesTitle)
+            },
+            onLongClick = { onShowItemOptions(item) },
+            onRequestSideMenu = onRequestSideMenu,
+            requestSideMenuOnLeft = requestSideMenuOnLeft,
+            modifier = itemModifier,
+        )
     }
 }
 
@@ -103,6 +93,7 @@ private fun SearchResultRow(
     onOpen: () -> Unit,
     onLongClick: () -> Unit,
     onRequestSideMenu: () -> Unit,
+    requestSideMenuOnLeft: Boolean,
     modifier: Modifier = Modifier,
 ) {
     var focused by remember { mutableStateOf(false) }
@@ -116,7 +107,11 @@ private fun SearchResultRow(
             .tvFocusLift(focused = focused, scale = 1.015f, liftPx = -3f)
             .onFocusChanged { focused = it.isFocused }
             .onPreviewKeyEvent { event ->
-                if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft) {
+                if (
+                    event.type == KeyEventType.KeyDown &&
+                    event.key == Key.DirectionLeft &&
+                    requestSideMenuOnLeft
+                ) {
                     onRequestSideMenu()
                     true
                 } else {

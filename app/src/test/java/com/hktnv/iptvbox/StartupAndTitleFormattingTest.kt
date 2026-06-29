@@ -6,10 +6,13 @@ import com.hktnv.iptvbox.model.AppScreen
 import com.hktnv.iptvbox.ui.media.readableContentTitle
 import com.hktnv.iptvbox.ui.media.readableMovieTitle
 import com.hktnv.iptvbox.ui.media.restoredScreen
+import com.hktnv.iptvbox.ui.media.shouldOpenDrawerFromHorizontalMediaGrid
 import com.hktnv.iptvbox.ui.search.collapseSeriesSearchResults
 import com.hktnv.iptvbox.ui.search.searchResultKind
 import com.hktnv.iptvbox.ui.search.searchResultTitle
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class StartupAndTitleFormattingTest {
@@ -31,14 +34,25 @@ class StartupAndTitleFormattingTest {
             "Sihirbazlar \u00C7etesi: Daha",
             "S\u0130H\u0130RBAZLAR \u00C7ETES\u0130: DAHA".readableMovieTitle(),
         )
-        assertEquals("The Electric State - 2025", "THE ELECTRIC STATE - 2025".readableMovieTitle())
+        assertEquals("THE Electric State - 2025", "THE ELECTRIC STATE - 2025".readableMovieTitle())
         assertEquals("The Electric State - 2025", "The Electric State - 2025".readableMovieTitle())
     }
 
     @Test
     fun contentTitleCaseFormatsAllCapsAcrossKinds() {
-        assertEquals("Trt 1 Hd", "TRT 1 HD".readableContentTitle())
-        assertEquals("The Electric State - 2025", "THE ELECTRIC STATE - 2025".readableContentTitle())
+        assertEquals("TRT 1 HD", "TRT 1 HD".readableContentTitle())
+        assertEquals("FOX TV", "FOX TV".readableContentTitle())
+        assertEquals("Haber Global", "HABER GLOBAL".readableContentTitle())
+        assertEquals("Avengers Endgame", "AVENGERS ENDGAME".readableContentTitle())
+        assertEquals("THE Electric State - 2025", "THE ELECTRIC STATE - 2025".readableContentTitle())
+    }
+
+    @Test
+    fun searchDrawerOpensOnlyFromLeftColumn() {
+        assertTrue(shouldOpenDrawerFromHorizontalMediaGrid(index = 0))
+        assertFalse(shouldOpenDrawerFromHorizontalMediaGrid(index = 1))
+        assertTrue(shouldOpenDrawerFromHorizontalMediaGrid(index = 2))
+        assertFalse(shouldOpenDrawerFromHorizontalMediaGrid(index = 3))
     }
 
     @Test

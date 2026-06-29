@@ -1,17 +1,9 @@
 package com.hktnv.iptvbox.ui.search
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,8 +15,6 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -81,12 +71,14 @@ internal fun SearchScreen(
     val television = configuration.uiMode and Configuration.UI_MODE_TYPE_MASK == Configuration.UI_MODE_TYPE_TELEVISION
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    val compactSearchControls = !television && configuration.screenWidthDp < 600
     var results by remember(playlist.id) { mutableStateOf<List<CatalogItem>>(emptyList()) }
     var searchLoading by remember(playlist.id) { mutableStateOf(false) }
     var queryFocused by remember { mutableStateOf(false) }
     var keyboardRequested by remember { mutableStateOf(false) }
     var keyboardActivationReady by remember { mutableStateOf(false) }
     val inputFocusRequester = initialFocusRequester ?: remember { FocusRequester() }
+    val searchButtonFocusRequester = remember { FocusRequester() }
     val firstResultFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
@@ -154,75 +146,28 @@ internal fun SearchScreen(
             }
             .padding(horizontal = contentPadding),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp, bottom = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                modifier = Modifier
-                    .weight(1f)
-                    .focusRequester(inputFocusRequester)
-                    .onFocusChanged {
-                        queryFocused = it.hasFocus
-                        if (!it.hasFocus) keyboardRequested = false
-                    }
-                    .onPreviewKeyEvent { event ->
-                        if (television && queryFocused && event.type == KeyEventType.KeyDown) {
-                            when (event.key) {
-                                Key.DirectionDown -> {
-                                    keyboardRequested = false
-                                    keyboardController?.hide()
-                                    focusManager.clearFocus(force = true)
-                                    if (results.isNotEmpty()) {
-                                        runCatching { firstResultFocusRequester.requestFocus() }.getOrDefault(false)
-                                    } else {
-                                        false
-                                    }
-                                }
-                                Key.DirectionLeft -> {
-                                    if (query.isBlank()) {
-                                        keyboardRequested = false
-                                        keyboardController?.hide()
-                                        focusManager.clearFocus(force = true)
-                                        onRequestSideMenu()
-                                        true
-                                    } else {
-                                        false
-                                    }
-                                }
-                                Key.DirectionCenter,
-                                Key.Enter,
-                                Key.NumPadEnter -> {
-                                    if (keyboardActivationReady) {
-                                        keyboardRequested = true
-                                    }
-                                    true
-                                }
-                                else -> false
-                            }
-                        } else {
-                            false
-                        }
-                    },
-                label = { Text("Kanal, film, dizi veya kategori ara") },
-                readOnly = television && !keyboardRequested,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions.Default.copy(showKeyboardOnFocus = !television || keyboardRequested),
-            )
-            Button(
-                onClick = onSearch,
-                enabled = query.isNotBlank(),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.height(56.dp),
-            ) {
-                Text("Ara")
-            }
-        }
+        SearchControls(
+            query = query,
+            onQueryChange = onQueryChange,
+            onSearch = onSearch,
+            compact = compactSearchControls,
+            television = television,
+            queryFocused = queryFocused,
+            keyboardRequested = keyboardRequested,
+            keyboardActivationReady = keyboardActivationReady,
+            hasResults = results.isNotEmpty(),
+            inputFocusRequester = inputFocusRequester,
+            searchButtonFocusRequester = searchButtonFocusRequester,
+            firstResultFocusRequester = firstResultFocusRequester,
+            focusManager = focusManager,
+            keyboardController = keyboardController,
+            onQueryFocusChanged = {
+                queryFocused = it
+                if (!it) keyboardRequested = false
+            },
+            onKeyboardRequestedChange = { keyboardRequested = it },
+            onRequestSideMenu = onRequestSideMenu,
+        )
         Text(
             text = when {
                 catalogIndexLoading || snapshot == null -> "Katalog hazırlanıyor"
