@@ -2,17 +2,12 @@ package com.hktnv.iptvbox.data.playlist
 
 import com.hktnv.iptvbox.core.model.CatalogItem
 
-internal data class RawM3uEntry(
-    val extInfLine: String,
-    val streamUrl: String,
-    val providerOrder: Int,
-)
-
-internal data class PreparedM3uEntry(
-    val raw: RawM3uEntry,
-    val info: ExtInf,
-    val title: String,
-    val normalizedTitle: String,
+internal data class ParsedM3uEntry(
+    val item: CatalogItem,
+    val cleaningNs: Long,
+    val seriesNs: Long,
+    val kindNs: Long,
+    val categoryNs: Long,
 )
 
 data class ParsedM3uPlaylist(

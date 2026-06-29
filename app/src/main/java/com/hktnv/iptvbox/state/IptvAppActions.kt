@@ -16,7 +16,6 @@ import com.hktnv.iptvbox.telemetry.AppPerformanceTelemetry
 import com.hktnv.iptvbox.telemetry.finishPlaylistImportTelemetry
 import com.hktnv.iptvbox.telemetry.recordCatalogWriteTimings
 import com.hktnv.iptvbox.telemetry.recordPlaylistLoadMetrics
-import com.hktnv.iptvbox.ui.media.normalizedForUi
 import com.hktnv.iptvbox.ui.media.simpleUserMessage
 import com.hktnv.iptvbox.ui.playlist.DraftPlaylist
 import com.hktnv.iptvbox.ui.playlist.resolvedPlaylistName
@@ -35,6 +34,7 @@ internal fun CoroutineScope.reloadPlaylistAction(
 ) {
     onBanner("${playlist.name} yenileniyor")
     launch {
+        val importStartedAtMs = SystemClock.elapsedRealtime()
         val request = CreatePlaylistSourceRequest(
             type = playlist.type,
             name = playlist.name,
@@ -46,18 +46,33 @@ internal fun CoroutineScope.reloadPlaylistAction(
             .onSuccess { result ->
                 recordPlaylistLoadMetrics(telemetry, result.metrics)
                 telemetry.record("playlist_import_image_ms", 0L)
-                val normalized = withContext(Dispatchers.Default) {
+                val normalizeStartedAt = SystemClock.elapsedRealtime()
+                val loaded = withContext(Dispatchers.Default) {
                     playlist.copy(
                         items = result.items,
                         epgUrls = result.epgUrls,
                         warnings = result.warnings.map(::simpleUserMessage).filter { it.isNotBlank() }.distinct().take(1),
-                    ).normalizedForUi()
+                    )
                 }
+                val normalizeMs = SystemClock.elapsedRealtime() - normalizeStartedAt
                 val writeResult = withContext(Dispatchers.IO) {
-                    catalogStore.replacePlaylistMeasured(normalized)
+                    catalogStore.replacePlaylistMeasured(loaded)
                 }
                 recordCatalogWriteTimings(telemetry, writeResult.timings)
+                val uiStartedAt = SystemClock.elapsedRealtime()
                 onStored(writeResult.playlist)
+                withFrameNanos { }
+                val uiUpdateMs = SystemClock.elapsedRealtime() - uiStartedAt
+                finishPlaylistImportTelemetry(
+                    telemetry = telemetry,
+                    importStartedAtMs = importStartedAtMs,
+                    firstResponseMs = 0L,
+                    metrics = result.metrics,
+                    dbTimings = writeResult.timings,
+                    normalizeMs = normalizeMs,
+                    uiUpdateMs = uiUpdateMs,
+                    itemCount = result.items.size,
+                )
                 telemetry.record("playlist_import_item_count", result.items.size.toLong())
                 onBanner("${playlist.name} yenilendi: ${result.items.size} içerik")
             }
@@ -91,7 +106,7 @@ internal fun CoroutineScope.saveLoadedPlaylistAction(
                     items = result.items,
                     epgUrls = result.epgUrls,
                     warnings = result.warnings.map(::simpleUserMessage).filter { it.isNotBlank() }.distinct().take(1),
-                ).normalizedForUi()
+                )
             }
             val normalizeMs = SystemClock.elapsedRealtime() - normalizeStartedAt
             val writeResult = withContext(Dispatchers.IO) {

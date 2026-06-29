@@ -15,7 +15,14 @@ private val catalogStoreJson = Json {
 }
 
 internal fun LoadedPlaylist.toPlaylistValues(): ContentValues = ContentValues().apply {
-    val stats = statsWithoutCacheForStore()
+    val fallbackStats = if (cachedLiveCount == null || cachedMovieCount == null || cachedSeriesCount == null) {
+        statsWithoutCacheForStore()
+    } else {
+        null
+    }
+    val live = cachedLiveCount ?: fallbackStats?.live ?: 0
+    val movies = cachedMovieCount ?: fallbackStats?.movies ?: 0
+    val series = cachedSeriesCount ?: fallbackStats?.series ?: 0
     put("id", id)
     put("name", name)
     put("type", type.name)
@@ -24,9 +31,9 @@ internal fun LoadedPlaylist.toPlaylistValues(): ContentValues = ContentValues().
     put("epg_json", catalogStoreJson.encodeToString(epgUrls))
     put("warnings_json", catalogStoreJson.encodeToString(warnings))
     put("item_count", items.size.takeIf { it > 0 } ?: cachedItemCount ?: 0)
-    put("live_count", stats.live)
-    put("movie_count", stats.movies)
-    put("series_count", stats.series)
+    put("live_count", live)
+    put("movie_count", movies)
+    put("series_count", series)
     put("updated_at", System.currentTimeMillis())
 }
 

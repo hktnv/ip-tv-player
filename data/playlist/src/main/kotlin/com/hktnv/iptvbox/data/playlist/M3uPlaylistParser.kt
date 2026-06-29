@@ -9,12 +9,21 @@ class M3uPlaylistParser {
     fun parse(sourceId: String, lines: Sequence<String>): ParsedM3uPlaylist {
         val parseStartedNs = System.nanoTime()
         val epgUrls = linkedSetOf<String>()
-        val rawEntries = ArrayList<RawM3uEntry>(8_192)
-        val lineReadStartedNs = System.nanoTime()
+        val items = ArrayList<CatalogItem>(8_192)
         var pendingExtInfLine: String? = null
         var order = 0
+        var lineReadNs = 0L
+        var cleaningNs = 0L
+        var seriesNs = 0L
+        var kindNs = 0L
+        var categoryNs = 0L
+        val iterator = lines.iterator()
 
-        lines.forEach { rawLine ->
+        while (true) {
+            val lineReadStartedNs = System.nanoTime()
+            if (!iterator.hasNext()) break
+            val rawLine = iterator.next()
+            lineReadNs += System.nanoTime() - lineReadStartedNs
             val line = rawLine.trim()
             when {
                 line.isBlank() -> Unit
@@ -29,80 +38,32 @@ class M3uPlaylistParser {
                 line.startsWith("#EXTINF", ignoreCase = true) -> pendingExtInfLine = line
                 line.startsWith("#") -> Unit
                 pendingExtInfLine != null -> {
-                    val extInfLine = pendingExtInfLine
+                    val extInfLine = pendingExtInfLine.orEmpty()
                     if (line.isHttpUrl() || line.startsWith("rtsp://", ignoreCase = true)) {
                         order += 1
-                        rawEntries += RawM3uEntry(extInfLine = extInfLine, streamUrl = line, providerOrder = order)
+                        val parsed = parseEntry(
+                            sourceId = sourceId,
+                            extInfLine = extInfLine,
+                            streamUrl = line,
+                            providerOrder = order,
+                        )
+                        cleaningNs += parsed.cleaningNs
+                        seriesNs += parsed.seriesNs
+                        kindNs += parsed.kindNs
+                        categoryNs += parsed.categoryNs
+                        items += parsed.item
                     }
                     pendingExtInfLine = null
                 }
             }
         }
-        val lineReadMs = elapsedMs(lineReadStartedNs)
-
-        val cleaningStartedNs = System.nanoTime()
-        val preparedEntries = ArrayList<PreparedM3uEntry>(rawEntries.size)
-        rawEntries.forEach { entry ->
-            val info = parseExtInf(entry.extInfLine)
-            val title = info.title.takeUnless { it == M3uPlaylistPatterns.UNTITLED } ?: m3uUrlFileName(entry.streamUrl)
-            preparedEntries += PreparedM3uEntry(
-                raw = entry,
-                info = info,
-                title = title,
-                normalizedTitle = SearchNormalizer.normalize(title),
-            )
-        }
-        val cleaningMs = elapsedMs(cleaningStartedNs)
-
-        val seriesStartedNs = System.nanoTime()
-        val seriesInfo = preparedEntries.map { extractSeriesEpisode(it.title) }
-        val seriesMs = elapsedMs(seriesStartedNs)
-
-        val kindStartedNs = System.nanoTime()
-        val guesses = preparedEntries.mapIndexed { index, entry ->
-            if (seriesInfo[index] != null) {
-                KindGuess(ContentKind.EPISODE, 0.95, "series episode pattern")
-            } else {
-                guessKind(entry.info, entry.raw.streamUrl, entry.title, entry.normalizedTitle)
-            }
-        }
-        val kindSplitMs = elapsedMs(kindStartedNs)
-
-        val categoryStartedNs = System.nanoTime()
-        val categories = preparedEntries.mapIndexed { index, entry ->
-            deriveCategory(
-                rawGroupTitle = entry.info.groupTitle,
-                title = entry.title,
-                normalizedTitle = entry.normalizedTitle,
-                kind = guesses[index].kind,
-                series = seriesInfo[index],
-            )
-        }
-        val categoryMs = elapsedMs(categoryStartedNs)
-
-        val items = ArrayList<CatalogItem>(preparedEntries.size)
-        preparedEntries.forEachIndexed { index, entry ->
-            val series = seriesInfo[index]
-            val guess = guesses[index]
-            items += CatalogItem(
-                id = stableM3uItemId(sourceId, entry.raw.streamUrl, entry.title),
-                sourceId = sourceId,
-                kind = if (series != null) ContentKind.EPISODE else guess.kind,
-                title = entry.title,
-                streamUrl = entry.raw.streamUrl,
-                category = categories[index],
-                logoUrl = entry.info.logoUrl?.takeIf { it.isHttpUrl() },
-                tvgId = entry.info.tvgId,
-                tvgName = entry.info.tvgName,
-                seriesTitle = series?.seriesTitle,
-                seasonNumber = series?.seasonNumber,
-                episodeNumber = series?.episodeNumber,
-                episodeTitle = series?.episodeTitle,
-                providerOrder = entry.raw.providerOrder,
-            )
-        }
 
         val parseMs = elapsedMs(parseStartedNs)
+        val lineReadMs = nsToMs(lineReadNs)
+        val cleaningMs = nsToMs(cleaningNs)
+        val kindSplitMs = nsToMs(kindNs)
+        val categoryMs = nsToMs(categoryNs)
+        val seriesMs = nsToMs(seriesNs)
         val subMs = lineReadMs + cleaningMs + kindSplitMs + categoryMs + seriesMs
         return ParsedM3uPlaylist(
             epgUrls = epgUrls.toList(),
@@ -115,6 +76,64 @@ class M3uPlaylistParser {
             seriesMs = seriesMs,
             parseOtherMs = (parseMs - subMs).coerceAtLeast(0L),
             classificationMs = kindSplitMs + categoryMs + seriesMs,
+        )
+    }
+
+    private fun parseEntry(
+        sourceId: String,
+        extInfLine: String,
+        streamUrl: String,
+        providerOrder: Int,
+    ): ParsedM3uEntry {
+        var startedNs = System.nanoTime()
+        val info = parseExtInf(extInfLine)
+        val title = info.title.takeUnless { it == M3uPlaylistPatterns.UNTITLED } ?: m3uUrlFileName(streamUrl)
+        val normalizedTitle = SearchNormalizer.normalize(title)
+        val cleaningNs = System.nanoTime() - startedNs
+
+        startedNs = System.nanoTime()
+        val series = extractSeriesEpisode(title)
+        val seriesNs = System.nanoTime() - startedNs
+
+        startedNs = System.nanoTime()
+        val guess = if (series != null) {
+            KindGuess(ContentKind.EPISODE, 0.95, "series episode pattern")
+        } else {
+            guessKind(info, streamUrl, title, normalizedTitle)
+        }
+        val kindNs = System.nanoTime() - startedNs
+
+        startedNs = System.nanoTime()
+        val category = deriveCategory(
+            rawGroupTitle = info.groupTitle,
+            title = title,
+            normalizedTitle = normalizedTitle,
+            kind = guess.kind,
+            series = series,
+        )
+        val categoryNs = System.nanoTime() - startedNs
+
+        return ParsedM3uEntry(
+            item = CatalogItem(
+                id = stableM3uItemId(sourceId, streamUrl, title),
+                sourceId = sourceId,
+                kind = if (series != null) ContentKind.EPISODE else guess.kind,
+                title = title,
+                streamUrl = streamUrl,
+                category = category,
+                logoUrl = info.logoUrl?.takeIf { it.isHttpUrl() },
+                tvgId = info.tvgId,
+                tvgName = info.tvgName,
+                seriesTitle = series?.seriesTitle,
+                seasonNumber = series?.seasonNumber,
+                episodeNumber = series?.episodeNumber,
+                episodeTitle = series?.episodeTitle,
+                providerOrder = providerOrder,
+            ),
+            cleaningNs = cleaningNs,
+            seriesNs = seriesNs,
+            kindNs = kindNs,
+            categoryNs = categoryNs,
         )
     }
 
@@ -315,5 +334,7 @@ class M3uPlaylistParser {
         return false
     }
 
-    private fun elapsedMs(startedNs: Long): Long = (System.nanoTime() - startedNs) / 1_000_000L
+    private fun elapsedMs(startedNs: Long): Long = nsToMs(System.nanoTime() - startedNs)
+
+    private fun nsToMs(ns: Long): Long = ns / 1_000_000L
 }

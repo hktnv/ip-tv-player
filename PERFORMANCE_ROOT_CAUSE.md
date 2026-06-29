@@ -11,7 +11,7 @@ This run was performed with the release APK on an Android TV / Google TV emulato
 - data partition: 32 GB
 - resolution: 1920 x 1080
 - APK: `app\build\outputs\apk\personal\release\app-personal-release.apk`
-- M3U file served locally to emulator: `http://10.0.2.2:8765/yCEUbXB9_playlist.m3u`
+- M3U file served locally to emulator: `http://10.0.2.2:8765/large-playlist.m3u`
 
 No files were deleted, moved, or uninstalled from drive `C:`.
 
@@ -174,7 +174,7 @@ The total import time is now closed by measured phases plus explicit idle/wait t
 
 Environment: Windows desktop JVM/unit tests, not physical TV Box hardware.
 
-Real file: `C:/Users/EVO-MRDM/Desktop/yCEUbXB9_playlist.m3u`
+Real file: local large M3U fixture provided through `REAL_M3U_PATH`.
 
 `M3uPlaylistParserTest.parsesRealLargePlaylistWhenProvided`:
 
@@ -210,7 +210,7 @@ The largest source file remains under the requested 10% threshold.
 
 - `./gradlew.bat :app:compilePersonalDebugKotlin --no-daemon` passed.
 - `./gradlew.bat test --no-daemon` passed.
-- `REAL_M3U_PATH=C:/Users/EVO-MRDM/Desktop/yCEUbXB9_playlist.m3u ./gradlew.bat :data:playlist:test --tests com.hktnv.iptvbox.data.playlist.M3uPlaylistParserTest.parsesRealLargePlaylistWhenProvided --no-daemon --rerun-tasks` passed.
+- `REAL_M3U_PATH=<local-large-m3u> ./gradlew.bat :data:playlist:test --tests com.hktnv.iptvbox.data.playlist.M3uPlaylistParserTest.parsesRealLargePlaylistWhenProvided --no-daemon --rerun-tasks` passed.
 - `./gradlew.bat :app:testPersonalDebugUnitTest --tests com.hktnv.iptvbox.RealM3uPerformanceTest --no-daemon --rerun-tasks` passed.
 - `./gradlew.bat :app:assemblePersonalRelease --no-daemon` passed.
 - `apksigner verify --verbose app/build/outputs/apk/personal/release/app-personal-release.apk` passed with v1/v2/v3 signatures.

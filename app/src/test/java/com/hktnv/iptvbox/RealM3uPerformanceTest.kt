@@ -16,9 +16,10 @@ class RealM3uPerformanceTest {
     @Test
     fun parsesNormalizesAndIndexesDesktopM3u() {
         val path = System.getProperty("iptv.performance.m3u")
-            ?: "C:/Users/EVO-MRDM/Desktop/yCEUbXB9_playlist.m3u"
-        val file = File(path)
-        assumeTrue("Local performance M3U not found: $path", file.isFile)
+            ?: System.getenv("REAL_M3U_PATH")
+        assumeTrue("Local performance M3U path is not configured", !path.isNullOrBlank())
+        val file = File(path.orEmpty())
+        assumeTrue("Local performance M3U not found: ${file.absolutePath}", file.isFile)
 
         val parser = M3uPlaylistParser()
         lateinit var playlist: LoadedPlaylist

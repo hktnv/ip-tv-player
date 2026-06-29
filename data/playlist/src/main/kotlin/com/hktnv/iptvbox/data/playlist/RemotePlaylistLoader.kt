@@ -98,8 +98,8 @@ class RemotePlaylistLoader(
         url: String,
         headers: Map<String, String>,
     ): PlaylistLoadResult {
-        val fetch = fetchTextWithFallback(url, headers)
-        val parsed = m3uParser.parse(playlistId, fetch.text)
+        val fetch = fetchM3uWithFallback(playlistId, url, headers)
+        val parsed = fetch.parsed
         if (parsed.items.isEmpty()) {
             error("İçerik bulunamadı.")
         }
@@ -122,6 +122,45 @@ class RemotePlaylistLoader(
                 classificationMs = parsed.classificationMs,
             ),
         )
+    }
+
+    private fun fetchM3uWithFallback(
+        playlistId: String,
+        rawUrl: String,
+        headers: Map<String, String>,
+    ): M3uFetchResult {
+        val normalizeStartedNs = System.nanoTime()
+        val normalizedUrl = normalizeUserUrl(rawUrl)
+        val normalizeMs = elapsedMs(normalizeStartedNs)
+        return runCatching {
+            val fetch = fetchM3u(normalizedUrl, headers, playlistId)
+            M3uFetchResult(
+                parsed = fetch.parsed,
+                urlNormalizeMs = normalizeMs,
+                connectionOpenMs = fetch.connectionOpenMs,
+                downloadMs = fetch.downloadMs,
+            )
+        }.getOrElse { firstError ->
+            val firstConnectionMs = if (firstError is TimedFetchException) firstError.connectionOpenMs else 0L
+            val canRetryHttp = normalizedUrl.startsWith("https://", ignoreCase = true) &&
+                firstError.isLikelyTlsForPlainHttp()
+            if (!canRetryHttp) {
+                throw userFacingError(rawUrl, firstError)
+            }
+
+            val httpUrl = "http://" + normalizedUrl.substringAfter("://")
+            runCatching {
+                val fetch = fetchM3u(httpUrl, headers, playlistId)
+                M3uFetchResult(
+                    parsed = fetch.parsed,
+                    urlNormalizeMs = normalizeMs,
+                    connectionOpenMs = firstConnectionMs + fetch.connectionOpenMs,
+                    downloadMs = fetch.downloadMs,
+                )
+            }.getOrElse { secondError ->
+                throw userFacingError(httpUrl, secondError)
+            }
+        }
     }
 
     private fun fetchTextWithFallback(rawUrl: String, headers: Map<String, String>): TextFetchResult {
@@ -183,6 +222,41 @@ class RemotePlaylistLoader(
                     text = text,
                     connectionOpenMs = connectionMs,
                     downloadMs = elapsedMs(downloadStartedNs),
+                )
+            }
+        } catch (throwable: Throwable) {
+            if (throwable is TimedFetchException) throw throwable
+            throw TimedFetchException(throwable, elapsedMs(connectionStartedNs))
+        }
+    }
+
+    private fun fetchM3u(
+        url: String,
+        headers: Map<String, String>,
+        playlistId: String,
+    ): M3uFetchPayload {
+        val builder = Request.Builder().url(url)
+        headers.forEach { (key, value) ->
+            if (key.isNotBlank() && value.isNotBlank()) {
+                builder.header(key, value)
+            }
+        }
+        val request = builder.build()
+        val connectionStartedNs = System.nanoTime()
+        return try {
+            client.newCall(request).execute().use { response ->
+                val connectionMs = elapsedMs(connectionStartedNs)
+                if (!response.isSuccessful) {
+                    throw TimedFetchException(IOException("HTTP ${response.code}"), connectionMs)
+                }
+                val streamStartedNs = System.nanoTime()
+                val parsed = response.body.byteStream()
+                    .bufferedReader(Charsets.UTF_8)
+                    .useLines { lines -> m3uParser.parse(playlistId, lines) }
+                M3uFetchPayload(
+                    parsed = parsed,
+                    connectionOpenMs = connectionMs,
+                    downloadMs = (elapsedMs(streamStartedNs) - parsed.parseMs).coerceAtLeast(0L),
                 )
             }
         } catch (throwable: Throwable) {
@@ -256,48 +330,6 @@ class RemotePlaylistLoader(
     private fun elapsedMs(startedNs: Long): Long = (System.nanoTime() - startedNs) / 1_000_000L
 }
 
-data class PlaylistLoadResult(
-    val playlistName: String,
-    val items: List<CatalogItem>,
-    val epgUrls: List<String>,
-    val warnings: List<String>,
-    val metrics: PlaylistLoadMetrics = PlaylistLoadMetrics(),
-)
-
-data class PlaylistLoadMetrics(
-    val totalMs: Long = 0L,
-    val urlNormalizeMs: Long = 0L,
-    val connectionOpenMs: Long = 0L,
-    val downloadMs: Long = 0L,
-    val lineReadMs: Long = 0L,
-    val parseMs: Long = 0L,
-    val parseOtherMs: Long = 0L,
-    val contentCleaningMs: Long = 0L,
-    val kindSplitMs: Long = 0L,
-    val categoryMs: Long = 0L,
-    val seriesMs: Long = 0L,
-    val classificationMs: Long = 0L,
-    val directoryMs: Long = 0L,
-)
-
-private operator fun PlaylistLoadMetrics.plus(other: PlaylistLoadMetrics): PlaylistLoadMetrics {
-    return PlaylistLoadMetrics(
-        totalMs = totalMs + other.totalMs,
-        urlNormalizeMs = urlNormalizeMs + other.urlNormalizeMs,
-        connectionOpenMs = connectionOpenMs + other.connectionOpenMs,
-        downloadMs = downloadMs + other.downloadMs,
-        lineReadMs = lineReadMs + other.lineReadMs,
-        parseMs = parseMs + other.parseMs,
-        parseOtherMs = parseOtherMs + other.parseOtherMs,
-        contentCleaningMs = contentCleaningMs + other.contentCleaningMs,
-        kindSplitMs = kindSplitMs + other.kindSplitMs,
-        categoryMs = categoryMs + other.categoryMs,
-        seriesMs = seriesMs + other.seriesMs,
-        classificationMs = classificationMs + other.classificationMs,
-        directoryMs = directoryMs + other.directoryMs,
-    )
-}
-
 private data class TextFetchResult(
     val text: String,
     val finalUrl: String,
@@ -309,6 +341,20 @@ private data class TextFetchResult(
 
 private data class FetchPayload(
     val text: String,
+    val connectionOpenMs: Long,
+    val downloadMs: Long,
+)
+
+private data class M3uFetchResult(
+    val parsed: ParsedM3uPlaylist,
+    val warnings: List<String> = emptyList(),
+    val urlNormalizeMs: Long = 0L,
+    val connectionOpenMs: Long = 0L,
+    val downloadMs: Long = 0L,
+)
+
+private data class M3uFetchPayload(
+    val parsed: ParsedM3uPlaylist,
     val connectionOpenMs: Long,
     val downloadMs: Long,
 )

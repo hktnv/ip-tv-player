@@ -73,7 +73,7 @@ class M3uPlaylistParserTest {
 
         lateinit var playlist: ParsedM3uPlaylist
         val elapsedMs = measureTimeMillis {
-            playlist = M3uPlaylistParser().parse("real-large", file.readText())
+            playlist = file.useLines { lines -> M3uPlaylistParser().parse("real-large", lines) }
         }
 
         val liveCount = playlist.items.count { it.kind == ContentKind.LIVE_CHANNEL }
@@ -84,5 +84,51 @@ class M3uPlaylistParserTest {
         assertTrue("live channels should be detected", liveCount >= 200)
         assertTrue("movies should be detected", movieCount >= 6_000)
         assertTrue("series episodes should be detected", episodeCount >= 1_000)
+    }
+
+    @Test
+    fun parsesLargePlaylistInSingleSequencePass() {
+        val source = SingleUseSequence(syntheticLargeM3uLines(live = 320, movies = 6_900, series = 240))
+
+        val playlist = M3uPlaylistParser().parse("large-stream", source)
+
+        assertEquals(1, source.iteratorCount)
+        assertEquals(7_460, playlist.items.size)
+        assertEquals(320, playlist.items.count { it.kind == ContentKind.LIVE_CHANNEL })
+        assertEquals(6_900, playlist.items.count { it.kind == ContentKind.MOVIE })
+        assertEquals(240, playlist.items.count { it.kind == ContentKind.EPISODE })
+        assertTrue(playlist.parseMs >= playlist.parseOtherMs)
+    }
+
+    private fun syntheticLargeM3uLines(live: Int, movies: Int, series: Int): Sequence<String> = sequence {
+        yield("#EXTM3U url-tvg=\"https://example.com/epg.xml\"")
+        repeat(live) { index ->
+            val number = index + 1
+            yield("""#EXTINF:-1 tvg-name="TRT $number HD" group-title="Türk Ulusal",TRT $number HD""")
+            yield("http://stream.example.com/live/user/pass/$number.ts")
+        }
+        repeat(movies) { index ->
+            val number = index + 1
+            yield("""#EXTINF:-1 tvg-name="MOVIE $number" group-title="Yeni Eklenen Filmler",MOVIE $number""")
+            yield("http://stream.example.com/movie/user/pass/$number.mp4")
+        }
+        repeat(series) { index ->
+            val number = index + 1
+            yield("""#EXTINF:-1 tvg-name="SERIES $number S1 E1" group-title="Diziler",SERIES $number S1 E1""")
+            yield("http://stream.example.com/series/user/pass/$number.mkv")
+        }
+    }
+
+    private class SingleUseSequence<T>(
+        private val delegate: Sequence<T>,
+    ) : Sequence<T> {
+        var iteratorCount: Int = 0
+            private set
+
+        override fun iterator(): Iterator<T> {
+            iteratorCount += 1
+            check(iteratorCount == 1) { "Parser must consume streaming lines once." }
+            return delegate.iterator()
+        }
     }
 }
