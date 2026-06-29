@@ -1,36 +1,23 @@
 package com.hktnv.iptvbox.player
+
+import androidx.activity.compose.BackHandler
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.ui.PlayerView
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.player.MediaPlayerFactory
-import com.hktnv.iptvbox.data.catalog.column
-import com.hktnv.iptvbox.ui.media.displayTitle
-import com.hktnv.iptvbox.ui.media.metaLine
 
 @Composable
 internal fun PlayerScreen(
@@ -51,6 +38,21 @@ internal fun PlayerScreen(
         onDispose { player.release() }
     }
 
+    var exitDialogState by remember(item.id) {
+        mutableStateOf(PlayerExitDialogState.Hidden)
+    }
+    fun applyExitAction(action: PlayerExitAction) {
+        val result = reducePlayerExitDialog(exitDialogState, action)
+        exitDialogState = result.state
+        if (result.exitRequested) {
+            onBack()
+        }
+    }
+
+    BackHandler {
+        applyExitAction(PlayerExitAction.BackPressed)
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -66,35 +68,11 @@ internal fun PlayerScreen(
             },
             modifier = Modifier.fillMaxSize(),
         )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.58f))
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Button(onClick = onBack, shape = RoundedCornerShape(8.dp)) {
-                Text("Geri")
-            }
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = item.displayTitle(),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = item.metaLine(),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
-                    fontSize = 13.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+        if (exitDialogState == PlayerExitDialogState.Visible) {
+            PlayerExitConfirmationDialog(
+                onExit = { applyExitAction(PlayerExitAction.ExitSelected) },
+                onContinue = { applyExitAction(PlayerExitAction.ContinueSelected) },
+            )
         }
     }
 }

@@ -107,9 +107,6 @@ internal fun IptvContentHost(
     onDismissBanner: () -> Unit,
 ) {
     CompositionLocalProvider(LocalPerformanceMode provides performanceMode) {
-        BackHandler(screen == AppScreen.PLAYER) {
-            onPlayerBack()
-        }
         BackHandler(
             shouldHandleSeriesBack(
                 screen = screen,
