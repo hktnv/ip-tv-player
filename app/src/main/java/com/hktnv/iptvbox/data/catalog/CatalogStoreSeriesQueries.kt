@@ -42,7 +42,7 @@ internal fun CatalogStore.episodes(
     seasonNumber: Int?,
     limit: Int,
 ): List<CatalogItem> {
-    val seasonClause = if (seasonNumber == null) "" else " AND COALESCE(season_number, 1)=?"
+    val seasonClause = seasonFilterClause(seasonNumber)
     val args = mutableListOf(playlistId, seriesTitle).apply {
         if (seasonNumber != null) add(seasonNumber.toString())
         add(limit.toString())
@@ -57,6 +57,14 @@ internal fun CatalogStore.episodes(
         """.trimIndent(),
         args.toTypedArray(),
     ).use { cursor -> cursor.toItems() }
+}
+
+internal fun seasonFilterClause(seasonNumber: Int?): String {
+    return if (seasonNumber == null) {
+        ""
+    } else {
+        " AND COALESCE(season_number, 1)=CAST(? AS INTEGER)"
+    }
 }
 
 internal fun CatalogStore.categories(playlistId: String, tab: CatalogTab): List<String> {

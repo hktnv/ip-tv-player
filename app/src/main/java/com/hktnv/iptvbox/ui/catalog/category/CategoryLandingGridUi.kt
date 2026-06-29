@@ -1,4 +1,4 @@
-package com.hktnv.iptvbox.ui.catalog
+package com.hktnv.iptvbox.ui.catalog.category
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
