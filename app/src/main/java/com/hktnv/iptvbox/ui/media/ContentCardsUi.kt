@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.hktnv.iptvbox.core.designsystem.cardTitleSurface
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentKind
 import com.hktnv.iptvbox.model.SeasonGroup
@@ -90,7 +91,7 @@ internal fun CompactContentCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(MediaCardRailInfoHeight)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(MaterialTheme.colorScheme.cardTitleSurface)
                     .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
@@ -155,7 +156,7 @@ internal fun SeriesGroupCard(
                 Modifier
                     .fillMaxWidth()
                     .height(MediaCardRailInfoHeight)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(MaterialTheme.colorScheme.cardTitleSurface)
                     .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
@@ -262,7 +263,7 @@ internal fun ContentCard(
                 Modifier
                     .fillMaxWidth()
                     .height(MediaCardGridInfoHeight)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(MaterialTheme.colorScheme.cardTitleSurface)
                     .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {

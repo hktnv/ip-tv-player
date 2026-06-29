@@ -8,6 +8,7 @@ internal val Background = Color(0xFF0B0E13)
 internal val Surface = Color(0xFF151A21)
 internal val SurfaceVariant = Color(0xFF1E242D)
 internal val SurfaceBorder = Color(0xFF2A313B)
+internal val CardTitleSurface = Color(0xFF11151B)
 
 // ACCENT (tek vurgu, sadece ana aksiyon)
 internal val Accent = Color(0xFF00C896)
@@ -30,6 +31,9 @@ internal val Warning = Color(0xFFD4A24E)
 
 val ColorScheme.surfaceBorder: Color
     get() = outline
+
+val ColorScheme.cardTitleSurface: Color
+    get() = CardTitleSurface
 
 val ColorScheme.accentPressed: Color
     get() = AccentPressed
