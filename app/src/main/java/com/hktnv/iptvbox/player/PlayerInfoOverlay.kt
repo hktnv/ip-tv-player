@@ -52,7 +52,39 @@ internal fun PlayerInfoOverlay(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            PlayerNeighborInfo(
+                label = "Önceki",
+                title = info.previousTitle,
+            )
+            PlayerNeighborInfo(
+                label = "Sonraki",
+                title = info.nextTitle,
+            )
         }
+    }
+}
+
+@Composable
+private fun PlayerNeighborInfo(
+    label: String,
+    title: String?,
+) {
+    if (title.isNullOrBlank()) return
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "$label:",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+        )
+        Text(
+            text = title,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

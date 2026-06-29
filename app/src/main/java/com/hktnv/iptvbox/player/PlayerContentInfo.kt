@@ -7,16 +7,20 @@ internal data class PlayerContentInfo(
     val typeLabel: String,
     val category: String,
     val title: String,
+    val previousTitle: String?,
+    val nextTitle: String?,
 )
 
-internal fun CatalogItem.toPlayerContentInfo(): PlayerContentInfo {
+internal fun CatalogItem.toPlayerContentInfo(
+    previousItem: CatalogItem? = null,
+    nextItem: CatalogItem? = null,
+): PlayerContentInfo {
     return PlayerContentInfo(
         typeLabel = kind.playerTypeLabel(),
         category = category.cleanPlayerText().ifBlank { kind.playerTypeLabel() },
-        title = title.cleanPlayerText()
-            .ifBlank { tvgName.cleanPlayerText() }
-            .ifBlank { seriesTitle.cleanPlayerText() }
-            .ifBlank { kind.playerTypeLabel() },
+        title = playerTitle(),
+        previousTitle = previousItem?.playerTitle(),
+        nextTitle = nextItem?.playerTitle(),
     )
 }
 
@@ -36,6 +40,13 @@ private fun ContentKind.playerTypeLabel(): String {
         ContentKind.SEASON,
         ContentKind.EPISODE -> "Dizi"
     }
+}
+
+private fun CatalogItem.playerTitle(): String {
+    return title.cleanPlayerText()
+        .ifBlank { tvgName.cleanPlayerText() }
+        .ifBlank { seriesTitle.cleanPlayerText() }
+        .ifBlank { kind.playerTypeLabel() }
 }
 
 private fun String?.cleanPlayerText(): String {

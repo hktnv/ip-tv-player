@@ -7,6 +7,7 @@ import com.hktnv.iptvbox.player.shouldShowPlayerContentInfo
 import com.hktnv.iptvbox.player.toPlayerContentInfo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -36,6 +37,25 @@ class PlayerContentInfoTest {
         assertEquals("Dizi", info.typeLabel)
         assertEquals("BluTV", info.category)
         assertEquals("Dune S1 E1", info.title)
+    }
+
+    @Test
+    fun includesPreviousAndNextTitlesWhenProvided() {
+        val previous = catalogItem(ContentKind.LIVE_CHANNEL, "Önceki Kanal", "Ulusal")
+        val current = catalogItem(ContentKind.LIVE_CHANNEL, "Mevcut Kanal", "Ulusal")
+        val next = catalogItem(ContentKind.LIVE_CHANNEL, "Sonraki Kanal", "Ulusal")
+        val info = current.toPlayerContentInfo(previousItem = previous, nextItem = next)
+
+        assertEquals("Önceki Kanal", info.previousTitle)
+        assertEquals("Sonraki Kanal", info.nextTitle)
+    }
+
+    @Test
+    fun omitsNeighborTitlesWhenQueueHasNoNeighbor() {
+        val info = catalogItem(ContentKind.MOVIE, "Tek Film", "Film").toPlayerContentInfo()
+
+        assertNull(info.previousTitle)
+        assertNull(info.nextTitle)
     }
 
     @Test

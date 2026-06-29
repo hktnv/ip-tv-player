@@ -52,6 +52,7 @@ internal fun IptvContentHost(
     showPlaylistEntry: Boolean,
     currentItem: CatalogItem?,
     currentHeaders: Map<String, String>,
+    playerContextItems: List<CatalogItem>,
     playlists: List<LoadedPlaylist>,
     catalogSnapshot: CatalogSnapshot?,
     catalogIndexLoading: Boolean,
@@ -100,6 +101,7 @@ internal fun IptvContentHost(
     onShowItemOptions: (CatalogItem) -> Unit,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
+    onSelectPlayerItem: (CatalogItem) -> Unit,
     onOpenPlaylistEntry: () -> Unit,
     onNavigate: (AppScreen) -> Unit,
     onDrawerEvent: (NavigationDrawerEvent) -> Unit,
@@ -186,6 +188,8 @@ internal fun IptvContentHost(
                 screen == AppScreen.PLAYER && currentItem != null -> PlayerScreen(
                     item = currentItem,
                     headers = currentHeaders,
+                    playbackItems = playerContextItems,
+                    onSelectItem = onSelectPlayerItem,
                     onBack = onPlayerBack,
                 )
                 showPlaylistEntry -> PlaylistEntryScreen(

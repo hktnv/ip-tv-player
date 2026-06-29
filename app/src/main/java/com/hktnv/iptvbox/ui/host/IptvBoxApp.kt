@@ -75,7 +75,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var selectedSeasonNumber by rememberSaveable { mutableStateOf<Int?>(null) }; var searchDraft by rememberSaveable { mutableStateOf("") }
     var submittedSearch by rememberSaveable { mutableStateOf("") }; var showAddDialog by rememberSaveable { mutableStateOf(false) }; var showExitDialog by rememberSaveable { mutableStateOf(false) }
     var renamingPlaylist by remember { mutableStateOf<LoadedPlaylist?>(null) }; var banner by rememberSaveable { mutableStateOf<String?>(null) }
-    var currentItem by remember { mutableStateOf<CatalogItem?>(null) }; var currentHeaders by remember { mutableStateOf<Map<String, String>>(emptyMap()) }; var contentOptionsItem by remember { mutableStateOf<CatalogItem?>(null) }
+    var currentItem by remember { mutableStateOf<CatalogItem?>(null) }; var currentHeaders by remember { mutableStateOf<Map<String, String>>(emptyMap()) }; var playerContextItems by remember { mutableStateOf<List<CatalogItem>>(emptyList()) }; var contentOptionsItem by remember { mutableStateOf<CatalogItem?>(null) }
     var catalogSnapshot by remember { mutableStateOf<CatalogSnapshot?>(null) }; var catalogIndexLoading by remember { mutableStateOf(false) }
     var firstDrawRecorded by remember { mutableStateOf(false) }; var updateCheckStarted by rememberSaveable { mutableStateOf(false) }
     var updateState by remember { mutableStateOf<AppUpdateUiState>(AppUpdateUiState.Hidden) }; var pendingNavigationStartedAt by remember { mutableStateOf<Long?>(null) }
@@ -221,10 +221,40 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         banner = banner,
         onDismiss = { banner = null },
     )
-    fun openItem(item: CatalogItem) {
+    fun currentContextItemsForPlayer(item: CatalogItem): List<CatalogItem> {
+        val snapshot = catalogSnapshot
+        val sourceItems = when (screen) {
+            AppScreen.CATALOG -> when {
+                selectedTab == CatalogTab.SERIES && selectedSeriesTitle != null ->
+                    snapshot?.episodes(selectedSeriesTitle.orEmpty(), selectedSeasonNumber).orEmpty()
+                showCatalogCategoryLanding -> snapshot?.items(selectedTab).orEmpty()
+                else -> snapshot?.visibleItems(selectedTab, selectedCategory).orEmpty()
+            }
+            AppScreen.SEARCH -> snapshot
+                ?.let { catalogRepository.search(it, submittedSearch, performanceMode.searchResultLimit) }
+                .orEmpty()
+            AppScreen.LATEST -> latestItemsForPlayer(snapshot)
+            AppScreen.FAVORITES -> favoriteItems
+            AppScreen.RECENT -> recentItems
+            AppScreen.HOME -> when {
+                recentItems.any { it.id == item.id } -> recentItems
+                favoriteItems.any { it.id == item.id } -> favoriteItems
+                else -> snapshot?.items(item.tabForPlayerContext()).orEmpty()
+            }
+            else -> emptyList()
+        }
+        return contextWindowForPlayer(sourceItems, item)
+    }
+
+    fun selectPlayerItem(item: CatalogItem) {
         recentIds.remove(item.id); recentIds.add(0, item.id)
         while (recentIds.size > 60) recentIds.removeLast()
         currentItem = item; currentHeaders = selectedPlaylist?.headers.orEmpty()
+    }
+
+    fun openItem(item: CatalogItem) {
+        playerContextItems = currentContextItemsForPlayer(item)
+        selectPlayerItem(item)
         returnScreen = screen.takeIf { it != AppScreen.PLAYER } ?: AppScreen.CATALOG; screen = AppScreen.PLAYER
     }
     fun reloadPlaylist(playlist: LoadedPlaylist) {
@@ -295,13 +325,13 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     IptvContentHost(
         performanceMode = performanceMode, restoredApplied = restoredApplied, showRecovery = showRecovery, bootError = bootError,
         selectedPlaylist = selectedPlaylist, screen = screen, showPlaylistEntry = showPlaylistEntry, currentItem = currentItem,
-        currentHeaders = currentHeaders, playlists = playlists, catalogSnapshot = catalogSnapshot, catalogIndexLoading = catalogIndexLoading,
+        currentHeaders = currentHeaders, playerContextItems = playerContextItems, playlists = playlists, catalogSnapshot = catalogSnapshot, catalogIndexLoading = catalogIndexLoading,
         selectedTab = selectedTab, selectedCategory = selectedCategory, showCatalogCategoryLanding = showCatalogCategoryLanding, selectedSeriesTitle = selectedSeriesTitle,
         selectedSeasonNumber = selectedSeasonNumber, favoriteIds = favoriteIds, recentIds = recentIds, favoriteItems = favoriteItems,
         recentItems = recentItems, diagnostics = diagnostics, banner = banner, sideMenuExpanded = drawerModel.state.expanded, drawerFocusExpansion = drawerModel.focusExpansion,
         contentFocusRequest = contentFocusRequest, contentInitialFocusRequester = contentInitialFocusRequester,
         catalogRepository = catalogRepository, telemetry = telemetry, searchDraft = searchDraft, submittedSearch = submittedSearch,
-        onPlayerBack = { screen = returnScreen; currentItem = null },
+        onPlayerBack = { screen = returnScreen; currentItem = null; playerContextItems = emptyList() },
         onSeriesBack = { if (selectedSeasonNumber != null) selectedSeasonNumber = null else selectedSeriesTitle = null },
         onShowCatalogCategories = ::showCatalogCategories,
         onRecoveryContinue = { showRecovery = false; bootError = null },
@@ -317,6 +347,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onCategorySelected = ::selectCatalogCategory, onSeriesSelected = { selectedSeriesTitle = it; selectedSeasonNumber = null },
         onSeasonSelected = { selectedSeasonNumber = it }, onShowItemOptions = { contentOptionsItem = it },
         onQueryChange = { searchDraft = it }, onSearch = { submittedSearch = searchDraft.trim() },
+        onSelectPlayerItem = ::selectPlayerItem,
         onOpenPlaylistEntry = ::openPlaylistEntry, onNavigate = ::navigate, onDrawerEvent = ::applyDrawerEvent,
         onRequestExitConfirmation = { showExitDialog = true }, onDismissBanner = { banner = null },
     )
