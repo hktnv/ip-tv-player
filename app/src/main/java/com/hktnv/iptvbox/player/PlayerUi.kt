@@ -3,6 +3,7 @@ package com.hktnv.iptvbox.player
 import android.content.Context
 import android.view.KeyEvent
 import android.view.View
+import android.view.ViewGroup
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -55,68 +56,46 @@ internal fun PlayerScreen(
         onDispose { player.release() }
     }
 
-    var exitDialogState by remember(item.id) {
-        mutableStateOf(PlayerExitDialogState.Hidden)
-    }
-    var controlsVisible by remember(item.id) {
-        mutableStateOf(false)
-    }
-    var contentListVisible by remember(item.id) {
-        mutableStateOf(false)
-    }
+    var inputState by remember { mutableStateOf(PlayerInputState.Watching) }
+    val controlsVisible = inputState == PlayerInputState.ControlsVisible
+    val contentListVisible = inputState == PlayerInputState.ContentListVisible
+    val exitConfirmVisible = inputState == PlayerInputState.ExitConfirmVisible
     val controllerVisibilityListener = PlayerView.ControllerVisibilityListener { visibility: Int ->
-        controlsVisible = visibility == View.VISIBLE
-    }
-    fun applyExitAction(action: PlayerExitAction) {
-        val result = reducePlayerExitDialog(exitDialogState, action)
-        exitDialogState = result.state
-        if (result.exitRequested) {
-            onBack()
+        val action = if (visibility == View.VISIBLE) {
+            PlayerInputAction.ControllerShown
+        } else {
+            PlayerInputAction.ControllerHidden
         }
+        inputState = reducePlayerInput(inputState, action).state
     }
 
     fun switchTo(itemToPlay: CatalogItem) {
-        contentListVisible = false
-        controlsVisible = true
+        inputState = PlayerInputState.ControlsVisible
         onSelectItem(itemToPlay)
     }
 
-    fun handleRemoteCommand(command: PlayerRemoteCommand, playerView: PlayerView): Boolean {
-        if (contentListVisible || exitDialogState == PlayerExitDialogState.Visible) return false
-        return when (command) {
-            PlayerRemoteCommand.TogglePlayPause -> {
-                if (player.isPlaying) player.pause() else player.play()
-                controlsVisible = true
-                playerView.showController()
-                true
-            }
-            PlayerRemoteCommand.NextItem -> {
-                queue.next?.let(::switchTo)
-                controlsVisible = true
-                playerView.showController()
-                true
-            }
-            PlayerRemoteCommand.PreviousItem -> {
-                queue.previous?.let(::switchTo)
-                controlsVisible = true
-                playerView.showController()
-                true
-            }
-            PlayerRemoteCommand.OpenContentList -> {
-                contentListVisible = true
-                controlsVisible = true
-                playerView.showController()
-                true
-            }
-            PlayerRemoteCommand.None -> false
+    fun applyInputResult(result: PlayerInputResult, playerView: PlayerView? = null): Boolean {
+        inputState = result.state
+        if (result.togglePlayback) {
+            if (player.isPlaying) player.pause() else player.play()
         }
+        if (result.selectNextItem) queue.next?.let(::switchTo)
+        if (result.selectPreviousItem) queue.previous?.let(::switchTo)
+        if (result.showControls) playerView?.showController()
+        if (result.exitRequested) onBack()
+        return result.consumeInput
+    }
+
+    fun handleRemoteCommand(command: PlayerRemoteCommand, playerView: PlayerView): Boolean {
+        val action = command.toInputAction() ?: return false
+        return applyInputResult(reducePlayerInput(inputState, action), playerView)
     }
 
     BackHandler(enabled = contentListVisible) {
-        contentListVisible = false
+        applyInputResult(reducePlayerInput(inputState, PlayerInputAction.BackPressed))
     }
-    BackHandler(enabled = !contentListVisible && exitDialogState == PlayerExitDialogState.Hidden) {
-        applyExitAction(PlayerExitAction.BackPressed)
+    BackHandler(enabled = !contentListVisible && !exitConfirmVisible) {
+        applyInputResult(reducePlayerInput(inputState, PlayerInputAction.BackPressed))
     }
 
     Box(
@@ -134,7 +113,8 @@ internal fun PlayerScreen(
                     isFocusableInTouchMode = true
                     setControllerVisibilityListener(controllerVisibilityListener)
                     shouldInterceptRemoteKeys = {
-                        !contentListVisible && exitDialogState == PlayerExitDialogState.Hidden
+                        inputState != PlayerInputState.ContentListVisible &&
+                            inputState != PlayerInputState.ExitConfirmVisible
                     }
                     onRemoteKeyUp = { keyCode ->
                         handleRemoteCommand(
@@ -150,7 +130,8 @@ internal fun PlayerScreen(
                 view.setControllerVisibilityListener(controllerVisibilityListener)
                 view.apply {
                     shouldInterceptRemoteKeys = {
-                        !contentListVisible && exitDialogState == PlayerExitDialogState.Hidden
+                        inputState != PlayerInputState.ContentListVisible &&
+                            inputState != PlayerInputState.ExitConfirmVisible
                     }
                     onRemoteKeyUp = { keyCode ->
                         handleRemoteCommand(
@@ -159,13 +140,13 @@ internal fun PlayerScreen(
                         )
                     }
                 }
-                if (!contentListVisible && exitDialogState == PlayerExitDialogState.Hidden) {
+                if (!contentListVisible && !exitConfirmVisible) {
                     view.requestFocus()
                 }
             },
             modifier = Modifier.fillMaxSize(),
         )
-        if (shouldShowPlayerContentInfo(controlsVisible, exitDialogState) && !contentListVisible) {
+        if (shouldShowPlayerContentInfo(controlsVisible, PlayerExitDialogState.Hidden) && !contentListVisible) {
             PlayerInfoOverlay(
                 info = contentInfo,
                 modifier = Modifier
@@ -177,14 +158,20 @@ internal fun PlayerScreen(
             PlayerContentListOverlay(
                 queue = queue,
                 onSelectItem = ::switchTo,
-                onDismiss = { contentListVisible = false },
+                onDismiss = {
+                    applyInputResult(reducePlayerInput(inputState, PlayerInputAction.BackPressed))
+                },
                 modifier = Modifier.align(Alignment.CenterStart),
             )
         }
-        if (exitDialogState == PlayerExitDialogState.Visible) {
+        if (exitConfirmVisible) {
             PlayerExitConfirmationDialog(
-                onExit = { applyExitAction(PlayerExitAction.ExitSelected) },
-                onContinue = { applyExitAction(PlayerExitAction.ContinueSelected) },
+                onExit = {
+                    applyInputResult(reducePlayerInput(inputState, PlayerInputAction.ExitSelected))
+                },
+                onContinue = {
+                    applyInputResult(reducePlayerInput(inputState, PlayerInputAction.ContinueSelected))
+                },
             )
         }
     }
@@ -193,6 +180,10 @@ internal fun PlayerScreen(
 private class TvRemotePlayerView(context: Context) : PlayerView(context) {
     var shouldInterceptRemoteKeys: () -> Boolean = { true }
     var onRemoteKeyUp: (keyCode: Int) -> Boolean = { false }
+
+    init {
+        descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
+    }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val command = playerRemoteCommandForKeyCode(event.keyCode)
