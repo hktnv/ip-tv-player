@@ -1,4 +1,7 @@
 package com.hktnv.iptvbox.ui.playlist
+import androidx.compose.material3.MaterialTheme
+import com.hktnv.iptvbox.core.designsystem.surfaceBorder
+import com.hktnv.iptvbox.core.designsystem.transparent
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateDpAsState
@@ -42,7 +45,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
@@ -139,7 +141,7 @@ internal fun TvTextField(
         if (helperText != null) {
             Text(
                 text = helperText,
-                color = IptvColors.TextSecondary.copy(alpha = 0.92f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.92f),
                 fontSize = 12.sp,
                 lineHeight = 16.sp,
             )
@@ -156,9 +158,9 @@ private fun Key.isDialogSelectKey(): Boolean {
 @Composable
 internal fun LoadingStepText(text: String) {
     Surface(
-        color = Color(0xFF101B25),
+        color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(1.dp, Color(0xFF34465A)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceBorder),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
@@ -166,13 +168,13 @@ internal fun LoadingStepText(text: String) {
         ) {
             Text(
                 text = text,
-                color = IptvColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 text = "Lütfen bekleyin, işlem devam ediyor.",
-                color = IptvColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 lineHeight = 16.sp,
             )
@@ -201,14 +203,13 @@ internal fun DialogPrimaryAction(
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(enabled = enabled, onClick = onClick),
         color = when {
-            !enabled -> Color(0xFF242D38)
-            focused -> Color(0xFF16E3B3)
-            else -> Color(0xFF00C795)
+            !enabled -> MaterialTheme.colorScheme.surfaceVariant
+            else -> MaterialTheme.colorScheme.primaryContainer
         },
         shape = RoundedCornerShape(10.dp),
         border = when {
-            focused && enabled -> BorderStroke(2.dp, Color.White)
-            !enabled -> BorderStroke(1.dp, Color(0xFF3B4652))
+            focused && enabled -> BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface)
+            !enabled -> BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceBorder)
             else -> null
         },
         shadowElevation = elevation,
@@ -221,9 +222,8 @@ internal fun DialogPrimaryAction(
             Text(
                 text = text,
                 color = when {
-                    !enabled -> IptvColors.TextSecondary.copy(alpha = 0.76f)
-                    focused -> Color.White
-                    else -> IptvColors.Night
+                    !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.76f)
+                    else -> MaterialTheme.colorScheme.onPrimaryContainer
                 },
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -246,8 +246,8 @@ internal fun DialogGhostAction(
             .defaultMinSize(minHeight = 50.dp)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(enabled = enabled, onClick = onClick),
-        color = if (focused) TvFocusPanel else Color.Transparent,
-        contentColor = if (enabled) IptvColors.TextSecondary else IptvColors.TextSecondary.copy(alpha = 0.42f),
+        color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.transparent,
+        contentColor = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.42f),
         shape = RoundedCornerShape(10.dp),
         border = BorderStroke(
             if (focused) 2.dp else 1.dp,

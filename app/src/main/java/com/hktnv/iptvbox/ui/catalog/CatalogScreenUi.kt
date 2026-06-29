@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.ui.catalog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.model.LoadedPlaylist
@@ -190,14 +189,14 @@ internal fun MainSectionButton(
         color = when {
             focused -> TvFocusPanel
             selected -> TvSelectedPanel
-            else -> Color(0xFF101720)
+            else -> MaterialTheme.colorScheme.surface
         },
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(
             1.dp,
             when {
                 focused -> TvFocusBorder
-                selected -> IptvColors.Accent
+                selected -> MaterialTheme.colorScheme.onPrimaryContainer
                 else -> TvRestingBorder
             },
         ),
@@ -210,7 +209,7 @@ internal fun MainSectionButton(
         ) {
             Text(
                 text = label,
-                color = if (selected) IptvColors.Accent else IptvColors.TextPrimary,
+                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -218,7 +217,7 @@ internal fun MainSectionButton(
             )
             Text(
                 text = count.toString(),
-                color = if (selected) IptvColors.TextPrimary else IptvColors.TextSecondary,
+                color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp,
                 maxLines = 1,
             )

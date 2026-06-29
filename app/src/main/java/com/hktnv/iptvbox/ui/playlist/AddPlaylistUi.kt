@@ -1,4 +1,6 @@
 package com.hktnv.iptvbox.ui.playlist
+import androidx.compose.material3.MaterialTheme
+import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import android.content.res.Configuration
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -59,7 +61,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.model.ContentHint
 import com.hktnv.iptvbox.core.model.PlaylistSourceType
 import com.hktnv.iptvbox.data.playlist.CreatePlaylistSourceRequest
@@ -186,7 +187,7 @@ internal fun AddPlaylistDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.76f))
+                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.76f))
                 .navigationBarsPadding()
                 .padding(
                     horizontal = if (compactDialog) 0.dp else 28.dp,
@@ -200,13 +201,13 @@ internal fun AddPlaylistDialog(
                 } else {
                     Modifier.width(dialogWidth)
                 },
-                color = Color(0xFF0D141C),
+                color = MaterialTheme.colorScheme.surface,
                 shape = if (compactDialog) {
                     RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 } else {
                     RoundedCornerShape(24.dp)
                 },
-                border = BorderStroke(1.dp, Color(0xFF405267)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceBorder),
                 shadowElevation = 28.dp,
                 tonalElevation = 10.dp,
             ) {
@@ -221,13 +222,13 @@ internal fun AddPlaylistDialog(
                 Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text(
                         "Yeni Oynatma Listesi",
-                        color = IptvColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
                         "Önce liste adresini girin. Liste adı isteğe bağlıdır.",
-                        color = IptvColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp,
                         lineHeight = 19.sp,
                     )
@@ -296,7 +297,7 @@ internal fun AddPlaylistDialog(
                         } else {
                             "URL girildiğinde Kaydet ve Yükle aktif olur."
                         },
-                        color = IptvColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         lineHeight = 16.sp,
                     )

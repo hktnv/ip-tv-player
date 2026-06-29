@@ -1,4 +1,6 @@
 package com.hktnv.iptvbox.update
+import androidx.compose.material3.MaterialTheme
+import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +27,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.data.catalog.column
 
 @Composable
@@ -48,9 +49,9 @@ internal fun AppUpdateDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .focusGroup(),
-            color = Color(0xFF101821),
+            color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(18.dp),
-            border = BorderStroke(1.dp, Color(0xFF2F4153)),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceBorder),
             tonalElevation = 8.dp,
         ) {
             Column(
@@ -77,20 +78,20 @@ private fun UpdateAvailableContent(
 ) {
     Text(
         text = if (update.required) "Güncelleme gerekli" else "Yeni sürüm hazır",
-        color = IptvColors.TextPrimary,
+        color = MaterialTheme.colorScheme.onSurface,
         fontSize = 22.sp,
         fontWeight = FontWeight.Bold,
     )
     Text(
         text = "Sürüm ${update.release.versionName} kullanılabilir.",
-        color = IptvColors.TextSecondary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontSize = 15.sp,
         lineHeight = 21.sp,
     )
     if (update.release.releaseNotes.isNotBlank()) {
         Text(
             text = update.release.releaseNotes,
-            color = IptvColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp,
             lineHeight = 20.sp,
             maxLines = 4,
@@ -109,13 +110,13 @@ private fun UpdateAvailableContent(
 private fun UpdateDownloadingContent(state: AppUpdateUiState.Downloading) {
     Text(
         text = "Güncelleme indiriliyor",
-        color = IptvColors.TextPrimary,
+        color = MaterialTheme.colorScheme.onSurface,
         fontSize = 21.sp,
         fontWeight = FontWeight.Bold,
     )
     Text(
         text = "APK indiriliyor ve doğrulanacak. Uygulama arka planda yanıt vermeye devam eder.",
-        color = IptvColors.TextSecondary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontSize = 14.sp,
         lineHeight = 20.sp,
     )
@@ -125,7 +126,7 @@ private fun UpdateDownloadingContent(state: AppUpdateUiState.Downloading) {
         LinearProgressIndicator(progress = { state.progress / 100f }, modifier = Modifier.fillMaxWidth())
         Text(
             text = "%${state.progress}",
-            color = IptvColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
         )
     }
@@ -140,13 +141,13 @@ private fun UpdatePermissionContent(
 ) {
     Text(
         text = "Kurulum izni gerekli",
-        color = IptvColors.TextPrimary,
+        color = MaterialTheme.colorScheme.onSurface,
         fontSize = 21.sp,
         fontWeight = FontWeight.Bold,
     )
     Text(
         text = "Android, APK kurmak için bu kaynağa izin vermenizi isteyebilir. İzni verdikten sonra kurulumu tekrar açın.",
-        color = IptvColors.TextSecondary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontSize = 14.sp,
         lineHeight = 20.sp,
     )
@@ -167,13 +168,13 @@ private fun UpdateErrorContent(
 ) {
     Text(
         text = "Güncelleme tamamlanamadı",
-        color = IptvColors.TextPrimary,
+        color = MaterialTheme.colorScheme.onSurface,
         fontSize = 21.sp,
         fontWeight = FontWeight.Bold,
     )
     Text(
         text = state.message,
-        color = IptvColors.TextSecondary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontSize = 14.sp,
         lineHeight = 20.sp,
     )
@@ -204,7 +205,7 @@ private fun UpdateActions(
                 OutlinedButton(
                     onClick = onSecondary,
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = IptvColors.TextPrimary),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
                 ) {
                     Text(secondaryText, maxLines = 1)
                 }
@@ -215,7 +216,7 @@ private fun UpdateActions(
             OutlinedButton(
                 onClick = onTertiary,
                 shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = IptvColors.TextPrimary),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
                 modifier = Modifier.width(160.dp),
             ) {
                 Text(tertiaryText, maxLines = 1)

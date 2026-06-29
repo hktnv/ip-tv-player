@@ -1,4 +1,6 @@
 package com.hktnv.iptvbox.navigation
+import androidx.compose.material3.MaterialTheme
+import com.hktnv.iptvbox.core.designsystem.transparent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
@@ -21,11 +23,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.model.AppScreen
 import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.model.PlaylistStats
@@ -46,7 +46,7 @@ internal fun BottomNavigation(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color(0xF20A0F16),
+        color = MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
         tonalElevation = 6.dp,
     ) {
         Row(
@@ -96,12 +96,12 @@ private fun BottomNavItem(
         color = when {
             focused -> TvFocusPanel
             selected -> TvSelectedPanel
-            else -> Color.Transparent
+            else -> MaterialTheme.colorScheme.transparent
         },
-        contentColor = if (selected) IptvColors.Accent else IptvColors.TextPrimary,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         shape = RoundedCornerShape(14.dp),
         border = if (focused || selected) {
-            BorderStroke(1.dp, if (focused) TvFocusBorder else IptvColors.Accent)
+            BorderStroke(1.dp, if (focused) TvFocusBorder else MaterialTheme.colorScheme.onPrimaryContainer)
         } else {
             null
         },
@@ -114,7 +114,11 @@ private fun BottomNavItem(
                 imageVector = icon,
                 contentDescription = label,
                 modifier = Modifier.size(22.dp),
-                tint = if (!enabled) IptvColors.TextSecondary.copy(alpha = 0.36f) else Color.Unspecified,
+                tint = when {
+                    !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.36f)
+                    selected -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.onSurface
+                },
             )
         }
     }

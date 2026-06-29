@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.ui.search
+import androidx.compose.material3.MaterialTheme
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -32,11 +33,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentKind
+import com.hktnv.iptvbox.ui.catalog.badgeContainerColor
+import com.hktnv.iptvbox.ui.catalog.badgeContentColor
 import com.hktnv.iptvbox.ui.catalog.badgeLabel
-import com.hktnv.iptvbox.ui.catalog.tint
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
 import com.hktnv.iptvbox.ui.common.TvRestingBorder
@@ -119,7 +120,7 @@ private fun SearchResultRow(
                 }
             }
             .tvClickable(onLongClick = onLongClick, onClick = onOpen),
-        color = if (focused) TvFocusPanel else IptvColors.Panel,
+        color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
@@ -165,7 +166,7 @@ private fun SearchResultText(
     ) {
         Text(
             text = title,
-            color = IptvColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 14.sp,
             lineHeight = 17.sp,
             fontWeight = FontWeight.Bold,
@@ -179,7 +180,7 @@ private fun SearchResultText(
             SearchKindPill(kind)
             Text(
                 text = item.searchResultMetaLine(),
-                color = IptvColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -191,13 +192,13 @@ private fun SearchResultText(
 @Composable
 private fun SearchKindPill(kind: ContentKind) {
     Surface(
-        color = kind.tint().copy(alpha = 0.16f),
+        color = kind.badgeContainerColor(),
         shape = RoundedCornerShape(6.dp),
-        border = BorderStroke(1.dp, kind.tint().copy(alpha = 0.32f)),
+        border = BorderStroke(1.dp, kind.badgeContentColor().copy(alpha = 0.32f)),
     ) {
         Text(
             text = kind.badgeLabel(),
-            color = IptvColors.TextPrimary,
+            color = kind.badgeContentColor(),
             fontSize = 9.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),

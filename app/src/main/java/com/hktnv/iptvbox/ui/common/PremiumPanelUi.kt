@@ -1,4 +1,6 @@
 package com.hktnv.iptvbox.ui.common
+import androidx.compose.material3.MaterialTheme
+import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,17 +11,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 
 @Composable
 internal fun PremiumPanel(
     modifier: Modifier = Modifier,
-    borderColor: Color = Color(0xFF263240),
+    borderColor: Color = MaterialTheme.colorScheme.surfaceBorder,
     content: @Composable () -> Unit,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = IptvColors.Panel,
+        color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, borderColor),
     ) {

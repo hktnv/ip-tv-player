@@ -68,7 +68,6 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -87,7 +86,6 @@ import androidx.media3.common.Player
 import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
 import com.hktnv.iptvbox.core.common.SearchNormalizer
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.designsystem.IptvTheme
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentHint
@@ -138,7 +136,7 @@ internal fun PlaylistSummary(
                 Column(Modifier.weight(1f)) {
                     Text(
                         text = playlist.name,
-                        color = IptvColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -146,7 +144,7 @@ internal fun PlaylistSummary(
                     )
                     Text(
                         text = "${playlist.type.label()} · $favoriteCount favori · $recentCount son izlenen",
-                        color = IptvColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -202,7 +200,7 @@ internal fun SummaryChip(
             .tvFocusLift(focused = focused, scale = 1.02f, liftPx = -4f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
-        color = if (focused) TvFocusPanel else Color(0xFF111B24),
+        color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
@@ -214,10 +212,10 @@ internal fun SummaryChip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(label, color = IptvColors.TextSecondary, fontSize = 11.sp, maxLines = 1)
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, maxLines = 1)
             Text(
                 value.toString(),
-                color = IptvColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -245,7 +243,7 @@ internal fun PlaylistRow(
             .tvClickable(onClick = onClick),
         borderColor = when {
             focused -> TvFocusBorder
-            selected -> IptvColors.Accent
+            selected -> MaterialTheme.colorScheme.onPrimaryContainer
             else -> TvRestingBorder
         },
     ) {
@@ -257,7 +255,7 @@ internal fun PlaylistRow(
             Column(Modifier.weight(1f)) {
                 Text(
                     text = playlist.name,
-                    color = IptvColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
@@ -265,7 +263,7 @@ internal fun PlaylistRow(
                 )
                 Text(
                     text = "${playlist.items.size} içerik · ${stats.live} canlı · ${stats.movies} film · ${stats.series} dizi",
-                    color = IptvColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -275,7 +273,7 @@ internal fun PlaylistRow(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Text(playlist.type.label(), color = IptvColors.Accent, fontWeight = FontWeight.Bold)
+                Text(playlist.type.label(), color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Bold)
                 if (onRename != null) {
                     OutlinedButton(
                         onClick = onRename,

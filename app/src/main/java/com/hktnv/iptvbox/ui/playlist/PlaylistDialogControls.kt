@@ -1,4 +1,7 @@
 package com.hktnv.iptvbox.ui.playlist
+import androidx.compose.material3.MaterialTheme
+import com.hktnv.iptvbox.core.designsystem.surfaceBorder
+import com.hktnv.iptvbox.core.designsystem.transparent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,13 +24,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.model.PlaylistSourceType
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.model.LoadedPlaylist
@@ -46,9 +47,9 @@ internal fun TypeSelector(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            color = Color(0xFF101821),
+            color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(16.dp),
-            border = BorderStroke(1.dp, Color(0xFF34465A)),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceBorder),
         ) {
             Row(
                 modifier = Modifier.padding(4.dp),
@@ -66,7 +67,7 @@ internal fun TypeSelector(
         }
         Text(
             text = type.typeHelperText(),
-            color = IptvColors.TextSecondary.copy(alpha = 0.94f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.94f),
             fontSize = 12.sp,
             lineHeight = 16.sp,
         )
@@ -89,15 +90,15 @@ private fun SourceTypeSegment(
         color = when {
             focused -> TvFocusPanel
             selected -> TvSelectedPanel
-            else -> Color.Transparent
+            else -> MaterialTheme.colorScheme.transparent
         },
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(
             if (focused) 2.dp else 1.dp,
             when {
                 focused -> TvFocusBorder
-                selected -> IptvColors.Accent
-                else -> Color.Transparent
+                selected -> MaterialTheme.colorScheme.onPrimaryContainer
+                else -> MaterialTheme.colorScheme.transparent
             },
         ),
     ) {
@@ -108,7 +109,7 @@ private fun SourceTypeSegment(
         ) {
             Text(
                 text = label,
-                color = if (selected || focused) IptvColors.TextPrimary else IptvColors.TextSecondary,
+                color = if (selected || focused) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -122,9 +123,9 @@ private fun SourceTypeSegment(
 internal fun playlistFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = TvFocusBorder,
     focusedLabelColor = TvFocusBorder,
-    cursorColor = IptvColors.Accent,
-    unfocusedBorderColor = Color(0xFF566272),
-    unfocusedLabelColor = IptvColors.TextSecondary,
+    cursorColor = MaterialTheme.colorScheme.onPrimaryContainer,
+    unfocusedBorderColor = MaterialTheme.colorScheme.surfaceBorder,
+    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
 )
 
 internal fun PlaylistSourceType.typeHelperText(): String {
@@ -152,7 +153,7 @@ internal fun RenamePlaylistDialog(
     var name by remember(playlist.id) { mutableStateOf(playlist.name) }
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            color = IptvColors.Panel,
+            color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(14.dp),
             tonalElevation = 4.dp,
         ) {
@@ -162,7 +163,7 @@ internal fun RenamePlaylistDialog(
                     .padding(18.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("Oynatma Listesi Adı", color = IptvColors.TextPrimary, fontSize = 22.sp)
+                Text("Oynatma Listesi Adı", color = MaterialTheme.colorScheme.onSurface, fontSize = 22.sp)
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },

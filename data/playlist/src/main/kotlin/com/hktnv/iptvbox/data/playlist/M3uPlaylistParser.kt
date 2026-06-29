@@ -26,9 +26,7 @@ class M3uPlaylistParser {
                         .filter { it.isHttpUrl() }
                         .forEach(epgUrls::add)
                 }
-                line.startsWith("#EXTINF", ignoreCase = true) -> {
-                    pendingExtInfLine = line
-                }
+                line.startsWith("#EXTINF", ignoreCase = true) -> pendingExtInfLine = line
                 line.startsWith("#") -> Unit
                 pendingExtInfLine != null -> {
                     val extInfLine = pendingExtInfLine
@@ -46,7 +44,7 @@ class M3uPlaylistParser {
         val preparedEntries = ArrayList<PreparedM3uEntry>(rawEntries.size)
         rawEntries.forEach { entry ->
             val info = parseExtInf(entry.extInfLine)
-            val title = info.title.takeUnless { it == M3uPlaylistPatterns.UNTITLED } ?: urlFileName(entry.streamUrl)
+            val title = info.title.takeUnless { it == M3uPlaylistPatterns.UNTITLED } ?: m3uUrlFileName(entry.streamUrl)
             preparedEntries += PreparedM3uEntry(
                 raw = entry,
                 info = info,
@@ -87,7 +85,7 @@ class M3uPlaylistParser {
             val series = seriesInfo[index]
             val guess = guesses[index]
             items += CatalogItem(
-                id = stableItemId(sourceId, entry.raw.streamUrl, entry.title),
+                id = stableM3uItemId(sourceId, entry.raw.streamUrl, entry.title),
                 sourceId = sourceId,
                 kind = if (series != null) ContentKind.EPISODE else guess.kind,
                 title = entry.title,
@@ -156,25 +154,24 @@ class M3uPlaylistParser {
             containsRadioMarker(normalizedTitle, normalizedGroup, normalizedTvg) ->
                 KindGuess(ContentKind.RADIO, 0.70, "radio markers")
 
-            else ->
-                KindGuess(ContentKind.LIVE_CHANNEL, 0.60, "default m3u live assumption")
+            else -> KindGuess(ContentKind.LIVE_CHANNEL, 0.60, "default m3u live assumption")
         }
     }
 
     private fun parseExtInf(line: String): ExtInf {
         val (metadata, rawTitle) = splitExtInf(line)
         val attrs = parseAttributes(metadata)
-        val title = cleanTitle(rawTitle)
-            .ifBlank { cleanTitle(attrs["tvg-name"].orEmpty()) }
+        val title = cleanM3uTitle(rawTitle)
+            .ifBlank { cleanM3uTitle(attrs["tvg-name"].orEmpty()) }
             .ifBlank { M3uPlaylistPatterns.UNTITLED }
-        val tvgName = cleanOptional(attrs["tvg-name"])
-        val groupTitle = cleanCategory(attrs["group-title"])
+        val tvgName = cleanM3uOptional(attrs["tvg-name"])
+        val groupTitle = cleanM3uCategory(attrs["group-title"])
         return ExtInf(
             title = title,
-            tvgId = cleanOptional(attrs["tvg-id"]),
+            tvgId = cleanM3uOptional(attrs["tvg-id"]),
             tvgName = tvgName,
             groupTitle = groupTitle,
-            logoUrl = attrs["tvg-logo"]?.let(::repairEncoding)?.trim()?.takeIf { it.isNotBlank() },
+            logoUrl = attrs["tvg-logo"]?.let(::repairM3uEncoding)?.trim()?.takeIf { it.isNotBlank() },
             normalizedGroupTitle = groupTitle?.let(SearchNormalizer::normalize).orEmpty(),
             normalizedTvgName = tvgName?.let(SearchNormalizer::normalize).orEmpty(),
         )
@@ -194,7 +191,7 @@ class M3uPlaylistParser {
     private fun parseAttributes(value: String): Map<String, String> {
         val attrs = LinkedHashMap<String, String>(6)
         M3uPlaylistPatterns.attributeRegex.findAll(value).forEach { match ->
-            attrs[match.groupValues[1].lowercase()] = repairEncoding(match.groupValues[2]).trim()
+            attrs[match.groupValues[1].lowercase()] = repairM3uEncoding(match.groupValues[2]).trim()
         }
         return attrs
     }
@@ -246,7 +243,7 @@ class M3uPlaylistParser {
             val episode = match.groupValues.getOrNull(2)?.toIntOrNull() ?: return@forEach
             val seriesTitle = cleanSeriesTitle(title.substring(0, match.range.first))
                 .ifBlank { cleanSeriesTitle(title.substringBefore(match.value)) }
-            val episodeTitle = cleanTitle(title.substring(match.range.last + 1))
+            val episodeTitle = cleanM3uTitle(title.substring(match.range.last + 1))
                 .ifBlank { "Bölüm $episode" }
             return SeriesEpisodeInfo(
                 seriesTitle = seriesTitle.ifBlank { title },
@@ -259,67 +256,9 @@ class M3uPlaylistParser {
     }
 
     private fun cleanSeriesTitle(value: String): String {
-        return cleanTitle(value)
+        return cleanM3uTitle(value)
             .replace(M3uPlaylistPatterns.trailingSeparatorRegex, "")
             .ifBlank { value.trim() }
-    }
-
-    private fun cleanTitle(value: String): String {
-        return repairEncoding(value)
-            .replace(M3uPlaylistPatterns.extInfRegex, " ")
-            .replace(M3uPlaylistPatterns.attributeRegex, " ")
-            .replace(M3uPlaylistPatterns.urlRegex, " ")
-            .replace(M3uPlaylistPatterns.secretParamRegex, " ")
-            .replace(M3uPlaylistPatterns.whitespaceRegex, " ")
-            .trim(' ', ',', '-', '|', '»', '•')
-            .stripLanguagePrefix()
-            .replace(M3uPlaylistPatterns.whitespaceRegex, " ")
-            .trim()
-    }
-
-    private fun cleanCategory(value: String?): String? {
-        return cleanOptional(value)
-            ?.replace(M3uPlaylistPatterns.pipeEdgeRegex, "")
-            ?.replace(M3uPlaylistPatterns.whitespaceRegex, " ")
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
-    }
-
-    private fun cleanOptional(value: String?): String? {
-        return value
-            ?.let(::cleanTitle)
-            ?.takeIf { it.isNotBlank() }
-    }
-
-    private fun urlFileName(url: String): String {
-        return url.substringBefore('?')
-            .substringAfterLast('/')
-            .substringBeforeLast('.', missingDelimiterValue = "")
-            .replace('-', ' ')
-            .replace('_', ' ')
-            .let(::cleanTitle)
-            .ifBlank { M3uPlaylistPatterns.UNTITLED }
-    }
-
-    private fun String.stripLanguagePrefix(): String {
-        return M3uPlaylistPatterns.languageCodePrefixRegex.replace(this, "")
-            .let { M3uPlaylistPatterns.languageWordPrefixRegex.replace(it, "") }
-            .trim()
-    }
-
-    private fun repairEncoding(value: String): String {
-        if (!value.any { it == 'Ã' || it == 'Ä' || it == 'Å' }) return value
-        return runCatching {
-            String(value.toByteArray(Charsets.ISO_8859_1), Charsets.UTF_8)
-        }.getOrDefault(value)
-    }
-
-    private fun stableItemId(sourceId: String, url: String, title: String): String {
-        var hash = 1125899906842597L
-        hash = hash.mix(sourceId)
-        hash = hash.mix(title)
-        hash = hash.mix(url)
-        return java.lang.Long.toUnsignedString(hash, 16)
     }
 
     private fun containsSeriesMarker(title: String, group: String, tvg: String): Boolean {
@@ -374,14 +313,6 @@ class M3uPlaylistParser {
             if (current.isDigit() && (next == 'x' || next == 'X')) return true
         }
         return false
-    }
-
-    private fun Long.mix(value: String): Long {
-        var current = this
-        value.forEach { char ->
-            current = current * 31 + char.code
-        }
-        return current
     }
 
     private fun elapsedMs(startedNs: Long): Long = (System.nanoTime() - startedNs) / 1_000_000L

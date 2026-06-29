@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,14 +24,23 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.hktnv.iptvbox.core.designsystem.accentSubtle
+import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-internal val TvFocusBorder = Color(0xFFE7F3FF)
-internal val TvFocusPanel = Color(0xFF17283A)
-internal val TvSelectedPanel = Color(0xFF10251F)
-internal val TvRestingBorder = Color(0xFF263240)
+internal val TvFocusBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f)
+
+internal val TvFocusPanel: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceVariant
+
+internal val TvSelectedPanel: Color
+    @Composable get() = MaterialTheme.colorScheme.accentSubtle
+
+internal val TvRestingBorder: Color
+    @Composable get() = MaterialTheme.colorScheme.surfaceBorder
 
 @Composable
 internal fun Modifier.tvFocusLift(

@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.ui.common
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -15,7 +16,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.data.catalog.column
 
 @Composable
@@ -67,7 +67,7 @@ internal fun HeaderTexts(title: String, subtitle: String, modifier: Modifier = M
     Column(modifier = modifier) {
         Text(
             text = title,
-            color = IptvColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 26.sp,
             lineHeight = 30.sp,
             fontWeight = FontWeight.Bold,
@@ -76,7 +76,7 @@ internal fun HeaderTexts(title: String, subtitle: String, modifier: Modifier = M
         )
         Text(
             text = subtitle,
-            color = IptvColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp,
             lineHeight = 18.sp,
             maxLines = 2,

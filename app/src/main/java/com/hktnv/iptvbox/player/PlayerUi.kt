@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.player
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,7 +54,7 @@ internal fun PlayerScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(MaterialTheme.colorScheme.background),
     ) {
         AndroidView(
             factory = { ctx ->
@@ -69,7 +70,7 @@ internal fun PlayerScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .background(Color.Black.copy(alpha = 0.58f))
+                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.58f))
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -80,7 +81,7 @@ internal fun PlayerScreen(
             Column(Modifier.weight(1f)) {
                 Text(
                     text = item.displayTitle(),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
@@ -88,7 +89,7 @@ internal fun PlayerScreen(
                 )
                 Text(
                     text = item.metaLine(),
-                    color = Color.White.copy(alpha = 0.72f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
                     fontSize = 13.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

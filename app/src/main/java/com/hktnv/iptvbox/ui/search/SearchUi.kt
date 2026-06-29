@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.ui.search
+import androidx.compose.material3.MaterialTheme
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
@@ -27,7 +28,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hktnv.iptvbox.core.common.SearchNormalizer
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.model.CatalogItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -176,7 +176,7 @@ internal fun SearchScreen(
                 results.isEmpty() -> "Sonuç bulunamadı"
                 else -> "${results.size} sonuç"
             },
-            color = IptvColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp,
             modifier = Modifier.padding(bottom = 8.dp),
         )

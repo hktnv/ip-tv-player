@@ -1,4 +1,6 @@
 package com.hktnv.iptvbox.navigation
+import androidx.compose.material3.MaterialTheme
+import com.hktnv.iptvbox.core.designsystem.transparent
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -24,14 +26,12 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
 import com.hktnv.iptvbox.ui.common.TvRestingBorder
@@ -73,13 +73,12 @@ internal fun NavigationButton(
             .then(if (interactive) Modifier.tvClickable(enabled = enabled, onClick = onClick) else Modifier),
         color = when {
             showFocus -> TvFocusPanel
-            selected -> IptvColors.Accent.copy(alpha = 0.12f)
-            else -> Color.Transparent
+            selected -> MaterialTheme.colorScheme.primaryContainer
+            else -> MaterialTheme.colorScheme.transparent
         },
         contentColor = when {
-            selected -> IptvColors.Accent
-            enabled -> IptvColors.TextPrimary
-            else -> IptvColors.TextSecondary.copy(alpha = 0.46f)
+            enabled -> MaterialTheme.colorScheme.onSurface
+            else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.46f)
         },
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(
@@ -87,7 +86,7 @@ internal fun NavigationButton(
             when {
                 showFocus -> TvFocusBorder
                 expanded -> TvRestingBorder.copy(alpha = if (selected) 0.55f else 1f)
-                else -> Color.Transparent
+                else -> MaterialTheme.colorScheme.transparent
             },
         ),
         shadowElevation = tvFocusElevation(focused = showFocus, resting = 0.dp, focusedElevation = 10.dp),
@@ -106,7 +105,16 @@ internal fun NavigationButton(
                 horizontalArrangement = if (expanded) Arrangement.spacedBy(9.dp) else Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(imageVector = icon, contentDescription = null, modifier = Modifier.height(17.dp))
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.height(17.dp),
+                    tint = when {
+                        !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.46f)
+                        selected -> MaterialTheme.colorScheme.primary
+                        else -> MaterialTheme.colorScheme.onSurface
+                    },
+                )
                 if (expanded) {
                     Text(
                         text = label,

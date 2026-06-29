@@ -1,4 +1,6 @@
 package com.hktnv.iptvbox.ui.settings
+import androidx.compose.material3.MaterialTheme
+import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
@@ -23,7 +25,6 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
 import com.hktnv.iptvbox.ui.common.tvFocusElevation
 import com.hktnv.iptvbox.ui.common.tvFocusLift
@@ -63,11 +64,11 @@ internal fun SettingsFocusPanel(
                 if (it.isFocused) onFocused()
             }
             .focusable(),
-        color = if (focused) TvFocusPanel else IptvColors.Panel,
+        color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(
             if (focused) 2.dp else 1.dp,
-            if (focused) TvFocusBorder else Color(0xFF263240),
+            if (focused) TvFocusBorder else MaterialTheme.colorScheme.surfaceBorder,
         ),
         shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 10.dp),
     ) {

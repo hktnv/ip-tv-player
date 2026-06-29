@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.ui.catalog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -31,7 +31,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.data.catalog.categories
 import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
@@ -118,8 +117,8 @@ internal fun CategoryButton(
             .tvClickable(onClick = onClick),
         color = when {
             focused -> TvFocusPanel
-            selected -> IptvColors.Accent.copy(alpha = 0.12f)
-            else -> Color(0xFF101720)
+            selected -> MaterialTheme.colorScheme.primaryContainer
+            else -> MaterialTheme.colorScheme.surface
         },
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(
@@ -138,7 +137,7 @@ internal fun CategoryButton(
         ) {
             Text(
                 text = label,
-                color = if (selected) IptvColors.TextPrimary else IptvColors.TextSecondary,
+                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 maxLines = 1,

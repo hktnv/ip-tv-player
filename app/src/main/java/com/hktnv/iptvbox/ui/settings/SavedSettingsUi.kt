@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.ui.settings
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,7 +28,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.model.CatalogItem
 import kotlinx.coroutines.launch
 import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
@@ -260,8 +260,8 @@ private fun InfoPanelContent(
     onAction: (() -> Unit)? = null,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(title, color = IptvColors.TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        Text(body, color = IptvColors.TextSecondary, fontSize = 14.sp, lineHeight = 19.sp)
+        Text(title, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, lineHeight = 19.sp)
         if (actionLabel != null && onAction != null) {
             OutlinedButton(onClick = onAction, shape = RoundedCornerShape(8.dp)) {
                 Text(actionLabel)

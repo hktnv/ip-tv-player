@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import com.hktnv.iptvbox.core.designsystem.surfaceBorder
+import com.hktnv.iptvbox.core.designsystem.warning
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -18,21 +20,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 
 @Composable
 internal fun StatusBanner(text: String, onDismiss: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF0F1B22))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             text = text,
-            color = IptvColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 14.sp,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -52,9 +53,9 @@ internal fun FloatingStatusToast(
 ) {
     Surface(
         modifier = modifier,
-        color = Color(0xEE101923),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.93f),
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, Color(0xFF2F4154)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceBorder),
         shadowElevation = 18.dp,
     ) {
         Row(
@@ -64,7 +65,7 @@ internal fun FloatingStatusToast(
         ) {
             Text(
                 text = text,
-                color = IptvColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 14.sp,
                 lineHeight = 18.sp,
                 maxLines = 2,
@@ -82,7 +83,7 @@ internal fun FloatingStatusToast(
 internal fun SectionTitle(text: String) {
     Text(
         text = text,
-        color = IptvColors.TextPrimary,
+        color = MaterialTheme.colorScheme.onSurface,
         fontSize = 18.sp,
         fontWeight = FontWeight.Bold,
         modifier = Modifier.padding(top = 4.dp),
@@ -93,7 +94,7 @@ internal fun SectionTitle(text: String) {
 internal fun WarningText(text: String) {
     Text(
         text = text,
-        color = IptvColors.Warning,
+        color = MaterialTheme.colorScheme.warning,
         fontSize = 13.sp,
         lineHeight = 17.sp,
     )

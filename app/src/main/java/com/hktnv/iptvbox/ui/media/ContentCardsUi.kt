@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.ui.media
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -24,14 +25,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentKind
 import com.hktnv.iptvbox.model.SeasonGroup
@@ -73,7 +72,7 @@ internal fun CompactContentCard(
                 if (it.isFocused) onFocused()
             }
             .tvClickable(onLongClick = onLongClick, onClick = onClick),
-        color = if (focused) TvFocusPanel else IptvColors.Panel,
+        color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
         shape = MediaCardShape,
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
@@ -91,13 +90,13 @@ internal fun CompactContentCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(MediaCardRailInfoHeight)
-                    .background(Color(0xFF0C151E))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
                     text = title,
-                    color = IptvColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 11.sp,
                     lineHeight = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -106,7 +105,7 @@ internal fun CompactContentCard(
                 )
                 Text(
                     text = item.metaLine(),
-                    color = IptvColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 10.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -140,7 +139,7 @@ internal fun SeriesGroupCard(
                 if (it.isFocused) onFocused()
             }
             .tvClickable(onLongClick = onLongClick, onClick = onClick),
-        color = if (focused) TvFocusPanel else IptvColors.Panel,
+        color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
         shape = MediaCardShape,
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
@@ -156,13 +155,13 @@ internal fun SeriesGroupCard(
                 Modifier
                     .fillMaxWidth()
                     .height(MediaCardRailInfoHeight)
-                    .background(Color(0xFF0C151E))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
                     text = title,
-                    color = IptvColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 11.sp,
                     lineHeight = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -171,7 +170,7 @@ internal fun SeriesGroupCard(
                 )
                 Text(
                     text = "${group.seasonCount} sezon · ${group.episodeCount} bölüm",
-                    color = IptvColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 10.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -201,7 +200,7 @@ internal fun SeasonCard(
                 if (it.isFocused) onFocused()
             }
             .tvClickable(onLongClick = onLongClick, onClick = onClick),
-        color = if (focused) TvFocusPanel else IptvColors.Panel,
+        color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
         shape = MediaCardShape,
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
@@ -209,7 +208,7 @@ internal fun SeasonCard(
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Text(
                 text = title,
-                color = IptvColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -217,7 +216,7 @@ internal fun SeasonCard(
             )
             Text(
                 text = "${season.episodeCount} bölüm",
-                color = IptvColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
             )
         }
@@ -245,7 +244,7 @@ internal fun ContentCard(
                 if (it.isFocused) onFocused()
             }
             .tvClickable(onLongClick = onLongClick, onClick = onOpen),
-        color = if (focused) TvFocusPanel else IptvColors.Panel,
+        color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
         shape = MediaCardShape,
         border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
@@ -263,13 +262,13 @@ internal fun ContentCard(
                 Modifier
                     .fillMaxWidth()
                     .height(MediaCardGridInfoHeight)
-                    .background(Color(0xFF0C151E))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
                     text = title,
-                    color = IptvColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 11.sp,
                     lineHeight = 14.sp,
                     fontWeight = FontWeight.Bold,
@@ -278,7 +277,7 @@ internal fun ContentCard(
                 )
                 Text(
                     text = item.metaLine(),
-                    color = IptvColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 10.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -319,14 +318,14 @@ private fun FavoriteArtworkFrame(
 internal fun FavoriteIndicator(modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier,
-        color = Color(0xCC091017),
+        color = MaterialTheme.colorScheme.background.copy(alpha = 0.80f),
         shape = RoundedCornerShape(999.dp),
-        border = BorderStroke(1.dp, Color(0x55FFFFFF)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.33f)),
     ) {
         Icon(
             imageVector = Icons.Filled.Favorite,
             contentDescription = null,
-            tint = IptvColors.Accent,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
             modifier = Modifier.padding(5.dp).size(13.dp),
         )
     }

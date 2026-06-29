@@ -93,7 +93,6 @@ import androidx.media3.common.Player
 import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
 import com.hktnv.iptvbox.core.common.SearchNormalizer
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.designsystem.IptvTheme
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentHint

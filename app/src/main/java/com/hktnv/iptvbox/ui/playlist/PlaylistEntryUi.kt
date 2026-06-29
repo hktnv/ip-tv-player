@@ -1,4 +1,6 @@
 package com.hktnv.iptvbox.ui.playlist
+import androidx.compose.material3.MaterialTheme
+import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -41,7 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -51,11 +52,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.ScreenBottomPadding
-import com.hktnv.iptvbox.ui.catalog.tint
 import com.hktnv.iptvbox.ui.common.ScreenHeader
 import com.hktnv.iptvbox.ui.common.SectionTitle
 import com.hktnv.iptvbox.ui.media.catalogSummary
@@ -141,9 +140,9 @@ private fun EmptyPlaylistEntryScene(
             Modifier.fillMaxWidth()
         }
         Surface(
-            color = Color(0xFF101923),
+            color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(28.dp),
-            border = BorderStroke(1.dp, Color(0xFF283747)),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceBorder),
             shadowElevation = 18.dp,
             modifier = panelModifier,
         ) {
@@ -153,14 +152,14 @@ private fun EmptyPlaylistEntryScene(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Surface(
-                    color = Color(0xFF162432),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(24.dp),
-                    border = BorderStroke(1.dp, Color(0xFF31495F)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceBorder),
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.List,
                         contentDescription = null,
-                        tint = IptvColors.TextPrimary,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier
                             .padding(20.dp)
                             .size(48.dp),
@@ -168,7 +167,7 @@ private fun EmptyPlaylistEntryScene(
                 }
                 Text(
                     text = "İlk listenizi ekleyin",
-                    color = IptvColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 30.sp,
                     lineHeight = 36.sp,
                     fontWeight = FontWeight.Bold,
@@ -176,7 +175,7 @@ private fun EmptyPlaylistEntryScene(
                 )
                 Text(
                     text = "M3U, JSON veya Xtream listenizi bağlayın; uygulama içerikleri düzenli bir kataloğa dönüştürsün.",
-                    color = IptvColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 16.sp,
                     lineHeight = 22.sp,
                     textAlign = TextAlign.Center,

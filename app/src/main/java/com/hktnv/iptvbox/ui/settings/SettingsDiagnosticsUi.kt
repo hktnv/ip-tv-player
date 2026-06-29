@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.ui.settings
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -16,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.telemetry.PerformanceDiagnostics
@@ -35,7 +35,7 @@ internal fun DiagnosticsPanelContent(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = "Performans / Tanılama",
-                color = IptvColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
             )
@@ -69,7 +69,7 @@ private fun DiagnosticTile(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = Color(0xFF101923),
+        color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(10.dp),
         border = BorderStroke(1.dp, TvRestingBorder),
     ) {
@@ -79,7 +79,7 @@ private fun DiagnosticTile(
         ) {
             Text(
                 text = label,
-                color = IptvColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp,
                 lineHeight = 12.sp,
                 fontWeight = FontWeight.Medium,
@@ -88,7 +88,7 @@ private fun DiagnosticTile(
             )
             Text(
                 text = value,
-                color = IptvColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 11.sp,
                 lineHeight = 13.sp,
                 fontWeight = FontWeight.SemiBold,

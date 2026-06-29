@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.ui.catalog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,7 +12,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.model.ScreenBottomPadding
 import com.hktnv.iptvbox.model.SeasonGroup
@@ -88,7 +88,7 @@ internal fun SeriesCatalogContent(
             Column(modifier = modifier.fillMaxWidth()) {
                 Text(
                     text = "$selectedSeriesTitle · Sezon $selectedSeasonNumber",
-                    color = IptvColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
@@ -152,7 +152,7 @@ internal fun SeasonGroupGrid(
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = seriesTitle,
-            color = IptvColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),

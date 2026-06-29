@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.navigation
+import androidx.compose.material3.MaterialTheme
 import android.os.SystemClock
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
@@ -51,7 +52,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import kotlinx.coroutines.delay
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.model.AppScreen
@@ -171,7 +171,7 @@ internal fun SideNavigation(
             }
             .focusable()
             .focusGroup()
-            .background(Color(0xFF0A0F16), RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.background, RoundedCornerShape(18.dp))
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(horizontal = 10.dp, vertical = 16.dp),
@@ -180,7 +180,7 @@ internal fun SideNavigation(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = if (expanded) "IP TV" else "IP",
-                color = IptvColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = if (expanded) 18.sp else 16.sp,
                 lineHeight = 20.sp,
                 fontWeight = FontWeight.Bold,
@@ -190,7 +190,7 @@ internal fun SideNavigation(
             if (expanded) {
                 Text(
                     text = screenLabel(selected, selectedTab),
-                    color = IptvColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

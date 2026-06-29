@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.ui.host
+import androidx.compose.material3.MaterialTheme
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusGroup
@@ -18,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.model.CatalogItem
 import kotlinx.coroutines.delay
 import com.hktnv.iptvbox.repository.catalog.AppCatalogRepository
@@ -114,7 +114,7 @@ internal fun IptvContentHost(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .background(IptvColors.Night),
+                .background(MaterialTheme.colorScheme.background),
         ) {
             val wide = maxWidth >= 900.dp
             val contentPadding = if (wide) 30.dp else 18.dp

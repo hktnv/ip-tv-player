@@ -1,4 +1,6 @@
 package com.hktnv.iptvbox.ui.home
+import androidx.compose.material3.MaterialTheme
+import com.hktnv.iptvbox.core.designsystem.transparent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -34,7 +35,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.model.SeriesGroup
 import com.hktnv.iptvbox.ui.common.tvClickable
@@ -71,7 +71,7 @@ internal fun HomeContentRow(
             onRequestSideMenu = onRequestSideMenu,
         )
         if (items.isEmpty()) {
-            Text(emptyText, color = IptvColors.TextSecondary, fontSize = 13.sp)
+            Text(emptyText, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
         } else {
             LazyRow(
                 modifier = Modifier.homeRailHorizontalNavigation(
@@ -125,7 +125,7 @@ internal fun HomeSeriesRow(
             onRequestSideMenu = onRequestSideMenu,
         )
         if (groups.isEmpty()) {
-            Text(emptyText, color = IptvColors.TextSecondary, fontSize = 13.sp)
+            Text(emptyText, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
         } else {
             LazyRow(
                 modifier = Modifier.homeRailHorizontalNavigation(
@@ -176,7 +176,7 @@ internal fun HomeRailHeader(
             .tvFocusLift(focused = focused, scale = 1.01f, liftPx = -3f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onOpenAll),
-        color = if (focused) TvFocusPanel else Color.Transparent,
+        color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.transparent,
         shape = RoundedCornerShape(12.dp),
         border = if (focused) BorderStroke(2.dp, TvFocusBorder) else null,
         shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 10.dp),
@@ -190,7 +190,7 @@ internal fun HomeRailHeader(
         ) {
             Text(
                 text = title,
-                color = IptvColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 22.sp,
                 lineHeight = 26.sp,
                 fontWeight = FontWeight.Bold,
@@ -206,13 +206,13 @@ internal fun HomeRailHeader(
 @Composable
 internal fun SeeAllLabel() {
     Surface(
-        color = Color(0xFF101720),
+        color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(999.dp),
         border = BorderStroke(1.dp, TvRestingBorder),
     ) {
         Text(
             text = "Tümü",
-            color = IptvColors.Accent,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),

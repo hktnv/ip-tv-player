@@ -1,4 +1,6 @@
 package com.hktnv.iptvbox.ui.dialog
+import androidx.compose.material3.MaterialTheme
+import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -29,7 +31,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
@@ -57,9 +58,9 @@ internal fun ContentOptionsDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .focusGroup(),
-            color = Color(0xFF101821),
+            color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(18.dp),
-            border = BorderStroke(1.dp, Color(0xFF2F4153)),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceBorder),
             tonalElevation = 8.dp,
         ) {
             Column(
@@ -68,13 +69,13 @@ internal fun ContentOptionsDialog(
             ) {
                 Text(
                     text = "\u0130\u00e7erik se\u00e7enekleri",
-                    color = IptvColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = item.displayTitle(),
-                    color = IptvColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 15.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -125,20 +126,20 @@ private fun ContentOptionButton(
             .tvFocusLift(focused = focused, scale = 1.025f, liftPx = -3f)
             .tvClickable(onClick = onClick),
         color = when {
-            focused -> if (primary) IptvColors.Accent else TvFocusPanel
-            primary -> IptvColors.Accent.copy(alpha = 0.88f)
-            else -> Color(0xFF0E1720)
+            focused -> if (primary) MaterialTheme.colorScheme.primaryContainer else TvFocusPanel
+            primary -> MaterialTheme.colorScheme.primaryContainer
+            else -> MaterialTheme.colorScheme.surface
         },
         shape = RoundedCornerShape(10.dp),
         border = BorderStroke(
             width = if (focused) 2.dp else 1.dp,
-            color = if (focused) TvFocusBorder else Color.White.copy(alpha = 0.12f),
+            color = if (focused) TvFocusBorder else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
         ),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
     ) {
         Text(
             text = text,
-            color = if (primary) Color.Black else IptvColors.TextPrimary,
+            color = if (primary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),

@@ -1,4 +1,6 @@
 package com.hktnv.iptvbox.ui.search
+import androidx.compose.material3.MaterialTheme
+import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,7 +29,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -36,13 +38,14 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
 import com.hktnv.iptvbox.ui.common.TvRestingBorder
 import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.tvFocusElevation
 import com.hktnv.iptvbox.ui.common.tvFocusLift
+
+private val SearchControlHeight = 64.dp
 
 @Composable
 internal fun SearchControls(
@@ -154,6 +157,7 @@ private fun SearchQueryField(
         value = query,
         onValueChange = onQueryChange,
         modifier = modifier
+            .height(SearchControlHeight)
             .focusRequester(inputFocusRequester)
             .focusProperties {
                 right = searchButtonFocusRequester
@@ -182,6 +186,19 @@ private fun SearchQueryField(
         readOnly = television && !keyboardRequested,
         singleLine = true,
         keyboardOptions = KeyboardOptions.Default.copy(showKeyboardOnFocus = !television || keyboardRequested),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.surfaceBorder,
+            disabledBorderColor = MaterialTheme.colorScheme.surfaceBorder,
+            focusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+            cursorColor = MaterialTheme.colorScheme.primary,
+        ),
     )
 }
 
@@ -212,15 +229,11 @@ private fun handleSearchInputKey(
             }
         }
         Key.DirectionLeft -> {
-            if (query.isBlank()) {
-                onKeyboardRequestedChange(false)
-                keyboardController?.hide()
-                focusManager.clearFocus(force = true)
-                onRequestSideMenu()
-                true
-            } else {
-                false
-            }
+            onKeyboardRequestedChange(false)
+            keyboardController?.hide()
+            focusManager.clearFocus(force = true)
+            onRequestSideMenu()
+            true
         }
         Key.DirectionCenter,
         Key.Enter,
@@ -242,18 +255,20 @@ private fun SearchSubmitButton(
     var focused by remember { mutableStateOf(false) }
     val compact = LocalConfiguration.current.screenWidthDp < 420
     val panelColor = when {
+        focused && enabled -> MaterialTheme.colorScheme.primary
         focused -> TvFocusPanel
-        enabled -> IptvColors.Accent
-        else -> Color(0xFF1E2731)
+        enabled -> MaterialTheme.colorScheme.primaryContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
     }
     val borderColor = when {
+        focused && enabled -> MaterialTheme.colorScheme.primary
         focused -> TvFocusBorder
-        enabled -> IptvColors.Accent.copy(alpha = 0.62f)
+        enabled -> MaterialTheme.colorScheme.surfaceBorder
         else -> TvRestingBorder
     }
     Surface(
         modifier = modifier
-            .height(56.dp)
+            .height(SearchControlHeight)
             .widthIn(min = if (compact) 76.dp else 104.dp)
             .focusRequester(focusRequester)
             .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -4f)
@@ -267,7 +282,11 @@ private fun SearchSubmitButton(
         Box(contentAlignment = Alignment.Center) {
             Text(
                 text = "Ara",
-                color = if (enabled || focused) IptvColors.TextPrimary else IptvColors.TextSecondary.copy(alpha = 0.7f),
+                color = when {
+                    !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    focused -> MaterialTheme.colorScheme.onPrimary
+                    else -> MaterialTheme.colorScheme.onPrimaryContainer
+                },
                 fontSize = if (compact) 14.sp else 15.sp,
             )
         }

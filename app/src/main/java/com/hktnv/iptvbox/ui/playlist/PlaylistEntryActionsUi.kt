@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.ui.playlist
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -25,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -33,9 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.data.catalog.column
-import com.hktnv.iptvbox.ui.catalog.tint
 import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
@@ -68,10 +66,10 @@ internal fun EmptyPrimaryAction(
             .focusRequester(focusRequester)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
-        color = if (focused) Color(0xFF16E3B3) else Color(0xFF00C795),
-        contentColor = IptvColors.Night,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         shape = RoundedCornerShape(18.dp),
-        border = if (focused) BorderStroke(2.dp, Color.White) else null,
+        border = if (focused) BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface) else null,
         shadowElevation = elevation,
     ) {
         Row(
@@ -110,8 +108,8 @@ internal fun EntryActionCard(
     )
     val borderColor = when {
         focused -> TvFocusBorder
-        action.selected -> IptvColors.Accent
-        action.emphasis == EntryEmphasis.Primary -> Color(0xFF37536D)
+        action.selected -> MaterialTheme.colorScheme.onPrimaryContainer
+        action.emphasis == EntryEmphasis.Primary -> MaterialTheme.colorScheme.surfaceVariant
         else -> TvRestingBorder
     }
     Surface(
@@ -127,10 +125,10 @@ internal fun EntryActionCard(
         color = when {
             focused -> TvFocusPanel
             action.selected -> TvSelectedPanel
-            action.emphasis == EntryEmphasis.Primary -> Color(0xFF101C28)
-            else -> IptvColors.Panel
+            action.emphasis == EntryEmphasis.Primary -> MaterialTheme.colorScheme.surfaceVariant
+            else -> MaterialTheme.colorScheme.surface
         },
-        contentColor = IptvColors.TextPrimary,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         shape = RoundedCornerShape(if (action.emphasis == EntryEmphasis.Primary) 22.dp else 16.dp),
         border = BorderStroke(if (focused) 2.dp else 1.dp, borderColor),
         shadowElevation = elevation,
@@ -148,8 +146,8 @@ internal fun EntryActionCard(
                 modifier = Modifier.height(if (action.emphasis == EntryEmphasis.Primary) 30.dp else 22.dp),
                 tint = when {
                     focused -> TvFocusBorder
-                    action.selected -> IptvColors.Accent
-                    else -> IptvColors.TextPrimary
+                    action.selected -> MaterialTheme.colorScheme.onPrimaryContainer
+                    else -> MaterialTheme.colorScheme.onSurface
                 },
             )
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -163,7 +161,7 @@ internal fun EntryActionCard(
                 )
                 Text(
                     text = action.subtitle,
-                    color = IptvColors.TextSecondary.copy(alpha = 0.94f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.94f),
                     fontSize = if (action.emphasis == EntryEmphasis.Primary) 15.sp else 13.sp,
                     lineHeight = if (action.emphasis == EntryEmphasis.Primary) 20.sp else 17.sp,
                     maxLines = 2,

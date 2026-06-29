@@ -23,29 +23,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-object IptvColors {
-    val Night = Color(0xFF070A0E)
-    val Panel = Color(0xFF0F1720)
-    val PanelSoft = Color(0xFF151F2A)
-    val Accent = Color(0xFF00D6A3)
-    val Warning = Color(0xFFFFC857)
-    val TextPrimary = Color(0xFFF4F7FA)
-    val TextSecondary = Color(0xFFC4CDD8)
-}
-
 private val IptvColorScheme: ColorScheme = darkColorScheme(
-    primary = IptvColors.Accent,
-    onPrimary = IptvColors.Night,
-    background = IptvColors.Night,
-    onBackground = IptvColors.TextPrimary,
-    surface = IptvColors.Panel,
-    onSurface = IptvColors.TextPrimary,
-    surfaceVariant = IptvColors.PanelSoft,
-    onSurfaceVariant = IptvColors.TextSecondary,
+    primary = Accent,
+    onPrimary = Background,
+    primaryContainer = AccentSubtle,
+    onPrimaryContainer = AccentText,
+    tertiaryContainer = BadgeFilm,
+    onTertiaryContainer = BadgeFilmText,
+    background = Background,
+    onBackground = TextPrimary,
+    surface = Surface,
+    onSurface = TextPrimary,
+    surfaceVariant = SurfaceVariant,
+    onSurfaceVariant = TextSecondary,
+    outline = SurfaceBorder,
+    outlineVariant = SurfaceBorder,
+    error = Error,
+    onError = TextPrimary,
+    scrim = Background,
 )
 
 @Composable
@@ -70,14 +68,17 @@ fun FocusPanel(
             .onFocusChanged { focused = it.isFocused }
             .focusable(),
         shape = shape,
-        color = IptvColors.Panel,
-        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) IptvColors.Accent else Color(0xFF273340)),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(
+            if (focused) 2.dp else 1.dp,
+            if (focused) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceBorder,
+        ),
         tonalElevation = if (focused) 6.dp else 1.dp,
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(IptvColors.Panel)
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(contentPadding),
         ) {
             content()
@@ -96,10 +97,13 @@ fun RailButton(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (selected) IptvColors.Accent else Color.Transparent,
-            contentColor = if (selected) IptvColors.Night else IptvColors.TextPrimary,
+            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.transparent,
+            contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
         ),
-        border = BorderStroke(1.dp, if (selected) IptvColors.Accent else Color(0xFF2A3542)),
+        border = BorderStroke(
+            1.dp,
+            if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.surfaceBorder,
+        ),
         shape = RoundedCornerShape(8.dp),
     ) {
         Text(label, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium)

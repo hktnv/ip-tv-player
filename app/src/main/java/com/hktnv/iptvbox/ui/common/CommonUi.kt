@@ -85,7 +85,6 @@ import androidx.media3.common.Player
 import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
 import com.hktnv.iptvbox.core.common.SearchNormalizer
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.core.designsystem.IptvTheme
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentHint
@@ -117,14 +116,14 @@ internal fun BootScreen(contentPadding: Dp) {
     ) {
         Text(
             text = "IP TV Player",
-            color = IptvColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
         )
         Spacer(Modifier.height(10.dp))
         Text(
             text = "Açılıyor",
-            color = IptvColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp,
         )
         Spacer(Modifier.height(16.dp))
@@ -152,13 +151,13 @@ internal fun RecoveryScreen(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     text = "Liste yeniden yüklenebilir",
-                    color = IptvColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = message,
-                    color = IptvColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp,
                     lineHeight = 19.sp,
                 )
@@ -227,7 +226,7 @@ internal fun EmptyState(
                 .tvFocusLift(focused = focused, scale = 1.015f, liftPx = -3f)
                 .onFocusChanged { focused = it.isFocused }
                 .tvClickable(onClick = onAction),
-            color = if (focused) TvFocusPanel else IptvColors.Panel,
+            color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(12.dp),
             border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
             shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
@@ -240,14 +239,14 @@ internal fun EmptyState(
             ) {
                 Text(
                     title,
-                    color = IptvColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 22.sp,
                     lineHeight = 27.sp,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
                     body,
-                    color = IptvColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 16.sp,
                     lineHeight = 22.sp,
                 )
@@ -267,14 +266,14 @@ internal fun EmptyState(
         ) {
             Text(
                 title,
-                color = IptvColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 22.sp,
                 lineHeight = 27.sp,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 body,
-                color = IptvColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 16.sp,
                 lineHeight = 22.sp,
             )
@@ -289,13 +288,13 @@ internal fun FocusAwarePrimaryLabel(
 ) {
     Surface(
         modifier = modifier.defaultMinSize(minWidth = 148.dp),
-        color = if (focused) IptvColors.Accent else Color(0xFF00C795),
+        color = MaterialTheme.colorScheme.primaryContainer,
         shape = RoundedCornerShape(10.dp),
-        border = if (focused) BorderStroke(2.dp, Color.White) else null,
+        border = if (focused) BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface) else null,
     ) {
         Text(
             text = text,
-            color = if (focused) Color.White else IptvColors.Night,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
             fontSize = 15.sp,
             lineHeight = 18.sp,
             fontWeight = FontWeight.Bold,
@@ -315,7 +314,7 @@ internal fun LoadingPanel(
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 text = text,
-                color = IptvColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
             )
@@ -333,8 +332,8 @@ internal fun InfoPanel(
 ) {
     PremiumPanel {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, color = IptvColors.TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Text(body, color = IptvColors.TextSecondary, fontSize = 14.sp, lineHeight = 19.sp)
+            Text(title, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, lineHeight = 19.sp)
             if (actionLabel != null && onAction != null) {
                 OutlinedButton(onClick = onAction, shape = RoundedCornerShape(8.dp)) {
                     Text(actionLabel)

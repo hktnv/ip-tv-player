@@ -1,4 +1,6 @@
 package com.hktnv.iptvbox.ui.dialog
+import androidx.compose.material3.MaterialTheme
+import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.focusGroup
@@ -27,7 +29,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.hktnv.iptvbox.core.designsystem.IptvColors
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
@@ -51,9 +52,9 @@ internal fun ExitConfirmationDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .focusGroup(),
-            color = Color(0xFF101821),
+            color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(18.dp),
-            border = BorderStroke(1.dp, Color(0xFF2F4153)),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceBorder),
             tonalElevation = 8.dp,
         ) {
             Column(
@@ -62,13 +63,13 @@ internal fun ExitConfirmationDialog(
             ) {
                 Text(
                     text = "Uygulamadan \u00e7\u0131k\u0131ls\u0131n m\u0131?",
-                    color = IptvColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = "Vazge\u00e7 ile uygulamaya d\u00f6n\u00fcn veya \u00c7\u0131k\u0131\u015f ile kapat\u0131n.",
-                    color = IptvColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 15.sp,
                     lineHeight = 21.sp,
                 )
@@ -105,9 +106,9 @@ private fun ExitDialogButton(
 ) {
     var focused by remember { mutableStateOf(false) }
     val background = when {
-        focused -> if (primary) IptvColors.Accent else TvFocusPanel
-        primary -> IptvColors.Accent.copy(alpha = 0.88f)
-        else -> Color(0xFF0E1720)
+        focused -> if (primary) MaterialTheme.colorScheme.primaryContainer else TvFocusPanel
+        primary -> MaterialTheme.colorScheme.primaryContainer
+        else -> MaterialTheme.colorScheme.surface
     }
     Surface(
         modifier = modifier
@@ -120,13 +121,13 @@ private fun ExitDialogButton(
         shape = RoundedCornerShape(10.dp),
         border = BorderStroke(
             width = if (focused) 2.dp else 1.dp,
-            color = if (focused) TvFocusBorder else Color.White.copy(alpha = 0.12f),
+            color = if (focused) TvFocusBorder else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
         ),
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
     ) {
         Text(
             text = text,
-            color = if (primary) Color.Black else IptvColors.TextPrimary,
+            color = if (primary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
