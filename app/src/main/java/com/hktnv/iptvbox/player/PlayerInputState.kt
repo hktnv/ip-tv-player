@@ -14,6 +14,7 @@ internal enum class PlayerInputAction {
     UpPressed,
     DownPressed,
     LeftPressed,
+    RightPressed,
     BackPressed,
     ContinueSelected,
     ExitSelected,
@@ -26,6 +27,8 @@ internal data class PlayerInputResult(
     val togglePlayback: Boolean = false,
     val selectNextItem: Boolean = false,
     val selectPreviousItem: Boolean = false,
+    val seekBack: Boolean = false,
+    val seekForward: Boolean = false,
     val exitRequested: Boolean = false,
 )
 
@@ -84,14 +87,25 @@ internal fun reducePlayerInput(
             PlayerInputState.Watching -> PlayerInputResult(PlayerInputState.ContentListVisible)
             PlayerInputState.ControlsVisible -> PlayerInputResult(
                 state = PlayerInputState.ControlsVisible,
-                consumeInput = false,
+                seekBack = true,
+            )
+            else -> PlayerInputResult(state, consumeInput = false)
+        }
+        PlayerInputAction.RightPressed -> when (state) {
+            PlayerInputState.Watching -> PlayerInputResult(
+                state = PlayerInputState.ControlsVisible,
+                showControls = true,
+            )
+            PlayerInputState.ControlsVisible -> PlayerInputResult(
+                state = PlayerInputState.ControlsVisible,
+                seekForward = true,
             )
             else -> PlayerInputResult(state, consumeInput = false)
         }
         PlayerInputAction.BackPressed -> when (state) {
             PlayerInputState.ContentListVisible -> PlayerInputResult(PlayerInputState.Watching)
-            PlayerInputState.Watching,
-            PlayerInputState.ControlsVisible -> PlayerInputResult(PlayerInputState.ExitConfirmVisible)
+            PlayerInputState.ControlsVisible -> PlayerInputResult(PlayerInputState.Watching)
+            PlayerInputState.Watching -> PlayerInputResult(PlayerInputState.ExitConfirmVisible)
             PlayerInputState.ExitConfirmVisible -> PlayerInputResult(
                 state = PlayerInputState.Watching,
                 exitRequested = true,
@@ -111,6 +125,8 @@ internal fun PlayerRemoteCommand.toInputAction(): PlayerInputAction? {
         PlayerRemoteCommand.NextItem -> PlayerInputAction.UpPressed
         PlayerRemoteCommand.PreviousItem -> PlayerInputAction.DownPressed
         PlayerRemoteCommand.OpenContentList -> PlayerInputAction.LeftPressed
+        PlayerRemoteCommand.SeekForward -> PlayerInputAction.RightPressed
+        PlayerRemoteCommand.Back -> PlayerInputAction.BackPressed
         PlayerRemoteCommand.None -> null
     }
 }

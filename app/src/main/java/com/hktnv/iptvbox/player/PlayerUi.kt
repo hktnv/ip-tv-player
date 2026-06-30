@@ -1,6 +1,6 @@
 package com.hktnv.iptvbox.player
 
-import android.content.Context
+import android.os.SystemClock
 import android.view.KeyEvent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -24,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -34,7 +33,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
-import androidx.media3.ui.PlayerView
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.player.MediaPlayerFactory
 import kotlinx.coroutines.delay
@@ -70,12 +68,15 @@ internal fun PlayerScreen(
     var currentPositionMs by remember(player) { mutableStateOf(0L) }
     var durationMs by remember(player) { mutableStateOf(0L) }
     var canSeek by remember(player) { mutableStateOf(false) }
+    var manuallyPaused by remember(player) { mutableStateOf(false) }
+    var playbackState by remember(player) { mutableStateOf(player.playbackState) }
     fun updatePlaybackSnapshot() {
         isPlaying = player.isPlaying
         playbackSpeed = player.playbackParameters.speed
         currentPositionMs = player.currentPosition.coerceAtLeast(0L)
         durationMs = player.duration.takeIf { it != C.TIME_UNSET }?.coerceAtLeast(0L) ?: 0L
         canSeek = player.isCurrentMediaItemSeekable && durationMs > 0L
+        playbackState = player.playbackState
     }
     DisposableEffect(player) {
         val listener = object : Player.Listener {
@@ -94,6 +95,7 @@ internal fun PlayerScreen(
     var inputState by remember(item.id) { mutableStateOf(PlayerInputState.Watching) }
     var exitChoice by remember(item.id) { mutableStateOf(PlayerExitChoice.Exit) }
     var controlsRevision by remember(item.id) { mutableIntStateOf(0) }
+    val backPressGuard = remember(item.id) { PlayerBackPressGuard() }
     val controlsVisible = inputState == PlayerInputState.ControlsVisible
     val contentListVisible = inputState == PlayerInputState.ContentListVisible
     val exitConfirmVisible = inputState == PlayerInputState.ExitConfirmVisible
@@ -120,9 +122,24 @@ internal fun PlayerScreen(
     }
 
     fun switchTo(itemToPlay: CatalogItem) {
+        manuallyPaused = false
         inputState = PlayerInputState.ControlsVisible
         controlsRevision++
         onSelectItem(itemToPlay)
+    }
+
+    fun seekBy(deltaMs: Long) {
+        if (!canSeek) return
+        val target = calculateSeekTarget(player.currentPosition, durationMs, deltaMs)
+        player.seekTo(target)
+        updatePlaybackSnapshot()
+    }
+
+    fun seekTo(targetMs: Long) {
+        if (!canSeek) return
+        val target = targetMs.coerceIn(0L, durationMs)
+        player.seekTo(target)
+        updatePlaybackSnapshot()
     }
 
     fun applyInputResult(result: PlayerInputResult): Boolean {
@@ -130,6 +147,7 @@ internal fun PlayerScreen(
         inputState = result.state
         if (result.state == PlayerInputState.ControlsVisible) {
             controlsRevision++
+            backPressGuard.markOverlayBackHandled(SystemClock.uptimeMillis())
         }
         if (result.state == PlayerInputState.ExitConfirmVisible &&
             previousState != PlayerInputState.ExitConfirmVisible
@@ -137,9 +155,17 @@ internal fun PlayerScreen(
             exitChoice = PlayerExitChoice.Exit
         }
         if (result.togglePlayback) {
-            if (player.isPlaying) player.pause() else player.play()
+            if (manuallyPaused || !player.playWhenReady) {
+                manuallyPaused = false
+                player.play()
+            } else {
+                manuallyPaused = true
+                player.pause()
+            }
             updatePlaybackSnapshot()
         }
+        if (result.seekBack) seekBy(-10_000L)
+        if (result.seekForward) seekBy(10_000L)
         if (result.selectNextItem) queue.next?.let(::switchTo)
         if (result.selectPreviousItem) queue.previous?.let(::switchTo)
         if (result.exitRequested) onBack()
@@ -150,6 +176,7 @@ internal fun PlayerScreen(
         if (!contentListVisible && !exitConfirmVisible) {
             inputState = PlayerInputState.ControlsVisible
             controlsRevision++
+            backPressGuard.markOverlayBackHandled(SystemClock.uptimeMillis())
         }
     }
 
@@ -167,13 +194,6 @@ internal fun PlayerScreen(
         applyInputResult(reducePlayerInput(inputState, action))
     }
 
-    fun seekBy(deltaMs: Long) {
-        if (!canSeek) return
-        val target = (player.currentPosition + deltaMs).coerceIn(0L, durationMs)
-        player.seekTo(target)
-        updatePlaybackSnapshot()
-    }
-
     fun cycleSpeed() {
         val speeds = listOf(0.5f, 1f, 1.25f, 1.5f, 2f)
         val currentIndex = speeds.indexOfFirst { kotlin.math.abs(it - playbackSpeed) < 0.01f }
@@ -185,12 +205,34 @@ internal fun PlayerScreen(
 
     fun handleRemoteCommand(command: PlayerRemoteCommand): Boolean {
         val action = command.toInputAction() ?: return false
+        if (
+            command == PlayerRemoteCommand.Back &&
+            (inputState == PlayerInputState.ControlsVisible || inputState == PlayerInputState.ContentListVisible)
+        ) {
+            backPressGuard.markOverlayBackHandled(SystemClock.uptimeMillis())
+        } else if (
+            command == PlayerRemoteCommand.Back &&
+            inputState == PlayerInputState.Watching &&
+            backPressGuard.shouldSuppressExitBack(SystemClock.uptimeMillis())
+        ) {
+            return true
+        }
         return applyInputResult(reducePlayerInput(inputState, action))
     }
 
     fun shouldHandleRemoteKey(keyCode: Int): Boolean {
         val action = playerRemoteCommandForKeyCode(keyCode).toInputAction() ?: return false
         return reducePlayerInput(inputState, action).consumeInput
+    }
+
+    fun handleBackPressed() {
+        val nowMs = SystemClock.uptimeMillis()
+        if (inputState == PlayerInputState.ControlsVisible || inputState == PlayerInputState.ContentListVisible) {
+            backPressGuard.markOverlayBackHandled(nowMs)
+        } else if (inputState == PlayerInputState.Watching && backPressGuard.shouldSuppressExitBack(nowMs)) {
+            return
+        }
+        applyInputResult(reducePlayerInput(inputState, PlayerInputAction.BackPressed))
     }
 
     fun handleExitDialogKeyEvent(event: KeyEvent): Boolean {
@@ -210,12 +252,7 @@ internal fun PlayerScreen(
         return true
     }
 
-    BackHandler(enabled = contentListVisible) {
-        applyInputResult(reducePlayerInput(inputState, PlayerInputAction.BackPressed))
-    }
-    BackHandler(enabled = !contentListVisible && !exitConfirmVisible) {
-        applyInputResult(reducePlayerInput(inputState, PlayerInputAction.BackPressed))
-    }
+    BackHandler { handleBackPressed() }
 
     Box(
         modifier = Modifier
@@ -277,6 +314,14 @@ internal fun PlayerScreen(
             PlayerOsdScrims()
         }
         AnimatedVisibility(
+            visible = shouldShowBufferingIndicator(playbackState, manuallyPaused),
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.Center),
+        ) {
+            PlayerBufferingIndicator()
+        }
+        AnimatedVisibility(
             visible = shouldShowPlayerContentInfo(controlsVisible, PlayerExitDialogState.Hidden) &&
                 !contentListVisible && !exitConfirmVisible,
             enter = fadeIn(),
@@ -292,14 +337,21 @@ internal fun PlayerScreen(
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
             PlayerControlsOverlay(
-                isPlaying = isPlaying,
+                isPlaying = shouldPresentAsPlaying(player.playWhenReady, manuallyPaused),
                 positionMs = currentPositionMs,
                 durationMs = durationMs,
                 speed = playbackSpeed,
                 canSeek = canSeek,
                 onSeekBack = { seekBy(-10_000L) },
+                onSeekTo = ::seekTo,
                 onTogglePlayback = {
-                    if (player.isPlaying) player.pause() else player.play()
+                    if (manuallyPaused || !player.playWhenReady) {
+                        manuallyPaused = false
+                        player.play()
+                    } else {
+                        manuallyPaused = true
+                        player.pause()
+                    }
                     updatePlaybackSnapshot()
                 },
                 onSeekForward = { seekBy(10_000L) },
@@ -312,6 +364,7 @@ internal fun PlayerScreen(
                 queue = queue,
                 onSelectItem = ::switchTo,
                 onDismiss = {
+                    backPressGuard.markOverlayBackHandled(SystemClock.uptimeMillis())
                     applyInputResult(reducePlayerInput(inputState, PlayerInputAction.BackPressed))
                 },
                 modifier = Modifier.align(Alignment.CenterStart),
@@ -329,47 +382,5 @@ internal fun PlayerScreen(
                 },
             )
         }
-    }
-}
-
-private class TvRemotePlayerView(context: Context) : PlayerView(context) {
-    var onOverlayKeyEvent: (KeyEvent) -> Boolean = { false }
-    var shouldHandleKeyCode: (Int) -> Boolean = { false }
-    var onRemoteCommand: (PlayerRemoteCommand) -> Boolean = { false }
-
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (onOverlayKeyEvent(event)) {
-            return true
-        }
-        val command = playerRemoteCommandForKeyCode(event.keyCode)
-        if (command != PlayerRemoteCommand.None && shouldHandleKeyCode(event.keyCode)) {
-            return when (event.action) {
-                KeyEvent.ACTION_DOWN -> true
-                KeyEvent.ACTION_UP -> onRemoteCommand(command)
-                else -> true
-            }
-        }
-        return super.dispatchKeyEvent(event)
-    }
-}
-
-private fun Int.isPlayerExitDialogKey(): Boolean {
-    return this == KeyEvent.KEYCODE_DPAD_LEFT ||
-        this == KeyEvent.KEYCODE_DPAD_RIGHT ||
-        this == KeyEvent.KEYCODE_DPAD_CENTER ||
-        this == KeyEvent.KEYCODE_ENTER ||
-        this == KeyEvent.KEYCODE_NUMPAD_ENTER ||
-        this == KeyEvent.KEYCODE_BACK
-}
-
-private fun playerRemoteCommandForComposeKey(key: Key): PlayerRemoteCommand {
-    return when (key) {
-        Key.DirectionCenter,
-        Key.Enter,
-        Key.NumPadEnter -> PlayerRemoteCommand.TogglePlayPause
-        Key.DirectionUp -> PlayerRemoteCommand.NextItem
-        Key.DirectionDown -> PlayerRemoteCommand.PreviousItem
-        Key.DirectionLeft -> PlayerRemoteCommand.OpenContentList
-        else -> PlayerRemoteCommand.None
     }
 }

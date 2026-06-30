@@ -88,6 +88,14 @@ class PlayerPlaybackQueueTest {
             PlayerRemoteCommand.OpenContentList,
             playerRemoteCommandForKeyCode(KeyEvent.KEYCODE_DPAD_LEFT),
         )
+        assertEquals(
+            PlayerRemoteCommand.SeekForward,
+            playerRemoteCommandForKeyCode(KeyEvent.KEYCODE_DPAD_RIGHT),
+        )
+        assertEquals(
+            PlayerRemoteCommand.Back,
+            playerRemoteCommandForKeyCode(KeyEvent.KEYCODE_BACK),
+        )
     }
 
     private fun item(id: String): CatalogItem {

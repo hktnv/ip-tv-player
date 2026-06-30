@@ -5,10 +5,8 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
@@ -20,7 +18,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -40,7 +37,6 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,6 +57,7 @@ internal fun PlayerControlsOverlay(
     speed: Float,
     canSeek: Boolean,
     onSeekBack: () -> Unit,
+    onSeekTo: (Long) -> Unit,
     onTogglePlayback: () -> Unit,
     onSeekForward: () -> Unit,
     onCycleSpeed: () -> Unit,
@@ -88,6 +85,15 @@ internal fun PlayerControlsOverlay(
                 positionMs = positionMs,
                 durationMs = durationMs,
                 canSeek = canSeek,
+                onSeekTo = {
+                    onUserInteraction()
+                    onSeekTo(it)
+                },
+                onSeekBy = {
+                    onUserInteraction()
+                    if (it < 0L) onSeekBack() else onSeekForward()
+                },
+                onUserInteraction = onUserInteraction,
             )
             Row(
                 horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp),
@@ -151,49 +157,6 @@ internal fun PlayerControlsOverlay(
 }
 
 @Composable
-private fun PlayerTimeline(
-    positionMs: Long,
-    durationMs: Long,
-    canSeek: Boolean,
-) {
-    val progress = if (canSeek && durationMs > 0L) {
-        (positionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
-    } else {
-        1f
-    }
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-    ) {
-        Text(
-            text = if (canSeek) formatPlayerTime(positionMs) else "Canlı",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.width(58.dp),
-        )
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier
-                .weight(1f)
-                .height(3.dp),
-            color = if (canSeek) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.accentText,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-            drawStopIndicator = {},
-        )
-        Text(
-            text = if (canSeek) formatPlayerTime(durationMs) else "Yayın",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.End,
-            modifier = Modifier.width(70.dp),
-        )
-    }
-}
-
-@Composable
 private fun PlayerIconControl(
     icon: ImageVector,
     contentDescription: String,
@@ -208,10 +171,6 @@ private fun PlayerIconControl(
         focused -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f)
         else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (enabled) 0.42f else 0.18f)
     }
-    val borderColor = when {
-        focused -> MaterialTheme.colorScheme.focusBorder
-        else -> TvRestingBorder
-    }
     Surface(
         modifier = modifier
             .tvFocusLift(focused = focused, scale = 1.025f, liftPx = -3f)
@@ -220,7 +179,10 @@ private fun PlayerIconControl(
             .tvClickable(enabled = enabled, onClick = onClick),
         color = surfaceColor,
         shape = RoundedCornerShape(999.dp),
-        border = BorderStroke(if (focused) 2.dp else 1.dp, borderColor),
+        border = BorderStroke(
+            if (focused) 2.dp else 1.dp,
+            if (focused) MaterialTheme.colorScheme.focusBorder else TvRestingBorder,
+        ),
         shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 10.dp),
     ) {
         Icon(
@@ -267,7 +229,7 @@ private fun PlayerSpeedControl(
                 modifier = Modifier.size(23.dp),
             )
             Text(
-                text = formatPlayerSpeed(speed),
+                text = if (speed == 1f) "1x" else "${speed}x",
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
@@ -275,22 +237,5 @@ private fun PlayerSpeedControl(
                 overflow = TextOverflow.Clip,
             )
         }
-    }
-}
-
-private fun formatPlayerSpeed(speed: Float): String {
-    return if (speed == 1f) "1x" else "${speed}x"
-}
-
-private fun formatPlayerTime(valueMs: Long): String {
-    if (valueMs <= 0L) return "00:00"
-    val totalSeconds = valueMs / 1000L
-    val hours = totalSeconds / 3600L
-    val minutes = (totalSeconds % 3600L) / 60L
-    val seconds = totalSeconds % 60L
-    return if (hours > 0L) {
-        "%d:%02d:%02d".format(hours, minutes, seconds)
-    } else {
-        "%02d:%02d".format(minutes, seconds)
     }
 }

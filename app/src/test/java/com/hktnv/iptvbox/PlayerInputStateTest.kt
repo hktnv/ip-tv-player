@@ -23,7 +23,8 @@ class PlayerInputStateTest {
         assertEquals(PlayerInputState.ContentListVisible, watchingResult.state)
         assertEquals(PlayerInputState.ControlsVisible, controlsResult.state)
         assertTrue(watchingResult.consumeInput)
-        assertFalse(controlsResult.consumeInput)
+        assertTrue(controlsResult.consumeInput)
+        assertTrue(controlsResult.seekBack)
         assertFalse(controlsResult.togglePlayback)
         assertFalse(controlsResult.selectNextItem)
         assertFalse(controlsResult.selectPreviousItem)
@@ -55,15 +56,39 @@ class PlayerInputStateTest {
             state = PlayerInputState.ContentListVisible,
             action = PlayerInputAction.BackPressed,
         )
+        val controlsResult = reducePlayerInput(
+            state = PlayerInputState.ControlsVisible,
+            action = PlayerInputAction.BackPressed,
+        )
         val watchingResult = reducePlayerInput(
             state = PlayerInputState.Watching,
             action = PlayerInputAction.BackPressed,
         )
 
         assertEquals(PlayerInputState.Watching, listResult.state)
+        assertEquals(PlayerInputState.Watching, controlsResult.state)
         assertFalse(listResult.exitRequested)
+        assertFalse(controlsResult.exitRequested)
         assertEquals(PlayerInputState.ExitConfirmVisible, watchingResult.state)
         assertFalse(watchingResult.exitRequested)
+    }
+
+    @Test
+    fun rightSeeksForwardWhenControlsAreVisible() {
+        val watchingResult = reducePlayerInput(
+            state = PlayerInputState.Watching,
+            action = PlayerInputAction.RightPressed,
+        )
+        val controlsResult = reducePlayerInput(
+            state = PlayerInputState.ControlsVisible,
+            action = PlayerInputAction.RightPressed,
+        )
+
+        assertEquals(PlayerInputState.ControlsVisible, watchingResult.state)
+        assertTrue(watchingResult.showControls)
+        assertFalse(watchingResult.seekForward)
+        assertEquals(PlayerInputState.ControlsVisible, controlsResult.state)
+        assertTrue(controlsResult.seekForward)
     }
 
     @Test

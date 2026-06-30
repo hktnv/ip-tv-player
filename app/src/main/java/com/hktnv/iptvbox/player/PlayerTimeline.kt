@@ -1,0 +1,149 @@
+package com.hktnv.iptvbox.player
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.hktnv.iptvbox.core.designsystem.accentText
+import com.hktnv.iptvbox.core.designsystem.focusBorder
+
+@Composable
+internal fun PlayerTimeline(
+    positionMs: Long,
+    durationMs: Long,
+    canSeek: Boolean,
+    onSeekTo: (Long) -> Unit,
+    onSeekBy: (Long) -> Unit,
+    onUserInteraction: () -> Unit,
+) {
+    var focused by remember { mutableStateOf(false) }
+    var previewPositionMs by remember { mutableStateOf<Long?>(null) }
+    val shownPositionMs = previewPositionMs ?: positionMs
+    val progress = if (canSeek && durationMs > 0L) {
+        (shownPositionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
+    } else {
+        1f
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = if (canSeek) formatPlayerTime(shownPositionMs) else "Canlı",
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.width(58.dp),
+        )
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center,
+        ) {
+            if ((focused || previewPositionMs != null) && canSeek) {
+                SeekTooltip(
+                    text = formatPlayerTime(shownPositionMs),
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(bottom = 24.dp),
+                )
+            }
+            Slider(
+                value = progress,
+                onValueChange = { value ->
+                    if (!canSeek || durationMs <= 0L) return@Slider
+                    previewPositionMs = (durationMs * value).toLong().coerceIn(0L, durationMs)
+                    onUserInteraction()
+                },
+                onValueChangeFinished = {
+                    previewPositionMs?.let(onSeekTo)
+                    previewPositionMs = null
+                },
+                enabled = canSeek,
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.onSurface,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.56f),
+                    disabledThumbColor = MaterialTheme.colorScheme.accentText,
+                    disabledActiveTrackColor = MaterialTheme.colorScheme.accentText,
+                    disabledInactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { focused = it.isFocused }
+                    .focusable(enabled = canSeek)
+                    .onPreviewKeyEvent { event ->
+                        if (!canSeek || event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        when (event.key) {
+                            Key.DirectionLeft -> {
+                                previewPositionMs = calculateSeekTarget(shownPositionMs, durationMs, -10_000L)
+                                onSeekBy(-10_000L)
+                                true
+                            }
+                            Key.DirectionRight -> {
+                                previewPositionMs = calculateSeekTarget(shownPositionMs, durationMs, 10_000L)
+                                onSeekBy(10_000L)
+                                true
+                            }
+                            else -> false
+                        }
+                    },
+            )
+        }
+        Text(
+            text = if (canSeek) formatPlayerTime(durationMs) else "Yayın",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.End,
+            modifier = Modifier.width(70.dp),
+        )
+    }
+}
+
+@Composable
+private fun SeekTooltip(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.86f),
+        shape = RoundedCornerShape(999.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.focusBorder.copy(alpha = 0.55f)),
+    ) {
+        Text(
+            text = text,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+        )
+    }
+}

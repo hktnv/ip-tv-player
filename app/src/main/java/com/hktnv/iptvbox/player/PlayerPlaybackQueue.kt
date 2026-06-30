@@ -23,6 +23,8 @@ internal enum class PlayerRemoteCommand {
     NextItem,
     PreviousItem,
     OpenContentList,
+    SeekForward,
+    Back,
     None,
 }
 
@@ -69,6 +71,8 @@ internal fun playerRemoteCommandForKeyCode(keyCode: Int): PlayerRemoteCommand {
         KeyEvent.KEYCODE_DPAD_UP -> PlayerRemoteCommand.NextItem
         KeyEvent.KEYCODE_DPAD_DOWN -> PlayerRemoteCommand.PreviousItem
         KeyEvent.KEYCODE_DPAD_LEFT -> PlayerRemoteCommand.OpenContentList
+        KeyEvent.KEYCODE_DPAD_RIGHT -> PlayerRemoteCommand.SeekForward
+        KeyEvent.KEYCODE_BACK -> PlayerRemoteCommand.Back
         else -> PlayerRemoteCommand.None
     }
 }
