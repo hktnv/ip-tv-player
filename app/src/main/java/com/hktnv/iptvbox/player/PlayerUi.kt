@@ -70,6 +70,12 @@ internal fun PlayerScreen(
     var canSeek by remember(player) { mutableStateOf(false) }
     var manuallyPaused by remember(player) { mutableStateOf(false) }
     var playbackState by remember(player) { mutableStateOf(player.playbackState) }
+    val diagnosticsContext = remember(item.id, item.streamUrl) {
+        item.toPlayerDiagnosticContext()
+    }
+    val diagnostics = remember(player, diagnosticsContext) {
+        PlayerDiagnosticLogger(diagnosticsContext) { manuallyPaused }
+    }
     fun updatePlaybackSnapshot() {
         isPlaying = player.isPlaying
         playbackSpeed = player.playbackParameters.speed
@@ -85,8 +91,12 @@ internal fun PlayerScreen(
             }
         }
         player.addListener(listener)
+        player.addAnalyticsListener(diagnostics)
+        diagnostics.logAttached()
         updatePlaybackSnapshot()
         onDispose {
+            diagnostics.logDetached()
+            player.removeAnalyticsListener(diagnostics)
             player.removeListener(listener)
             player.release()
         }
@@ -129,15 +139,17 @@ internal fun PlayerScreen(
     }
 
     fun seekBy(deltaMs: Long) {
-        if (!canSeek) return
         val target = calculateSeekTarget(player.currentPosition, durationMs, deltaMs)
+        diagnostics.logSeekRequest(targetMs = target, canSeek = canSeek, source = "remote")
+        if (!canSeek) return
         player.seekTo(target)
         updatePlaybackSnapshot()
     }
 
     fun seekTo(targetMs: Long) {
-        if (!canSeek) return
         val target = targetMs.coerceIn(0L, durationMs)
+        diagnostics.logSeekRequest(targetMs = target, canSeek = canSeek, source = "timeline")
+        if (!canSeek) return
         player.seekTo(target)
         updatePlaybackSnapshot()
     }
