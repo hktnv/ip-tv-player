@@ -8,15 +8,17 @@ internal data class PlayerDiagnosticContext(
     val category: String,
     val title: String,
     val media: String,
+    val uiMode: String,
 )
 
-internal fun CatalogItem.toPlayerDiagnosticContext(): PlayerDiagnosticContext {
+internal fun CatalogItem.toPlayerDiagnosticContext(uiMode: PlayerUiMode): PlayerDiagnosticContext {
     val info = toPlayerContentInfo()
     return PlayerDiagnosticContext(
         type = info.typeLabel,
         category = info.category,
         title = info.title,
         media = streamUrl.toDiagnosticMediaHint(),
+        uiMode = uiMode.diagnosticValue,
     )
 }
 

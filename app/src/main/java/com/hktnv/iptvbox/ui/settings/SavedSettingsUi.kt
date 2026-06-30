@@ -34,6 +34,7 @@ import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.ScreenBottomPadding
+import com.hktnv.iptvbox.player.PlayerUiMode
 import com.hktnv.iptvbox.telemetry.PerformanceDiagnostics
 import com.hktnv.iptvbox.ui.common.EmptyCatalog
 import com.hktnv.iptvbox.ui.common.EmptyState
@@ -153,6 +154,8 @@ internal fun LatestItemsScreen(
 internal fun SettingsScreen(
     playlist: LoadedPlaylist?,
     diagnostics: PerformanceDiagnostics,
+    playerUiMode: PlayerUiMode,
+    onPlayerUiModeChange: (PlayerUiMode) -> Unit,
     onReload: () -> Unit,
     onAddPlaylist: () -> Unit,
     onOpenPlaylistEntry: () -> Unit,
@@ -164,6 +167,7 @@ internal fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val startFocusRequester = initialFocusRequester ?: remember { FocusRequester() }
     val privacyFocusRequester = remember { FocusRequester() }
+    val playerUiFocusRequester = remember { FocusRequester() }
     val diagnosticsFocusRequester = remember { FocusRequester() }
     val playlistFocusRequester = remember { FocusRequester() }
     fun scrollTo(index: Int) {
@@ -203,7 +207,7 @@ internal fun SettingsScreen(
             SettingsFocusPanel(
                 focusRequester = privacyFocusRequester,
                 previousFocusRequester = startFocusRequester,
-                nextFocusRequester = diagnosticsFocusRequester,
+                nextFocusRequester = playerUiFocusRequester,
                 onFocused = { scrollTo(1) },
                 onRequestSideMenu = onRequestSideMenu,
             ) {
@@ -215,10 +219,22 @@ internal fun SettingsScreen(
         }
         item {
             SettingsFocusPanel(
-                focusRequester = diagnosticsFocusRequester,
+                focusRequester = playerUiFocusRequester,
                 previousFocusRequester = privacyFocusRequester,
-                nextFocusRequester = playlistFocusRequester,
+                nextFocusRequester = diagnosticsFocusRequester,
                 onFocused = { scrollTo(2) },
+                onConfirm = { onPlayerUiModeChange(playerUiMode.next()) },
+                onRequestSideMenu = onRequestSideMenu,
+            ) {
+                PlayerUiModePanelContent(selectedMode = playerUiMode)
+            }
+        }
+        item {
+            SettingsFocusPanel(
+                focusRequester = diagnosticsFocusRequester,
+                previousFocusRequester = playerUiFocusRequester,
+                nextFocusRequester = playlistFocusRequester,
+                onFocused = { scrollTo(3) },
                 onRequestSideMenu = onRequestSideMenu,
             ) {
                 DiagnosticsPanelContent(diagnostics = diagnostics, playlist = playlist)
@@ -229,7 +245,7 @@ internal fun SettingsScreen(
                 focusRequester = playlistFocusRequester,
                 previousFocusRequester = diagnosticsFocusRequester,
                 nextFocusRequester = null,
-                onFocused = { scrollTo(3) },
+                onFocused = { scrollTo(4) },
                 onRequestSideMenu = onRequestSideMenu,
             ) {
                 if (playlist == null) {

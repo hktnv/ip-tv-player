@@ -24,6 +24,7 @@ import com.hktnv.iptvbox.navigation.NavigationDrawerFocusExpansion
 import com.hktnv.iptvbox.navigation.NavigationDrawerModel
 import com.hktnv.iptvbox.navigation.NavigationDrawerState
 import com.hktnv.iptvbox.navigation.reduce
+import com.hktnv.iptvbox.player.PlayerUiModeStore
 import com.hktnv.iptvbox.repository.catalog.AppCatalogRepository
 import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
 import com.hktnv.iptvbox.state.AppStateStore
@@ -61,6 +62,8 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val catalogRepository = remember(catalogStore) { AppCatalogRepository(catalogStore) }
     val scope = rememberCoroutineScope()
     val stateStore = remember(context, catalogStore) { AppStateStore(context, catalogStore) }
+    val playerUiModeStore = remember(context) { PlayerUiModeStore(context) }
+    val playerUiMode by playerUiModeStore.mode.collectAsState()
     val updateService = remember { AppUpdateService() }
     val updateInstaller = remember(context) { AppUpdateInstaller(context) }
     val performanceMode = remember(context) { AppPerformanceMode.from(context) }
@@ -326,6 +329,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         performanceMode = performanceMode, restoredApplied = restoredApplied, showRecovery = showRecovery, bootError = bootError,
         selectedPlaylist = selectedPlaylist, screen = screen, showPlaylistEntry = showPlaylistEntry, currentItem = currentItem,
         currentHeaders = currentHeaders, playerContextItems = playerContextItems, playlists = playlists, catalogSnapshot = catalogSnapshot, catalogIndexLoading = catalogIndexLoading,
+        playerUiMode = playerUiMode,
         selectedTab = selectedTab, selectedCategory = selectedCategory, showCatalogCategoryLanding = showCatalogCategoryLanding, selectedSeriesTitle = selectedSeriesTitle,
         selectedSeasonNumber = selectedSeasonNumber, favoriteIds = favoriteIds, recentIds = recentIds, favoriteItems = favoriteItems,
         recentItems = recentItems, diagnostics = diagnostics, banner = banner, sideMenuExpanded = drawerModel.state.expanded, drawerFocusExpansion = drawerModel.focusExpansion,
@@ -349,6 +353,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onQueryChange = { searchDraft = it }, onSearch = { submittedSearch = searchDraft.trim() },
         onSelectPlayerItem = ::selectPlayerItem,
         onOpenPlaylistEntry = ::openPlaylistEntry, onNavigate = ::navigate, onDrawerEvent = ::applyDrawerEvent,
+        onPlayerUiModeChange = playerUiModeStore::setMode,
         onRequestExitConfirmation = { showExitDialog = true }, onDismissBanner = { banner = null },
     )
     IptvDialogHost(

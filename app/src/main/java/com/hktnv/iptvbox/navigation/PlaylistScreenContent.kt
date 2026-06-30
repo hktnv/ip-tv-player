@@ -7,6 +7,7 @@ import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.model.AppScreen
 import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.model.LoadedPlaylist
+import com.hktnv.iptvbox.player.PlayerUiMode
 import com.hktnv.iptvbox.repository.catalog.AppCatalogRepository
 import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
 import com.hktnv.iptvbox.telemetry.AppPerformanceTelemetry
@@ -36,6 +37,7 @@ internal fun PlaylistScreenContent(
     favoriteItems: List<CatalogItem>,
     recentItems: List<CatalogItem>,
     diagnostics: PerformanceDiagnostics,
+    playerUiMode: PlayerUiMode,
     contentInitialFocusRequester: FocusRequester,
     catalogRepository: AppCatalogRepository,
     telemetry: AppPerformanceTelemetry,
@@ -61,6 +63,7 @@ internal fun PlaylistScreenContent(
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     onOpenPlaylistEntry: () -> Unit,
+    onPlayerUiModeChange: (PlayerUiMode) -> Unit,
     onRequestSideMenu: () -> Unit,
 ) {
     when (screen) {
@@ -182,6 +185,8 @@ internal fun PlaylistScreenContent(
         AppScreen.SETTINGS -> SettingsScreen(
             playlist = selectedPlaylist,
             diagnostics = diagnostics,
+            playerUiMode = playerUiMode,
+            onPlayerUiModeChange = onPlayerUiModeChange,
             onReload = { selectedPlaylist?.let(onReloadPlaylist) },
             onAddPlaylist = onAddPlaylist,
             onOpenPlaylistEntry = onOpenPlaylistEntry,

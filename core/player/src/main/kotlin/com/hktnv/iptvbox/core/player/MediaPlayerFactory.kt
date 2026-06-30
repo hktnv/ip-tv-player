@@ -19,6 +19,7 @@ object MediaPlayerFactory {
             .setMediaSourceFactory(createIptvMediaSourceFactory(context, headers))
             .setLoadControl(defaultIptvPlayerBufferProfile().toLoadControl())
             .setTrackSelector(createIptvTrackSelector(context))
+            .setVideoChangeFrameRateStrategy(C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_ONLY_IF_SEAMLESS)
             .setSeekBackIncrementMs(10_000)
             .setSeekForwardIncrementMs(10_000)
             .build()

@@ -37,6 +37,7 @@ internal fun SettingsFocusPanel(
     nextFocusRequester: FocusRequester?,
     modifier: Modifier = Modifier,
     onFocused: () -> Unit = {},
+    onConfirm: (() -> Unit)? = null,
     onRequestSideMenu: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
@@ -55,6 +56,10 @@ internal fun SettingsFocusPanel(
                     Key.DirectionLeft -> {
                         onRequestSideMenu?.invoke()
                         onRequestSideMenu != null
+                    }
+                    Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
+                        onConfirm?.invoke()
+                        onConfirm != null
                     }
                     else -> false
                 }

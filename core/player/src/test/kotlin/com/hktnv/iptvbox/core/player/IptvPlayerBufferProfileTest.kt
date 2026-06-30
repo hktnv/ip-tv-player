@@ -7,15 +7,15 @@ import org.junit.Test
 
 class IptvPlayerBufferProfileTest {
     @Test
-    fun defaultProfileWaitsLongerAfterRebufferWithoutUnboundedMemoryGrowth() {
+    fun defaultProfileRecoversQuicklyAfterRenderOrNetworkStalls() {
         val profile = defaultIptvPlayerBufferProfile()
 
         assertTrue(profile.bufferForPlaybackAfterRebufferMs > profile.bufferForPlaybackMs)
-        assertTrue(profile.bufferForPlaybackMs >= 4_000)
-        assertTrue(profile.bufferForPlaybackAfterRebufferMs >= 12_000)
-        assertTrue(profile.maxBufferMs <= 120_000)
-        assertTrue(profile.minBufferMs >= 45_000)
-        assertTrue(profile.backBufferMs <= 5_000)
+        assertTrue(profile.bufferForPlaybackMs in 1_000..2_500)
+        assertTrue(profile.bufferForPlaybackAfterRebufferMs <= 3_000)
+        assertTrue(profile.maxBufferMs <= 60_000)
+        assertTrue(profile.minBufferMs >= 20_000)
+        assertTrue(profile.backBufferMs <= 2_000)
         assertEquals(true, profile.prioritizeTimeOverSizeThresholds)
     }
 

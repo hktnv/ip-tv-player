@@ -35,6 +35,7 @@ import com.hktnv.iptvbox.navigation.PlaylistContentScaffold
 import com.hktnv.iptvbox.navigation.shouldHandleSeriesBack
 import com.hktnv.iptvbox.navigation.shouldReturnToCatalogCategories
 import com.hktnv.iptvbox.player.PlayerScreen
+import com.hktnv.iptvbox.player.PlayerUiMode
 import com.hktnv.iptvbox.telemetry.AppPerformanceTelemetry
 import com.hktnv.iptvbox.telemetry.PerformanceDiagnostics
 import com.hktnv.iptvbox.ui.common.BootScreen
@@ -56,6 +57,7 @@ internal fun IptvContentHost(
     playlists: List<LoadedPlaylist>,
     catalogSnapshot: CatalogSnapshot?,
     catalogIndexLoading: Boolean,
+    playerUiMode: PlayerUiMode,
     selectedTab: CatalogTab,
     selectedCategory: String?,
     showCatalogCategoryLanding: Boolean,
@@ -105,6 +107,7 @@ internal fun IptvContentHost(
     onOpenPlaylistEntry: () -> Unit,
     onNavigate: (AppScreen) -> Unit,
     onDrawerEvent: (NavigationDrawerEvent) -> Unit,
+    onPlayerUiModeChange: (PlayerUiMode) -> Unit,
     onRequestExitConfirmation: () -> Unit,
     onDismissBanner: () -> Unit,
 ) {
@@ -189,6 +192,7 @@ internal fun IptvContentHost(
                     item = currentItem,
                     headers = currentHeaders,
                     playbackItems = playerContextItems,
+                    playerUiMode = playerUiMode,
                     onSelectItem = onSelectPlayerItem,
                     onBack = onPlayerBack,
                 )
@@ -219,6 +223,7 @@ internal fun IptvContentHost(
                     favoriteItems = favoriteItems,
                     recentItems = recentItems,
                     diagnostics = diagnostics,
+                    playerUiMode = playerUiMode,
                     banner = banner,
                     sideMenuExpanded = sideMenuExpanded,
                     drawerFocusExpansion = drawerFocusExpansion,
@@ -248,6 +253,7 @@ internal fun IptvContentHost(
                     onOpenPlaylistEntry = onOpenPlaylistEntry,
                         onNavigate = onNavigate,
                         onDrawerEvent = onDrawerEvent,
+                        onPlayerUiModeChange = onPlayerUiModeChange,
                         onRequestExitConfirmation = onRequestExitConfirmation,
                         onDismissBanner = onDismissBanner,
                     )

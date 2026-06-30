@@ -42,10 +42,31 @@ internal fun PlayerScreen(
     item: CatalogItem,
     headers: Map<String, String>,
     playbackItems: List<CatalogItem>,
+    playerUiMode: PlayerUiMode,
     onSelectItem: (CatalogItem) -> Unit,
     onBack: () -> Unit,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val player = remember(item.id, headers) {
+        MediaPlayerFactory.create(context, headers).apply {
+            setMediaItem(MediaItem.fromUri(item.streamUrl))
+            repeatMode = Player.REPEAT_MODE_OFF
+            playWhenReady = true
+            prepare()
+        }
+    }
+    val diagnosticsContext = remember(item.id, item.streamUrl, playerUiMode) {
+        item.toPlayerDiagnosticContext(playerUiMode)
+    }
+
+    if (playerUiMode == PlayerUiMode.StandardMedia3) {
+        StandardMedia3PlayerScreen(
+            player = player,
+            diagnosticsContext = diagnosticsContext,
+        )
+        return
+    }
+
     val queue = remember(playbackItems, item.id) {
         buildPlayerPlaybackQueue(playbackItems, item)
     }
@@ -55,14 +76,6 @@ internal fun PlayerScreen(
             nextItem = queue.next,
         )
     }
-    val player = remember(item.id, headers) {
-        MediaPlayerFactory.create(context, headers).apply {
-            setMediaItem(MediaItem.fromUri(item.streamUrl))
-            repeatMode = Player.REPEAT_MODE_OFF
-            playWhenReady = true
-            prepare()
-        }
-    }
     var isPlaying by remember(player) { mutableStateOf(player.isPlaying) }
     var playbackSpeed by remember(player) { mutableStateOf(player.playbackParameters.speed) }
     var currentPositionMs by remember(player) { mutableStateOf(0L) }
@@ -70,11 +83,12 @@ internal fun PlayerScreen(
     var canSeek by remember(player) { mutableStateOf(false) }
     var manuallyPaused by remember(player) { mutableStateOf(false) }
     var playbackState by remember(player) { mutableStateOf(player.playbackState) }
-    val diagnosticsContext = remember(item.id, item.streamUrl) {
-        item.toPlayerDiagnosticContext()
-    }
     val diagnostics = remember(player, diagnosticsContext) {
-        PlayerDiagnosticLogger(diagnosticsContext) { manuallyPaused }
+        PlayerDiagnosticLogger(
+            context = diagnosticsContext,
+            manualPauseProvider = { manuallyPaused },
+            bufferSnapshotProvider = { player.toBufferDiagnosticSnapshot() },
+        )
     }
     fun updatePlaybackSnapshot() {
         isPlaying = player.isPlaying
@@ -138,7 +152,6 @@ internal fun PlayerScreen(
         controlsRevision++
         onSelectItem(itemToPlay)
     }
-
     fun seekBy(deltaMs: Long) {
         val target = calculateSeekTarget(player.currentPosition, durationMs, deltaMs)
         diagnostics.logSeekRequest(targetMs = target, canSeek = canSeek, source = "remote")
@@ -146,7 +159,6 @@ internal fun PlayerScreen(
         player.seekTo(target)
         updatePlaybackSnapshot()
     }
-
     fun seekTo(targetMs: Long) {
         val target = targetMs.coerceIn(0L, durationMs)
         diagnostics.logSeekRequest(targetMs = target, canSeek = canSeek, source = "timeline")
@@ -154,7 +166,6 @@ internal fun PlayerScreen(
         player.seekTo(target)
         updatePlaybackSnapshot()
     }
-
     fun applyInputResult(result: PlayerInputResult): Boolean {
         val previousState = inputState
         inputState = result.state
@@ -184,7 +195,6 @@ internal fun PlayerScreen(
         if (result.exitRequested) onBack()
         return result.consumeInput
     }
-
     fun showControlsOnly() {
         if (!contentListVisible && !exitConfirmVisible) {
             inputState = PlayerInputState.ControlsVisible
@@ -198,7 +208,6 @@ internal fun PlayerScreen(
             controlsRevision++
         }
     }
-
     fun performExitChoice() {
         val action = when (exitChoice) {
             PlayerExitChoice.Exit -> PlayerInputAction.ExitSelected
@@ -206,7 +215,6 @@ internal fun PlayerScreen(
         }
         applyInputResult(reducePlayerInput(inputState, action))
     }
-
     fun cycleSpeed() {
         val speeds = listOf(0.5f, 1f, 1.25f, 1.5f, 2f)
         val currentIndex = speeds.indexOfFirst { kotlin.math.abs(it - playbackSpeed) < 0.01f }
@@ -248,22 +256,15 @@ internal fun PlayerScreen(
         applyInputResult(reducePlayerInput(inputState, PlayerInputAction.BackPressed))
     }
 
-    fun handleExitDialogKeyEvent(event: KeyEvent): Boolean {
-        if (!exitConfirmVisible || !event.keyCode.isPlayerExitDialogKey()) return false
-        if (event.action == KeyEvent.ACTION_DOWN) return true
-        if (event.action != KeyEvent.ACTION_UP) return true
-        when (event.keyCode) {
-            KeyEvent.KEYCODE_DPAD_LEFT -> exitChoice = PlayerExitChoice.Exit
-            KeyEvent.KEYCODE_DPAD_RIGHT -> exitChoice = PlayerExitChoice.Continue
-            KeyEvent.KEYCODE_DPAD_CENTER,
-            KeyEvent.KEYCODE_ENTER,
-            KeyEvent.KEYCODE_NUMPAD_ENTER -> performExitChoice()
-            KeyEvent.KEYCODE_BACK -> applyInputResult(
-                reducePlayerInput(inputState, PlayerInputAction.ExitSelected),
-            )
-        }
-        return true
-    }
+    fun handleExitDialogKeyEvent(event: KeyEvent): Boolean = handlePlayerExitDialogKeyEvent(
+        event = event,
+        visible = exitConfirmVisible,
+        onChoiceChange = { exitChoice = it },
+        onConfirmChoice = ::performExitChoice,
+        onBackExit = {
+            applyInputResult(reducePlayerInput(inputState, PlayerInputAction.ExitSelected))
+        },
+    )
 
     BackHandler { handleBackPressed() }
 
