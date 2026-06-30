@@ -28,10 +28,8 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.media3.common.C
-import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import com.hktnv.iptvbox.core.model.CatalogItem
-import com.hktnv.iptvbox.core.player.MediaPlayerFactory
 import kotlinx.coroutines.delay
 
 @Composable
@@ -45,18 +43,7 @@ internal fun PlayerScreen(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     PlayerOrientationLock()
-    val player = remember(item.id, headers) {
-        MediaPlayerFactory.create(
-            context = context,
-            headers = headers,
-            bufferKind = item.toPlaybackBufferKind(),
-        ).apply {
-            setMediaItem(MediaItem.fromUri(item.streamUrl))
-            repeatMode = Player.REPEAT_MODE_OFF
-            playWhenReady = true
-            prepare()
-        }
-    }
+    val player = rememberIptvPlayerSession(context, headers, item)
     val diagnosticsContext = remember(item.id, item.streamUrl, playerUiMode) {
         if (isPlayerDiagnosticEnabled) {
             item.toPlayerDiagnosticContext(playerUiMode)
@@ -64,6 +51,22 @@ internal fun PlayerScreen(
             null
         }
     }
+    var manuallyPaused by remember(player) { mutableStateOf(false) }
+    val diagnostics = remember(player, diagnosticsContext) {
+        diagnosticsContext?.let { context ->
+            PlayerDiagnosticLogger(
+                context = context,
+                manualPauseProvider = { manuallyPaused },
+                bufferSnapshotProvider = { player.toBufferDiagnosticSnapshot() },
+            )
+        }
+    }
+    PlayerMediaSwitchLifecycle(
+        player = player,
+        item = item,
+        diagnostics = diagnostics,
+        onBeforeSwitch = { manuallyPaused = false },
+    )
 
     if (playerUiMode == PlayerUiMode.StandardMedia3) {
         StandardMedia3PlayerScreen(
@@ -87,17 +90,7 @@ internal fun PlayerScreen(
     var currentPositionMs by remember(player) { mutableStateOf(0L) }
     var durationMs by remember(player) { mutableStateOf(0L) }
     var canSeek by remember(player) { mutableStateOf(false) }
-    var manuallyPaused by remember(player) { mutableStateOf(false) }
     var playbackState by remember(player) { mutableStateOf(player.playbackState) }
-    val diagnostics = remember(player, diagnosticsContext) {
-        diagnosticsContext?.let { context ->
-            PlayerDiagnosticLogger(
-                context = context,
-                manualPauseProvider = { manuallyPaused },
-                bufferSnapshotProvider = { player.toBufferDiagnosticSnapshot() },
-            )
-        }
-    }
     fun updatePlaybackSnapshot() {
         isPlaying = player.isPlaying
         playbackSpeed = player.playbackParameters.speed
@@ -106,6 +99,13 @@ internal fun PlayerScreen(
         canSeek = player.isCurrentMediaItemSeekable && durationMs > 0L
         playbackState = player.playbackState
     }
+    LaunchedEffect(player, item.id) {
+        currentPositionMs = 0L
+        durationMs = 0L
+        canSeek = false
+        playbackState = player.playbackState
+        updatePlaybackSnapshot()
+    }
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onEvents(player: Player, events: Player.Events) {
@@ -113,26 +113,29 @@ internal fun PlayerScreen(
             }
         }
         player.addListener(listener)
+        updatePlaybackSnapshot()
+        onDispose {
+            player.removeListener(listener)
+        }
+    }
+    DisposableEffect(player, diagnostics) {
         if (diagnostics != null) {
             player.addAnalyticsListener(diagnostics)
             diagnostics.syncPlaybackState(player.playWhenReady)
             diagnostics.logAttached()
         }
-        updatePlaybackSnapshot()
         onDispose {
             if (diagnostics != null) {
                 diagnostics.logDetached()
                 player.removeAnalyticsListener(diagnostics)
             }
-            player.removeListener(listener)
-            player.release()
         }
     }
 
-    var inputState by remember(item.id) { mutableStateOf(PlayerInputState.Watching) }
-    var exitChoice by remember(item.id) { mutableStateOf(PlayerExitChoice.Exit) }
-    var controlsRevision by remember(item.id) { mutableIntStateOf(0) }
-    val backPressGuard = remember(item.id) { PlayerBackPressGuard() }
+    var inputState by remember { mutableStateOf(PlayerInputState.Watching) }
+    var exitChoice by remember { mutableStateOf(PlayerExitChoice.Exit) }
+    var controlsRevision by remember { mutableIntStateOf(0) }
+    val backPressGuard = remember { PlayerBackPressGuard() }
     val controlsVisible = inputState == PlayerInputState.ControlsVisible
     val contentListVisible = inputState == PlayerInputState.ContentListVisible
     val exitConfirmVisible = inputState == PlayerInputState.ExitConfirmVisible

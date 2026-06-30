@@ -45,6 +45,14 @@ internal class PlayerDiagnosticLogger(
         log("event=seek_request target_ms=$targetMs can_seek=$canSeek source=$source")
     }
 
+    fun logChannelSwitchStart(targetItemId: String) {
+        log("event=channel_switch_start target_item_id=${targetItemId.safeLogValue()} ${bufferFields()}")
+    }
+
+    fun logChannelSwitchReady(durationMs: Long) {
+        log("event=channel_switch_ready duration_ms=$durationMs ${bufferFields()}")
+    }
+
     override fun onPlaybackStateChanged(eventTime: AnalyticsListener.EventTime, state: Int) {
         log(
             "event=state_change state=${state.diagnosticName()} " +

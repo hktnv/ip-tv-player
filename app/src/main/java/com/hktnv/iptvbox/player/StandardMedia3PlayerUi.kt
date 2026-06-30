@@ -38,7 +38,6 @@ internal fun StandardMedia3PlayerScreen(
                 diagnostics.logDetached()
                 player.removeAnalyticsListener(diagnostics)
             }
-            player.release()
         }
     }
     StandardMedia3PlayerSurface(player = player)
