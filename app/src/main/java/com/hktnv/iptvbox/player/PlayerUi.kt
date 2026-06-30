@@ -2,17 +2,21 @@ package com.hktnv.iptvbox.player
 
 import android.content.Context
 import android.view.KeyEvent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -25,7 +29,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -89,9 +93,11 @@ internal fun PlayerScreen(
 
     var inputState by remember(item.id) { mutableStateOf(PlayerInputState.Watching) }
     var exitChoice by remember(item.id) { mutableStateOf(PlayerExitChoice.Exit) }
+    var controlsRevision by remember(item.id) { mutableIntStateOf(0) }
     val controlsVisible = inputState == PlayerInputState.ControlsVisible
     val contentListVisible = inputState == PlayerInputState.ContentListVisible
     val exitConfirmVisible = inputState == PlayerInputState.ExitConfirmVisible
+    val osdVisible = controlsVisible && !contentListVisible && !exitConfirmVisible
     val playerFocusRequester = remember { FocusRequester() }
     LaunchedEffect(item.id, inputState) {
         if (inputState == PlayerInputState.Watching) {
@@ -104,15 +110,27 @@ internal fun PlayerScreen(
             delay(500L)
         }
     }
+    LaunchedEffect(inputState, controlsRevision, item.id) {
+        if (inputState == PlayerInputState.ControlsVisible) {
+            delay(3_500L)
+            if (inputState == PlayerInputState.ControlsVisible) {
+                inputState = PlayerInputState.Watching
+            }
+        }
+    }
 
     fun switchTo(itemToPlay: CatalogItem) {
         inputState = PlayerInputState.ControlsVisible
+        controlsRevision++
         onSelectItem(itemToPlay)
     }
 
     fun applyInputResult(result: PlayerInputResult): Boolean {
         val previousState = inputState
         inputState = result.state
+        if (result.state == PlayerInputState.ControlsVisible) {
+            controlsRevision++
+        }
         if (result.state == PlayerInputState.ExitConfirmVisible &&
             previousState != PlayerInputState.ExitConfirmVisible
         ) {
@@ -126,6 +144,19 @@ internal fun PlayerScreen(
         if (result.selectPreviousItem) queue.previous?.let(::switchTo)
         if (result.exitRequested) onBack()
         return result.consumeInput
+    }
+
+    fun showControlsOnly() {
+        if (!contentListVisible && !exitConfirmVisible) {
+            inputState = PlayerInputState.ControlsVisible
+            controlsRevision++
+        }
+    }
+
+    fun keepControlsAlive() {
+        if (inputState == PlayerInputState.ControlsVisible) {
+            controlsRevision++
+        }
     }
 
     fun performExitChoice() {
@@ -192,6 +223,9 @@ internal fun PlayerScreen(
             .background(MaterialTheme.colorScheme.background)
             .focusRequester(playerFocusRequester)
             .focusable(enabled = !controlsVisible && !contentListVisible && !exitConfirmVisible)
+            .pointerInput(item.id, inputState) {
+                detectTapGestures(onTap = { showControlsOnly() })
+            }
             .onPreviewKeyEvent { event ->
                 if (inputState != PlayerInputState.Watching) {
                     return@onPreviewKeyEvent false
@@ -235,15 +269,28 @@ internal fun PlayerScreen(
             },
             modifier = Modifier.fillMaxSize(),
         )
-        if (shouldShowPlayerContentInfo(controlsVisible, PlayerExitDialogState.Hidden) && !contentListVisible) {
-            PlayerInfoOverlay(
-                info = contentInfo,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(start = 28.dp, top = 28.dp),
-            )
+        AnimatedVisibility(
+            visible = osdVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
+            PlayerOsdScrims()
         }
-        if (controlsVisible && !contentListVisible && !exitConfirmVisible) {
+        AnimatedVisibility(
+            visible = shouldShowPlayerContentInfo(controlsVisible, PlayerExitDialogState.Hidden) &&
+                !contentListVisible && !exitConfirmVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.TopStart),
+        ) {
+            PlayerInfoOverlay(info = contentInfo)
+        }
+        AnimatedVisibility(
+            visible = osdVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
             PlayerControlsOverlay(
                 isPlaying = isPlaying,
                 positionMs = currentPositionMs,
@@ -257,9 +304,7 @@ internal fun PlayerScreen(
                 },
                 onSeekForward = { seekBy(10_000L) },
                 onCycleSpeed = ::cycleSpeed,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 42.dp),
+                onUserInteraction = ::keepControlsAlive,
             )
         }
         if (contentListVisible) {

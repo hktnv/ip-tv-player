@@ -52,6 +52,25 @@ class PlayerPlaybackQueueTest {
     }
 
     @Test
+    fun filtersQueueToCurrentPlaybackContext() {
+        val firstEpisode = episode("episode-1", "Dune", "Dune S1 E1")
+        val secondEpisode = episode("episode-2", "Dune", "Dune S1 E2")
+        val otherSeries = episode("episode-3", "Prens", "Prens S1 E1")
+        val liveChannel = item("live-1")
+        val movie = movie("movie-1")
+
+        val queue = buildPlayerPlaybackQueue(
+            contextItems = listOf(firstEpisode, liveChannel, secondEpisode, movie, otherSeries),
+            currentItem = firstEpisode,
+        )
+
+        assertEquals(firstEpisode, queue.current)
+        assertNull(queue.previous)
+        assertEquals(secondEpisode, queue.next)
+        assertEquals(listOf(firstEpisode, secondEpisode), queue.items)
+    }
+
+    @Test
     fun mapsTvRemoteKeysToPlayerCommands() {
         assertEquals(
             PlayerRemoteCommand.TogglePlayPause,
@@ -79,6 +98,33 @@ class PlayerPlaybackQueueTest {
             title = "Kanal $id",
             streamUrl = "https://example.test/$id",
             category = "Test",
+        )
+    }
+
+    private fun movie(id: String): CatalogItem {
+        return CatalogItem(
+            id = id,
+            sourceId = "playlist",
+            kind = ContentKind.MOVIE,
+            title = "Film $id",
+            streamUrl = "https://example.test/$id",
+            category = "Film",
+        )
+    }
+
+    private fun episode(
+        id: String,
+        seriesTitle: String,
+        title: String,
+    ): CatalogItem {
+        return CatalogItem(
+            id = id,
+            sourceId = "playlist",
+            kind = ContentKind.EPISODE,
+            title = title,
+            streamUrl = "https://example.test/$id",
+            category = "Dizi",
+            seriesTitle = seriesTitle,
         )
     }
 }

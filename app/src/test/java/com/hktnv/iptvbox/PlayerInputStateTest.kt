@@ -67,6 +67,17 @@ class PlayerInputStateTest {
     }
 
     @Test
+    fun controllerHiddenReturnsToWatching() {
+        val result = reducePlayerInput(
+            state = PlayerInputState.ControlsVisible,
+            action = PlayerInputAction.ControllerHidden,
+        )
+
+        assertEquals(PlayerInputState.Watching, result.state)
+        assertFalse(result.consumeInput)
+    }
+
+    @Test
     fun upAndDownMoveQueueOnlyWhileWatching() {
         val nextResult = reducePlayerInput(
             state = PlayerInputState.Watching,
