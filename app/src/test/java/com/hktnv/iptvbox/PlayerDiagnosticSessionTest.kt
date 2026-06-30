@@ -52,4 +52,41 @@ class PlayerDiagnosticSessionTest {
         assertEquals("READY", Player.STATE_READY.diagnosticName())
         assertEquals("ENDED", Player.STATE_ENDED.diagnosticName())
     }
+
+    @Test
+    fun droppedFramesAreAggregatedUntilWindowPasses() {
+        val session = PlayerDiagnosticSession()
+
+        assertNull(session.onDroppedVideoFrames(droppedFrames = 4, elapsedMs = 800L, nowMs = 1_000L))
+        assertNull(session.onDroppedVideoFrames(droppedFrames = 5, elapsedMs = 900L, nowMs = 3_000L))
+        val event = session.onDroppedVideoFrames(droppedFrames = 2, elapsedMs = 600L, nowMs = 6_100L)
+
+        assertEquals(11, event?.count)
+        assertEquals(2_300L, event?.elapsedMs)
+        assertEquals(5_100L, event?.windowMs)
+    }
+
+    @Test
+    fun droppedFramesCanBeFlushedOnDetach() {
+        val session = PlayerDiagnosticSession()
+
+        session.onDroppedVideoFrames(droppedFrames = 3, elapsedMs = 500L, nowMs = 1_000L)
+        val event = session.flushDroppedVideoFrames(nowMs = 2_000L)
+
+        assertEquals(3, event?.count)
+        assertEquals(500L, event?.elapsedMs)
+        assertEquals(1_000L, event?.windowMs)
+        assertNull(session.flushDroppedVideoFrames(nowMs = 3_000L))
+    }
+
+    @Test
+    fun severeDroppedFrameBurstLogsBeforeWindowPasses() {
+        val session = PlayerDiagnosticSession()
+
+        val event = session.onDroppedVideoFrames(droppedFrames = 24, elapsedMs = 1_100L, nowMs = 1_000L)
+
+        assertEquals(24, event?.count)
+        assertEquals(1_100L, event?.elapsedMs)
+        assertEquals(0L, event?.windowMs)
+    }
 }

@@ -8,10 +8,19 @@ internal data class BufferingDiagnosticEvent(
     val totalDurationMs: Long,
 )
 
+internal data class DroppedFrameDiagnosticEvent(
+    val count: Int,
+    val elapsedMs: Long,
+    val windowMs: Long,
+)
+
 internal class PlayerDiagnosticSession {
     private var bufferingStartedAtMs: Long? = null
     private var bufferingCount = 0
     private var totalBufferingMs = 0L
+    private var droppedFrameWindowStartedAtMs: Long? = null
+    private var droppedFrameCount = 0
+    private var droppedFrameElapsedMs = 0L
 
     fun onPlaybackStateChanged(
         state: Int,
@@ -30,5 +39,46 @@ internal class PlayerDiagnosticSession {
             return BufferingDiagnosticEvent(duration, bufferingCount, totalBufferingMs)
         }
         return null
+    }
+
+    fun onDroppedVideoFrames(
+        droppedFrames: Int,
+        elapsedMs: Long,
+        nowMs: Long,
+        minWindowMs: Long = DROPPED_FRAME_LOG_WINDOW_MS,
+    ): DroppedFrameDiagnosticEvent? {
+        val windowStart = droppedFrameWindowStartedAtMs ?: nowMs.also {
+            droppedFrameWindowStartedAtMs = it
+        }
+        droppedFrameCount += droppedFrames
+        droppedFrameElapsedMs += elapsedMs
+        val windowMs = (nowMs - windowStart).coerceAtLeast(0L)
+        if (windowMs < minWindowMs && droppedFrameCount < DROPPED_FRAME_URGENT_COUNT) {
+            return null
+        }
+        return consumeDroppedFrames(windowMs)
+    }
+
+    fun flushDroppedVideoFrames(nowMs: Long): DroppedFrameDiagnosticEvent? {
+        val windowStart = droppedFrameWindowStartedAtMs ?: return null
+        val windowMs = (nowMs - windowStart).coerceAtLeast(0L)
+        return consumeDroppedFrames(windowMs)
+    }
+
+    private fun consumeDroppedFrames(windowMs: Long): DroppedFrameDiagnosticEvent {
+        val event = DroppedFrameDiagnosticEvent(
+            count = droppedFrameCount,
+            elapsedMs = droppedFrameElapsedMs,
+            windowMs = windowMs,
+        )
+        droppedFrameWindowStartedAtMs = null
+        droppedFrameCount = 0
+        droppedFrameElapsedMs = 0L
+        return event
+    }
+
+    companion object {
+        const val DROPPED_FRAME_LOG_WINDOW_MS = 5_000L
+        const val DROPPED_FRAME_URGENT_COUNT = 24
     }
 }

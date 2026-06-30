@@ -14,12 +14,12 @@ internal data class IptvPlayerBufferProfile(
 
 internal fun defaultIptvPlayerBufferProfile(): IptvPlayerBufferProfile {
     return IptvPlayerBufferProfile(
-        minBufferMs = 30_000,
-        maxBufferMs = 90_000,
-        bufferForPlaybackMs = 1_500,
-        bufferForPlaybackAfterRebufferMs = 8_000,
-        backBufferMs = 15_000,
-        prioritizeTimeOverSizeThresholds = false,
+        minBufferMs = 45_000,
+        maxBufferMs = 120_000,
+        bufferForPlaybackMs = 4_000,
+        bufferForPlaybackAfterRebufferMs = 12_000,
+        backBufferMs = 5_000,
+        prioritizeTimeOverSizeThresholds = true,
     )
 }
 

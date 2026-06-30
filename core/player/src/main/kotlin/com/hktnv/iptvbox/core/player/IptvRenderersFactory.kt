@@ -9,6 +9,7 @@ private const val VIDEO_JOINING_TIME_MS = 5_000L
 @UnstableApi
 internal fun createIptvRenderersFactory(context: Context): DefaultRenderersFactory {
     return DefaultRenderersFactory(context)
+        .forceEnableMediaCodecAsynchronousQueueing()
         .setAllowedVideoJoiningTimeMs(VIDEO_JOINING_TIME_MS)
         .setEnableDecoderFallback(true)
 }

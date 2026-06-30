@@ -11,10 +11,12 @@ class IptvPlayerBufferProfileTest {
         val profile = defaultIptvPlayerBufferProfile()
 
         assertTrue(profile.bufferForPlaybackAfterRebufferMs > profile.bufferForPlaybackMs)
-        assertTrue(profile.maxBufferMs <= 90_000)
-        assertTrue(profile.minBufferMs >= 30_000)
-        assertTrue(profile.backBufferMs <= 15_000)
-        assertEquals(false, profile.prioritizeTimeOverSizeThresholds)
+        assertTrue(profile.bufferForPlaybackMs >= 4_000)
+        assertTrue(profile.bufferForPlaybackAfterRebufferMs >= 12_000)
+        assertTrue(profile.maxBufferMs <= 120_000)
+        assertTrue(profile.minBufferMs >= 45_000)
+        assertTrue(profile.backBufferMs <= 5_000)
+        assertEquals(true, profile.prioritizeTimeOverSizeThresholds)
     }
 
     @Test
@@ -36,5 +38,7 @@ class IptvPlayerBufferProfileTest {
 
         assertTrue(flags and DefaultTsPayloadReaderFactory.FLAG_DETECT_ACCESS_UNITS != 0)
         assertTrue(flags and DefaultTsPayloadReaderFactory.FLAG_ALLOW_NON_IDR_KEYFRAMES != 0)
+        assertTrue(flags and DefaultTsPayloadReaderFactory.FLAG_IGNORE_SPLICE_INFO_STREAM != 0)
+        assertEquals(64 * 1024, IPTV_TS_TIMESTAMP_SEARCH_BYTES)
     }
 }

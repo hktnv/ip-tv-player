@@ -92,6 +92,7 @@ internal fun PlayerScreen(
         }
         player.addListener(listener)
         player.addAnalyticsListener(diagnostics)
+        diagnostics.syncPlaybackState(player.playWhenReady)
         diagnostics.logAttached()
         updatePlaybackSnapshot()
         onDispose {

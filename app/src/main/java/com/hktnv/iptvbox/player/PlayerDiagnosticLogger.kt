@@ -27,7 +27,12 @@ internal class PlayerDiagnosticLogger(
     }
 
     fun logDetached() {
+        session.flushDroppedVideoFrames(SystemClock.elapsedRealtime())?.let(::logDroppedFrameEvent)
         log("event=diagnostic_detached")
+    }
+
+    fun syncPlaybackState(playWhenReady: Boolean) {
+        lastPlayWhenReady = playWhenReady
     }
 
     fun logSeekRequest(
@@ -97,7 +102,11 @@ internal class PlayerDiagnosticLogger(
         droppedFrames: Int,
         elapsedMs: Long,
     ) {
-        log("event=dropped_frames count=$droppedFrames elapsed_ms=$elapsedMs")
+        session.onDroppedVideoFrames(
+            droppedFrames = droppedFrames,
+            elapsedMs = elapsedMs,
+            nowMs = SystemClock.elapsedRealtime(),
+        )?.let(::logDroppedFrameEvent)
     }
 
     override fun onVideoDecoderInitialized(
@@ -135,6 +144,13 @@ internal class PlayerDiagnosticLogger(
             PLAYER_DIAGNOSTIC_TAG,
             "$message type=${context.type.quoted()} category=${context.category.quoted()} " +
                 "title=${context.title.quoted()} media=${context.media.quoted()}",
+        )
+    }
+
+    private fun logDroppedFrameEvent(event: DroppedFrameDiagnosticEvent) {
+        log(
+            "event=dropped_frames count=${event.count} elapsed_ms=${event.elapsedMs} " +
+                "window_ms=${event.windowMs}",
         )
     }
 }
