@@ -4,23 +4,21 @@ import android.content.Context
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
-import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.hktnv.iptvbox.core.model.PlaybackCapabilities
 import com.hktnv.iptvbox.core.model.PlaybackRequest
 
 object MediaPlayerFactory {
+    @OptIn(UnstableApi::class)
     fun create(
         context: Context,
         headers: Map<String, String> = emptyMap(),
     ): ExoPlayer {
-        val dataSourceFactory = DefaultHttpDataSource.Factory()
-            .setDefaultRequestProperties(headers.filterValues { it.isNotBlank() })
-        val mediaSourceFactory = DefaultMediaSourceFactory(context)
-            .setDataSourceFactory(dataSourceFactory)
         return ExoPlayer.Builder(context)
-            .setMediaSourceFactory(mediaSourceFactory)
+            .setRenderersFactory(createIptvRenderersFactory(context))
+            .setMediaSourceFactory(createIptvMediaSourceFactory(context, headers))
+            .setLoadControl(defaultIptvPlayerBufferProfile().toLoadControl())
             .setSeekBackIncrementMs(10_000)
             .setSeekForwardIncrementMs(10_000)
             .build()
