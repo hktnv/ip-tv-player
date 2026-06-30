@@ -125,19 +125,7 @@ internal fun PlayerScreen(
             player.removeListener(listener)
         }
     }
-    DisposableEffect(player, diagnostics) {
-        if (diagnostics != null) {
-            player.addAnalyticsListener(diagnostics)
-            diagnostics.syncPlaybackState(player.playWhenReady)
-            diagnostics.logAttached()
-        }
-        onDispose {
-            if (diagnostics != null) {
-                diagnostics.logDetached()
-                player.removeAnalyticsListener(diagnostics)
-            }
-        }
-    }
+    PlayerDiagnosticsLifecycle(player = player, diagnostics = diagnostics)
 
     var inputState by remember { mutableStateOf(PlayerInputState.Watching) }
     var exitChoice by remember { mutableStateOf(PlayerExitChoice.Exit) }

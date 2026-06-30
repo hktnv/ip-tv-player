@@ -232,8 +232,12 @@ internal fun PlaylistRow(
     onClick: () -> Unit,
     onReload: (() -> Unit)?,
     onRename: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
 ) {
     val stats = remember(playlist.id, playlist.items) { playlist.stats() }
+    val totalCount = remember(stats, playlist.items.size) {
+        (stats.live + stats.movies + stats.series).takeIf { it > 0 } ?: playlist.items.size
+    }
     var focused by remember { mutableStateOf(false) }
     PremiumPanel(
         modifier = Modifier
@@ -262,7 +266,7 @@ internal fun PlaylistRow(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = "${playlist.items.size} içerik · ${stats.live} canlı · ${stats.movies} film · ${stats.series} dizi",
+                    text = "$totalCount içerik · ${stats.live} canlı · ${stats.movies} film · ${stats.series} dizi",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                     maxLines = 1,
@@ -290,6 +294,15 @@ internal fun PlaylistRow(
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                     ) {
                         Text("Yenile", fontSize = 12.sp)
+                    }
+                }
+                if (onDelete != null) {
+                    OutlinedButton(
+                        onClick = onDelete,
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                    ) {
+                        Text("Sil", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                     }
                 }
             }

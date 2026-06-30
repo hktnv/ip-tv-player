@@ -295,6 +295,7 @@ internal fun PlaylistScreen(
     onSelectPlaylist: (String) -> Unit,
     onReload: (LoadedPlaylist) -> Unit,
     onRename: (LoadedPlaylist) -> Unit,
+    onDelete: (LoadedPlaylist) -> Unit,
     contentPadding: Dp,
 ) {
     LazyColumn(
@@ -329,6 +330,7 @@ internal fun PlaylistScreen(
                     onClick = { onSelectPlaylist(playlist.id) },
                     onReload = { onReload(playlist) },
                     onRename = { onRename(playlist) },
+                    onDelete = { onDelete(playlist) },
                 )
             }
         }

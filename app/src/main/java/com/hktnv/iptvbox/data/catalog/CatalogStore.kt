@@ -190,6 +190,17 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
         }
     }
 
+    fun itemIds(playlistId: String): Set<String> {
+        return readableDatabase.rawQuery(
+            "SELECT item_id FROM items WHERE playlist_id=?",
+            arrayOf(playlistId),
+        ).use { cursor ->
+            buildSet {
+                while (cursor.moveToNext()) add(cursor.getString(0))
+            }
+        }
+    }
+
     fun deletePlaylist(playlistId: String) {
         writableDatabase.transaction {
             delete("items", "playlist_id=?", arrayOf(playlistId))

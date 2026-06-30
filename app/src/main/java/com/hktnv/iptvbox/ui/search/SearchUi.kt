@@ -90,12 +90,14 @@ internal fun SearchScreen(
 
     LaunchedEffect(Unit) {
         keyboardActivationReady = false
-        var focused = false
-        repeat(3) { attempt ->
-            withFrameNanos { }
-            if (attempt > 0) delay(100L)
-            focused = runCatching { inputFocusRequester.requestFocus() }.getOrDefault(false)
-            if (focused) return@repeat
+        if (television) {
+            var focused = false
+            repeat(3) { attempt ->
+                withFrameNanos { }
+                if (attempt > 0) delay(100L)
+                focused = runCatching { inputFocusRequester.requestFocus() }.getOrDefault(false)
+                if (focused) return@repeat
+            }
         }
         delay(250L)
         keyboardActivationReady = true
@@ -122,6 +124,9 @@ internal fun SearchScreen(
             pendingKeyboardCloseAfterClear = true
             withFrameNanos { }
             keyboardController?.show()
+        }
+        if (!television && keyboardRequested && keyboardWasVisible && !imeVisible) {
+            keyboardRequested = false
         }
         keyboardWasVisible = imeVisible
     }

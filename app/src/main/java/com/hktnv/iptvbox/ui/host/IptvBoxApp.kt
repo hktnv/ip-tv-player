@@ -31,9 +31,11 @@ import com.hktnv.iptvbox.state.AppStateStore
 import com.hktnv.iptvbox.state.AutoDismissBannerEffect
 import com.hktnv.iptvbox.state.CatalogSnapshotEffect
 import com.hktnv.iptvbox.state.clearBrokenStateAction
+import com.hktnv.iptvbox.state.deletePlaylistAction
 import com.hktnv.iptvbox.state.InitialContentFocusEffect
 import com.hktnv.iptvbox.state.NavigationTimingEffect
 import com.hktnv.iptvbox.state.PersistAppStateEffect
+import com.hktnv.iptvbox.state.playlistStateAfterDeletion
 import com.hktnv.iptvbox.state.reloadPlaylistAction
 import com.hktnv.iptvbox.state.renamePlaylistAction
 import com.hktnv.iptvbox.state.RestoreAppStateEffect
@@ -77,7 +79,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }; var showCatalogCategoryLanding by rememberSaveable { mutableStateOf(true) }; var selectedSeriesTitle by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedSeasonNumber by rememberSaveable { mutableStateOf<Int?>(null) }; var searchDraft by rememberSaveable { mutableStateOf("") }
     var submittedSearch by rememberSaveable { mutableStateOf("") }; var showAddDialog by rememberSaveable { mutableStateOf(false) }; var showExitDialog by rememberSaveable { mutableStateOf(false) }
-    var renamingPlaylist by remember { mutableStateOf<LoadedPlaylist?>(null) }; var banner by rememberSaveable { mutableStateOf<String?>(null) }
+    var renamingPlaylist by remember { mutableStateOf<LoadedPlaylist?>(null) }; var deletingPlaylist by remember { mutableStateOf<LoadedPlaylist?>(null) }; var banner by rememberSaveable { mutableStateOf<String?>(null) }
     var currentItem by remember { mutableStateOf<CatalogItem?>(null) }; var currentHeaders by remember { mutableStateOf<Map<String, String>>(emptyMap()) }; var playerContextItems by remember { mutableStateOf<List<CatalogItem>>(emptyList()) }; var contentOptionsItem by remember { mutableStateOf<CatalogItem?>(null) }
     var catalogSnapshot by remember { mutableStateOf<CatalogSnapshot?>(null) }; var catalogIndexLoading by remember { mutableStateOf(false) }
     var firstDrawRecorded by remember { mutableStateOf(false) }; var updateCheckStarted by rememberSaveable { mutableStateOf(false) }
@@ -295,22 +297,33 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             },
         )
     }
+    fun deletePlaylist(playlist: LoadedPlaylist) {
+        scope.deletePlaylistAction(
+            playlist = playlist, catalogStore = catalogStore,
+            onDeleted = { deleted ->
+                val remaining = playlists.filterNot { it.id == deleted.id }
+                val nextState = playlistStateAfterDeletion(remaining, deleted.id, selectedPlaylistId, screen)
+                playlists.clear(); playlists.addAll(remaining); favoriteIds.removeAll(deleted.itemIds); recentIds.removeAll(deleted.itemIds)
+                selectedPlaylistId = nextState.selectedPlaylistId
+                if (nextState.deletedActivePlaylist) {
+                    catalogSnapshot = null; selectedCategory = null; showCatalogCategoryLanding = true; selectedSeriesTitle = null
+                    selectedSeasonNumber = null; submittedSearch = ""; searchDraft = ""; currentItem = null; playerContextItems = emptyList()
+                }
+                screen = nextState.screen; showPlaylistEntry = nextState.showPlaylistEntry; deletingPlaylist = null; banner = "${deleted.name} silindi"
+                if (!nextState.showPlaylistEntry) requestContentFocus()
+            },
+            onFailure = { deletingPlaylist = null; banner = it },
+        )
+    }
     fun clearBrokenState() {
         scope.clearBrokenStateAction(stateStore) {
-            playlists.clear()
-            favoriteIds.clear(); recentIds.clear()
-            selectedPlaylistId = null; selectedCategory = null
-            showCatalogCategoryLanding = true
-            selectedSeriesTitle = null; selectedSeasonNumber = null
-            submittedSearch = ""; searchDraft = ""
+            playlists.clear(); favoriteIds.clear(); recentIds.clear(); selectedPlaylistId = null; selectedCategory = null
+            showCatalogCategoryLanding = true; selectedSeriesTitle = null; selectedSeasonNumber = null; submittedSearch = ""; searchDraft = ""
             screen = AppScreen.PLAYLISTS; showPlaylistEntry = true
             showRecovery = false; bootError = null; banner = "Sorunlu liste kaldırıldı"
         }
     }
-    fun openSettingsFromEntry() {
-        screen = AppScreen.SETTINGS; showPlaylistEntry = false
-        requestContentFocus()
-    }
+    fun openSettingsFromEntry() { screen = AppScreen.SETTINGS; showPlaylistEntry = false; requestContentFocus() }
     fun openSeriesCatalog(title: String) {
         selectedTab = CatalogTab.SERIES; selectedCategory = null; selectedSeriesTitle = title
         selectedSeasonNumber = null; showCatalogCategoryLanding = false; screen = AppScreen.CATALOG; showPlaylistEntry = false
@@ -322,9 +335,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     fun selectCatalogCategory(category: String?) {
         selectedCategory = category; showCatalogCategoryLanding = false; selectedSeriesTitle = null; selectedSeasonNumber = null; requestContentFocus()
     }
-    fun showCatalogCategories() {
-        selectedSeriesTitle = null; selectedSeasonNumber = null; showCatalogCategoryLanding = true; requestContentFocus()
-    }
+    fun showCatalogCategories() { selectedSeriesTitle = null; selectedSeasonNumber = null; showCatalogCategoryLanding = true; requestContentFocus() }
     IptvContentHost(
         performanceMode = performanceMode, restoredApplied = restoredApplied, showRecovery = showRecovery, bootError = bootError,
         selectedPlaylist = selectedPlaylist, screen = screen, showPlaylistEntry = showPlaylistEntry, currentItem = currentItem,
@@ -347,7 +358,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onOpenCatalogTab = { openCatalogRoot(it) }, onOpenLatest = { openHomeRailScreen(AppScreen.LATEST) },
         onOpenFavorites = { openHomeRailScreen(AppScreen.FAVORITES) }, onOpenRecent = { openHomeRailScreen(AppScreen.RECENT) },
         onOpenSeries = ::openSeriesCatalog, onOpenItem = ::openItem, onReloadPlaylist = ::reloadPlaylist,
-        onRenamePlaylist = { renamingPlaylist = it }, onTabSelected = ::selectCatalogTab,
+        onRenamePlaylist = { renamingPlaylist = it }, onDeletePlaylist = { deletingPlaylist = it }, onTabSelected = ::selectCatalogTab,
         onCategorySelected = ::selectCatalogCategory, onSeriesSelected = { selectedSeriesTitle = it; selectedSeasonNumber = null },
         onSeasonSelected = { selectedSeasonNumber = it }, onShowItemOptions = { contentOptionsItem = it },
         onQueryChange = { searchDraft = it }, onSearch = { submittedSearch = searchDraft.trim() },
@@ -358,7 +369,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     )
     IptvDialogHost(
         showAddDialog = showAddDialog, showExitDialog = showExitDialog, loader = loader, telemetry = telemetry,
-        existingPlaylistNames = playlists.map { it.name }, renamingPlaylist = renamingPlaylist, contentOptionsItem = contentOptionsItem, contentOptionsFavorite = contentOptionsItem?.id?.let { it in favoriteIds } == true, updateState = updateState,
+        existingPlaylistNames = playlists.map { it.name }, renamingPlaylist = renamingPlaylist, deletingPlaylist = deletingPlaylist, contentOptionsItem = contentOptionsItem, contentOptionsFavorite = contentOptionsItem?.id?.let { it in favoriteIds } == true, updateState = updateState,
         screen = screen, showRecovery = showRecovery, onDismissAdd = { showAddDialog = false },
         onDismissExit = { showExitDialog = false }, onConfirmExit = { showExitDialog = false; activity?.finish() },
         onPlaylistLoaded = { draft, result ->
@@ -370,7 +381,8 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                     banner = "$playlistName yüklendi: $itemCount içerik"; showAddDialog = false
                 }, onFailure = { message -> banner = message; showAddDialog = false })
         },
-        onDismissRename = { renamingPlaylist = null }, onRenamePlaylist = ::renamePlaylist, onDismissContentOptions = { contentOptionsItem = null },
+        onDismissRename = { renamingPlaylist = null }, onRenamePlaylist = ::renamePlaylist,
+        onDismissDeletePlaylist = { deletingPlaylist = null }, onConfirmDeletePlaylist = ::deletePlaylist, onDismissContentOptions = { contentOptionsItem = null },
         onOpenContentOptionsItem = { contentOptionsItem?.let { item -> contentOptionsItem = null; openItem(item) } },
         onToggleContentOptionsFavorite = { contentOptionsItem?.let { item -> val wasFavorite = item.id in favoriteIds; toggleFavorite(favoriteIds, item.id); contentOptionsItem = null; banner = if (wasFavorite) "Favoriden \u00e7\u0131kar\u0131ld\u0131" else "Favorilere eklendi" } },
         onDownloadUpdate = { updateState.pendingUpdate()?.let(::startUpdateDownload) },

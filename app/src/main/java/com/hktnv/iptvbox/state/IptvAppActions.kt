@@ -192,6 +192,31 @@ internal fun CoroutineScope.renamePlaylistAction(
     }
 }
 
+internal data class DeletedPlaylist(
+    val id: String,
+    val name: String,
+    val itemIds: Set<String>,
+)
+
+internal fun CoroutineScope.deletePlaylistAction(
+    playlist: LoadedPlaylist,
+    catalogStore: CatalogStore,
+    onDeleted: (DeletedPlaylist) -> Unit,
+    onFailure: (String) -> Unit,
+) {
+    launch {
+        runCatching {
+            withContext(Dispatchers.IO) {
+                val itemIds = catalogStore.itemIds(playlist.id)
+                catalogStore.deletePlaylist(playlist.id)
+                DeletedPlaylist(id = playlist.id, name = playlist.name, itemIds = itemIds)
+            }
+        }.onSuccess(onDeleted).onFailure { throwable ->
+            onFailure(simpleUserMessage(throwable.message.orEmpty()).ifBlank { "Oynatma listesi silinemedi" })
+        }
+    }
+}
+
 internal fun CoroutineScope.clearBrokenStateAction(
     stateStore: AppStateStore,
     onCleared: () -> Unit,

@@ -67,6 +67,7 @@ internal fun PlaylistEntryScreen(
     onOpenLastPlaylist: () -> Unit,
     onAddPlaylist: () -> Unit,
     onSelectPlaylist: (String) -> Unit,
+    onDeletePlaylist: (LoadedPlaylist) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     if (playlists.isEmpty()) {
@@ -116,6 +117,7 @@ internal fun PlaylistEntryScreen(
                     selected = playlist.id == lastPlaylist.id,
                     onClick = { onSelectPlaylist(playlist.id) },
                     onReload = null,
+                    onDelete = { onDeletePlaylist(playlist) },
                 )
             }
         }

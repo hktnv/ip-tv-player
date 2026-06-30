@@ -207,7 +207,7 @@ private fun categoryGridMetrics(maxWidth: Dp, television: Boolean): CategoryGrid
         television && maxWidth >= 700.dp -> CategoryGridMetrics(columnCount = 4, cardHeight = 104.dp)
         maxWidth >= 900.dp -> CategoryGridMetrics(columnCount = 4, cardHeight = 104.dp)
         maxWidth >= 600.dp -> CategoryGridMetrics(columnCount = 3, cardHeight = 100.dp)
-        else -> CategoryGridMetrics(columnCount = 2, cardHeight = 92.dp)
+        else -> CategoryGridMetrics(columnCount = 2, cardHeight = 116.dp)
     }
 }
 

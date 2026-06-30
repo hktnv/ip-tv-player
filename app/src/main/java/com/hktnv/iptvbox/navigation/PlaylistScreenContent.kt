@@ -55,6 +55,7 @@ internal fun PlaylistScreenContent(
     onSelectPlaylist: (String) -> Unit,
     onReloadPlaylist: (LoadedPlaylist) -> Unit,
     onRenamePlaylist: (LoadedPlaylist) -> Unit,
+    onDeletePlaylist: (LoadedPlaylist) -> Unit,
     onTabSelected: (CatalogTab) -> Unit,
     onCategorySelected: (String?) -> Unit,
     onSeriesSelected: (String) -> Unit,
@@ -98,6 +99,7 @@ internal fun PlaylistScreenContent(
             onSelectPlaylist = onSelectPlaylist,
             onReload = onReloadPlaylist,
             onRename = onRenamePlaylist,
+            onDelete = onDeletePlaylist,
             contentPadding = contentPadding,
         )
         AppScreen.CATALOG -> CatalogScreen(

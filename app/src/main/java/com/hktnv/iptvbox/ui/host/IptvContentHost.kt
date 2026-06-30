@@ -96,6 +96,7 @@ internal fun IptvContentHost(
     onOpenItem: (CatalogItem) -> Unit,
     onReloadPlaylist: (LoadedPlaylist) -> Unit,
     onRenamePlaylist: (LoadedPlaylist) -> Unit,
+    onDeletePlaylist: (LoadedPlaylist) -> Unit,
     onTabSelected: (CatalogTab) -> Unit,
     onCategorySelected: (String?) -> Unit,
     onSeriesSelected: (String) -> Unit,
@@ -203,6 +204,7 @@ internal fun IptvContentHost(
                     onOpenLastPlaylist = onOpenLastPlaylist,
                     onAddPlaylist = onAddPlaylist,
                     onSelectPlaylist = onSelectPlaylist,
+                    onDeletePlaylist = onDeletePlaylist,
                     onOpenSettings = onOpenSettingsFromEntry,
                 )
                 else -> PlaylistContentScaffold(
@@ -243,6 +245,7 @@ internal fun IptvContentHost(
                     onSelectPlaylist = onSelectPlaylist,
                     onReloadPlaylist = onReloadPlaylist,
                     onRenamePlaylist = onRenamePlaylist,
+                    onDeletePlaylist = onDeletePlaylist,
                     onTabSelected = onTabSelected,
                     onCategorySelected = onCategorySelected,
                     onSeriesSelected = onSeriesSelected,

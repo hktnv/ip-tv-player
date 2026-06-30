@@ -20,6 +20,7 @@ internal fun IptvDialogHost(
     telemetry: AppPerformanceTelemetry,
     existingPlaylistNames: List<String>,
     renamingPlaylist: LoadedPlaylist?,
+    deletingPlaylist: LoadedPlaylist?,
     contentOptionsItem: CatalogItem?,
     contentOptionsFavorite: Boolean,
     updateState: AppUpdateUiState,
@@ -31,6 +32,8 @@ internal fun IptvDialogHost(
     onPlaylistLoaded: (DraftPlaylist, PlaylistLoadResult) -> Unit,
     onDismissRename: () -> Unit,
     onRenamePlaylist: (LoadedPlaylist, String) -> Unit,
+    onDismissDeletePlaylist: () -> Unit,
+    onConfirmDeletePlaylist: (LoadedPlaylist) -> Unit,
     onDismissContentOptions: () -> Unit,
     onOpenContentOptionsItem: () -> Unit,
     onToggleContentOptionsFavorite: () -> Unit,
@@ -64,6 +67,14 @@ internal fun IptvDialogHost(
         )
     }
 
+    deletingPlaylist?.let { playlist ->
+        PlaylistDeleteConfirmationDialog(
+            playlist = playlist,
+            onDismiss = onDismissDeletePlaylist,
+            onConfirm = { onConfirmDeletePlaylist(playlist) },
+        )
+    }
+
     contentOptionsItem?.let { item ->
         ContentOptionsDialog(
             item = item,
@@ -80,6 +91,7 @@ internal fun IptvDialogHost(
             showAddDialog ||
             showExitDialog ||
             renamingPlaylist != null ||
+            deletingPlaylist != null ||
             contentOptionsItem != null ||
             showRecovery
     }
