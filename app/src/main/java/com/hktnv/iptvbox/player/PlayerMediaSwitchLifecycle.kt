@@ -6,30 +6,62 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import com.hktnv.iptvbox.core.model.CatalogItem
 
 @Composable
 internal fun PlayerMediaSwitchLifecycle(
     player: ExoPlayer,
-    item: CatalogItem,
+    queue: PlayerMediaQueue,
+    targetItemId: String,
     diagnostics: PlayerDiagnosticLogger?,
     onBeforeSwitch: () -> Unit,
 ) {
     var pendingSwitchStartedAtMs by remember(player) { mutableLongStateOf(0L) }
+    var activeQueueSignature by remember(player) { mutableStateOf<String?>(null) }
     val latestDiagnostics by rememberUpdatedState(diagnostics)
 
-    LaunchedEffect(player, item.id, item.streamUrl) {
+    LaunchedEffect(player, queue.signature, queue.currentIndex, targetItemId) {
         onBeforeSwitch()
         pendingSwitchStartedAtMs = SystemClock.elapsedRealtime()
-        latestDiagnostics?.logChannelSwitchStart(item.id)
-        player.setMediaItem(item.toPlayerMediaItem())
+        latestDiagnostics?.logChannelSwitchStart(targetItemId)
+        val shouldPrepare = if (activeQueueSignature != queue.signature || player.mediaItemCount != queue.mediaItems.size) {
+            latestDiagnostics?.logMediaSwitchPlan(
+                plan = "set_media_items",
+                index = queue.currentIndex,
+                queueSize = queue.mediaItems.size,
+            )
+            player.setMediaItems(queue.mediaItems, queue.currentIndex, C.TIME_UNSET)
+            activeQueueSignature = queue.signature
+            true
+        } else if (
+            player.currentMediaItemIndex != queue.currentIndex ||
+            player.currentMediaItem?.mediaId != targetItemId
+        ) {
+            latestDiagnostics?.logMediaSwitchPlan(
+                plan = "seek_to_queue_index",
+                index = queue.currentIndex,
+                queueSize = queue.mediaItems.size,
+            )
+            player.seekToDefaultPosition(queue.currentIndex)
+            player.playbackState == Player.STATE_IDLE
+        } else {
+            latestDiagnostics?.logMediaSwitchPlan(
+                plan = "reuse_current_item",
+                index = queue.currentIndex,
+                queueSize = queue.mediaItems.size,
+            )
+            player.playbackState == Player.STATE_IDLE
+        }
         player.playWhenReady = true
-        player.prepare()
+        if (shouldPrepare) {
+            player.prepare()
+        }
     }
 
     DisposableEffect(player) {

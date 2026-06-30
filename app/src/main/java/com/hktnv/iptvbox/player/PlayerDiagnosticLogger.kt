@@ -23,6 +23,7 @@ internal class PlayerDiagnosticLogger(
 ) : AnalyticsListener {
     private val session = PlayerDiagnosticSession()
     private var lastPlayWhenReady = false
+    private var channelSwitchStartedAtMs = 0L
 
     fun logAttached() {
         log("event=diagnostic_attached")
@@ -46,11 +47,20 @@ internal class PlayerDiagnosticLogger(
     }
 
     fun logChannelSwitchStart(targetItemId: String) {
+        channelSwitchStartedAtMs = SystemClock.elapsedRealtime()
         log("event=channel_switch_start target_item_id=${targetItemId.safeLogValue()} ${bufferFields()}")
     }
 
     fun logChannelSwitchReady(durationMs: Long) {
         log("event=channel_switch_ready duration_ms=$durationMs ${bufferFields()}")
+    }
+
+    fun logMediaSwitchPlan(
+        plan: String,
+        index: Int,
+        queueSize: Int,
+    ) {
+        log("event=media_switch_plan plan=${plan.quoted()} index=$index queue_size=$queueSize ${bufferFields()}")
     }
 
     override fun onPlaybackStateChanged(eventTime: AnalyticsListener.EventTime, state: Int) {
@@ -147,6 +157,19 @@ internal class PlayerDiagnosticLogger(
             elapsedMs = elapsedMs,
             nowMs = SystemClock.elapsedRealtime(),
         )?.let(::logDroppedFrameEvent)
+    }
+
+    override fun onRenderedFirstFrame(
+        eventTime: AnalyticsListener.EventTime,
+        output: Any,
+        renderTimeMs: Long,
+    ) {
+        val durationMs = if (channelSwitchStartedAtMs > 0L) {
+            SystemClock.elapsedRealtime() - channelSwitchStartedAtMs
+        } else {
+            0L
+        }
+        log("event=rendered_first_frame duration_ms=$durationMs render_time_ms=$renderTimeMs ${bufferFields()}")
     }
 
     override fun onVideoDecoderInitialized(

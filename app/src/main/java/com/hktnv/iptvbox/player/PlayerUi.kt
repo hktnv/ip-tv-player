@@ -51,6 +51,15 @@ internal fun PlayerScreen(
             null
         }
     }
+    val queue = remember(playbackItems, item.id) {
+        buildPlayerPlaybackQueue(playbackItems, item)
+    }
+    val playerMediaItems = remember(queue.items) {
+        queue.items.map { it.toPlayerMediaItem() }
+    }
+    val mediaQueue = remember(queue.currentIndex, queue.items, playerMediaItems) {
+        queue.toPlayerMediaQueue(playerMediaItems)
+    }
     var manuallyPaused by remember(player) { mutableStateOf(false) }
     val diagnostics = remember(player, diagnosticsContext) {
         diagnosticsContext?.let { context ->
@@ -63,7 +72,8 @@ internal fun PlayerScreen(
     }
     PlayerMediaSwitchLifecycle(
         player = player,
-        item = item,
+        queue = mediaQueue,
+        targetItemId = item.id,
         diagnostics = diagnostics,
         onBeforeSwitch = { manuallyPaused = false },
     )
@@ -76,9 +86,6 @@ internal fun PlayerScreen(
         return
     }
 
-    val queue = remember(playbackItems, item.id) {
-        buildPlayerPlaybackQueue(playbackItems, item)
-    }
     val contentInfo = remember(item.id, queue.previous?.id, queue.next?.id) {
         item.toPlayerContentInfo(
             previousItem = queue.previous,
