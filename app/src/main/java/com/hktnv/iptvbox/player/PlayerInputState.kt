@@ -45,29 +45,38 @@ internal fun reducePlayerInput(
             else -> PlayerInputResult(state, consumeInput = false)
         }
         PlayerInputAction.OkPressed -> when (state) {
-            PlayerInputState.Watching,
-            PlayerInputState.ControlsVisible -> PlayerInputResult(
+            PlayerInputState.Watching -> PlayerInputResult(
                 state = PlayerInputState.ControlsVisible,
                 showControls = true,
                 togglePlayback = true,
             )
+            PlayerInputState.ControlsVisible -> PlayerInputResult(
+                state = PlayerInputState.ControlsVisible,
+                consumeInput = false,
+            )
             else -> PlayerInputResult(state, consumeInput = false)
         }
         PlayerInputAction.UpPressed -> when (state) {
-            PlayerInputState.Watching,
-            PlayerInputState.ControlsVisible -> PlayerInputResult(
+            PlayerInputState.Watching -> PlayerInputResult(
                 state = PlayerInputState.ControlsVisible,
                 showControls = true,
                 selectNextItem = true,
             )
+            PlayerInputState.ControlsVisible -> PlayerInputResult(
+                state = PlayerInputState.ControlsVisible,
+                consumeInput = false,
+            )
             else -> PlayerInputResult(state, consumeInput = false)
         }
         PlayerInputAction.DownPressed -> when (state) {
-            PlayerInputState.Watching,
-            PlayerInputState.ControlsVisible -> PlayerInputResult(
+            PlayerInputState.Watching -> PlayerInputResult(
                 state = PlayerInputState.ControlsVisible,
                 showControls = true,
                 selectPreviousItem = true,
+            )
+            PlayerInputState.ControlsVisible -> PlayerInputResult(
+                state = PlayerInputState.ControlsVisible,
+                consumeInput = false,
             )
             else -> PlayerInputResult(state, consumeInput = false)
         }

@@ -30,7 +30,7 @@ class PlayerInputStateTest {
     }
 
     @Test
-    fun okAlwaysShowsControlsAndTogglesPlaybackInPlaybackStates() {
+    fun okShowsControlsAndTogglesPlaybackOnlyWhileWatching() {
         val watchingResult = reducePlayerInput(
             state = PlayerInputState.Watching,
             action = PlayerInputAction.OkPressed,
@@ -43,9 +43,10 @@ class PlayerInputStateTest {
         assertEquals(PlayerInputState.ControlsVisible, watchingResult.state)
         assertEquals(PlayerInputState.ControlsVisible, controlsResult.state)
         assertTrue(watchingResult.showControls)
-        assertTrue(controlsResult.showControls)
         assertTrue(watchingResult.togglePlayback)
-        assertTrue(controlsResult.togglePlayback)
+        assertFalse(controlsResult.consumeInput)
+        assertFalse(controlsResult.showControls)
+        assertFalse(controlsResult.togglePlayback)
     }
 
     @Test
@@ -66,7 +67,7 @@ class PlayerInputStateTest {
     }
 
     @Test
-    fun upAndDownKeepControlsVisibleAndRequestQueueMove() {
+    fun upAndDownMoveQueueOnlyWhileWatching() {
         val nextResult = reducePlayerInput(
             state = PlayerInputState.Watching,
             action = PlayerInputAction.UpPressed,
@@ -79,8 +80,9 @@ class PlayerInputStateTest {
         assertEquals(PlayerInputState.ControlsVisible, nextResult.state)
         assertEquals(PlayerInputState.ControlsVisible, previousResult.state)
         assertTrue(nextResult.showControls)
-        assertTrue(previousResult.showControls)
         assertTrue(nextResult.selectNextItem)
-        assertTrue(previousResult.selectPreviousItem)
+        assertFalse(previousResult.consumeInput)
+        assertFalse(previousResult.showControls)
+        assertFalse(previousResult.selectPreviousItem)
     }
 }

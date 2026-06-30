@@ -24,6 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,17 +41,25 @@ import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.tvFocusElevation
 import com.hktnv.iptvbox.ui.common.tvFocusLift
 
+internal enum class PlayerExitChoice {
+    Exit,
+    Continue,
+}
+
 @Composable
 internal fun PlayerExitConfirmationDialog(
+    selectedChoice: PlayerExitChoice,
+    onChoiceChange: (PlayerExitChoice) -> Unit,
     onExit: () -> Unit,
     onContinue: () -> Unit,
 ) {
+    val exitFocusRequester = remember { FocusRequester() }
     val continueFocusRequester = remember { FocusRequester() }
 
     BackHandler { onExit() }
     LaunchedEffect(Unit) {
         withFrameNanos { }
-        runCatching { continueFocusRequester.requestFocus() }
+        runCatching { exitFocusRequester.requestFocus() }
     }
 
     Dialog(onDismissRequest = onExit) {
@@ -76,6 +90,14 @@ internal fun PlayerExitConfirmationDialog(
                         text = "Çık",
                         onClick = onExit,
                         modifier = Modifier.weight(1f),
+                        focusRequester = exitFocusRequester,
+                        selected = selectedChoice == PlayerExitChoice.Exit,
+                        onFocused = { onChoiceChange(PlayerExitChoice.Exit) },
+                        onMoveLeft = { },
+                        onMoveRight = {
+                            onChoiceChange(PlayerExitChoice.Continue)
+                            runCatching { continueFocusRequester.requestFocus() }
+                        },
                         primary = false,
                     )
                     PlayerExitButton(
@@ -83,6 +105,13 @@ internal fun PlayerExitConfirmationDialog(
                         onClick = onContinue,
                         modifier = Modifier.weight(1f),
                         focusRequester = continueFocusRequester,
+                        selected = selectedChoice == PlayerExitChoice.Continue,
+                        onFocused = { onChoiceChange(PlayerExitChoice.Continue) },
+                        onMoveLeft = {
+                            onChoiceChange(PlayerExitChoice.Exit)
+                            runCatching { exitFocusRequester.requestFocus() }
+                        },
+                        onMoveRight = { },
                         primary = true,
                     )
                 }
@@ -97,18 +126,32 @@ private fun PlayerExitButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester? = null,
+    selected: Boolean,
+    onFocused: () -> Unit,
+    onMoveLeft: () -> Unit,
+    onMoveRight: () -> Unit,
     primary: Boolean,
 ) {
     var focused by remember { mutableStateOf(false) }
     val background = when {
         focused -> if (primary) MaterialTheme.colorScheme.primaryContainer else TvFocusPanel
+        selected -> if (primary) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
         primary -> MaterialTheme.colorScheme.primaryContainer
         else -> MaterialTheme.colorScheme.surface
     }
     Surface(
         modifier = modifier
             .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
-            .onFocusChanged { focused = it.isFocused }
+            .onPreviewKeyEvent { event ->
+                handlePlayerExitKey(event, onClick, onMoveLeft, onMoveRight)
+            }
+            .onKeyEvent { event ->
+                handlePlayerExitKey(event, onClick, onMoveLeft, onMoveRight)
+            }
+            .onFocusChanged {
+                focused = it.isFocused
+                if (it.isFocused) onFocused()
+            }
             .focusable()
             .tvFocusLift(focused = focused, scale = 1.025f, liftPx = -3f)
             .tvClickable(onClick = onClick),
@@ -132,4 +175,33 @@ private fun PlayerExitButton(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
         )
     }
+}
+
+private fun handlePlayerExitKey(
+    event: androidx.compose.ui.input.key.KeyEvent,
+    onClick: () -> Unit,
+    onMoveLeft: () -> Unit,
+    onMoveRight: () -> Unit,
+): Boolean {
+    return when {
+        event.key.isPlayerExitSelectKey() -> {
+            if (event.type == KeyEventType.KeyUp) onClick()
+            true
+        }
+        event.key == Key.DirectionLeft -> {
+            if (event.type == KeyEventType.KeyUp) onMoveLeft()
+            true
+        }
+        event.key == Key.DirectionRight -> {
+            if (event.type == KeyEventType.KeyUp) onMoveRight()
+            true
+        }
+        else -> false
+    }
+}
+
+private fun Key.isPlayerExitSelectKey(): Boolean {
+    return this == Key.DirectionCenter ||
+        this == Key.Enter ||
+        this == Key.NumPadEnter
 }
