@@ -77,6 +77,7 @@ internal fun SearchScreen(
     val density = LocalDensity.current
     val imeVisible = WindowInsets.ime.getBottom(density) > 0
     val compactSearchControls = !television && configuration.screenWidthDp < 600
+    val searchResultColumnCount = if (compactSearchControls) 1 else 2
     var results by remember(playlist.id) { mutableStateOf<List<CatalogItem>>(emptyList()) }
     var searchLoading by remember(playlist.id) { mutableStateOf(false) }
     var queryFocused by remember { mutableStateOf(false) }
@@ -261,6 +262,7 @@ internal fun SearchScreen(
                 onShowItemOptions = onShowItemOptions,
                 onRequestSideMenu = onRequestSideMenu,
                 initialFocusRequester = firstResultFocusRequester,
+                columnCount = searchResultColumnCount,
                 modifier = Modifier.weight(1f),
             )
         }

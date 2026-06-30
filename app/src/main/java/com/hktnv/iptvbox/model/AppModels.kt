@@ -43,6 +43,7 @@ internal data class LoadedPlaylist(
     val cachedLiveCount: Int? = null,
     val cachedMovieCount: Int? = null,
     val cachedSeriesCount: Int? = null,
+    val autoUpdateHours: Int = 0,
 )
 
 internal data class PlaylistStats(

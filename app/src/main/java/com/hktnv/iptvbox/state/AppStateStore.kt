@@ -55,6 +55,7 @@ private data class PersistedPlaylistMetadata(
     val liveCount: Int,
     val movieCount: Int,
     val seriesCount: Int,
+    val autoUpdateHours: Int = 0,
 )
 
 @Serializable
@@ -206,6 +207,7 @@ internal class AppStateStore(
             liveCount = stats.live,
             movieCount = stats.movies,
             seriesCount = stats.series,
+            autoUpdateHours = autoUpdateHours,
         )
     }
 
@@ -223,6 +225,7 @@ internal class AppStateStore(
             cachedLiveCount = liveCount,
             cachedMovieCount = movieCount,
             cachedSeriesCount = seriesCount,
+            autoUpdateHours = autoUpdateHours,
         )
     }
 }

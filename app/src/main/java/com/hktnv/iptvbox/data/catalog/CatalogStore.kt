@@ -16,7 +16,7 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
     context.applicationContext,
     "iptvbox_catalog.db",
     null,
-    1,
+    2,
 ) {
     init {
         setWriteAheadLoggingEnabled(true)
@@ -49,6 +49,7 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
                 live_count INTEGER NOT NULL,
                 movie_count INTEGER NOT NULL,
                 series_count INTEGER NOT NULL,
+                auto_update_hours INTEGER NOT NULL DEFAULT 0,
                 updated_at INTEGER NOT NULL
             )
             """.trimIndent(),
@@ -80,9 +81,9 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS items")
-        db.execSQL("DROP TABLE IF EXISTS playlists")
-        onCreate(db)
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE playlists ADD COLUMN auto_update_hours INTEGER NOT NULL DEFAULT 0")
+        }
     }
 
     fun loadPlaylists(): List<LoadedPlaylist> {
@@ -177,6 +178,24 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
             "playlists",
             ContentValues().apply {
                 put("name", name)
+                put("updated_at", System.currentTimeMillis())
+            },
+            "id=?",
+            arrayOf(playlistId),
+        )
+        return readableDatabase.rawQuery(
+            "SELECT * FROM playlists WHERE id=?",
+            arrayOf(playlistId),
+        ).use { cursor ->
+            if (cursor.moveToFirst()) cursor.toPlaylist() else null
+        }
+    }
+
+    fun updatePlaylistAutoUpdateHours(playlistId: String, hours: Int): LoadedPlaylist? {
+        writableDatabase.update(
+            "playlists",
+            ContentValues().apply {
+                put("auto_update_hours", hours.coerceAtLeast(0))
                 put("updated_at", System.currentTimeMillis())
             },
             "id=?",

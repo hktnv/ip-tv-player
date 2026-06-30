@@ -34,6 +34,7 @@ internal fun LoadedPlaylist.toPlaylistValues(): ContentValues = ContentValues().
     put("live_count", live)
     put("movie_count", movies)
     put("series_count", series)
+    put("auto_update_hours", autoUpdateHours.coerceAtLeast(0))
     put("updated_at", System.currentTimeMillis())
 }
 
@@ -51,6 +52,7 @@ internal fun Cursor.toPlaylist(): LoadedPlaylist {
         cachedLiveCount = getInt(column("live_count")),
         cachedMovieCount = getInt(column("movie_count")),
         cachedSeriesCount = getInt(column("series_count")),
+        autoUpdateHours = nullableInt("auto_update_hours") ?: 0,
     )
 }
 

@@ -192,6 +192,20 @@ internal fun CoroutineScope.renamePlaylistAction(
     }
 }
 
+internal fun CoroutineScope.updatePlaylistAutoRefreshAction(
+    playlist: LoadedPlaylist,
+    hours: Int,
+    catalogStore: CatalogStore,
+    onUpdated: (LoadedPlaylist) -> Unit,
+) {
+    launch {
+        val updated = withContext(Dispatchers.IO) {
+            catalogStore.updatePlaylistAutoUpdateHours(playlist.id, hours)
+        } ?: playlist.copy(autoUpdateHours = hours.coerceAtLeast(0))
+        onUpdated(updated)
+    }
+}
+
 internal data class DeletedPlaylist(
     val id: String,
     val name: String,

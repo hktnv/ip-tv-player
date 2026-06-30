@@ -63,17 +63,39 @@ import com.hktnv.iptvbox.ui.media.catalogSummary
 internal fun PlaylistEntryScreen(
     playlists: List<LoadedPlaylist>,
     selectedPlaylistId: String?,
+    detailPlaylistId: String?,
     contentPadding: Dp,
     onOpenLastPlaylist: () -> Unit,
     onAddPlaylist: () -> Unit,
-    onSelectPlaylist: (String) -> Unit,
+    onOpenPlaylistDetails: (String) -> Unit,
+    onClosePlaylistDetails: () -> Unit,
+    onUsePlaylist: (String) -> Unit,
+    onReloadPlaylist: (LoadedPlaylist) -> Unit,
+    onRenamePlaylist: (LoadedPlaylist) -> Unit,
     onDeletePlaylist: (LoadedPlaylist) -> Unit,
+    onAutoUpdateHoursChange: (LoadedPlaylist, Int) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     if (playlists.isEmpty()) {
         EmptyPlaylistEntryScene(
             contentPadding = contentPadding,
             onAddPlaylist = onAddPlaylist,
+        )
+        return
+    }
+
+    val detailPlaylist = playlists.firstOrNull { it.id == detailPlaylistId }
+    if (detailPlaylist != null) {
+        PlaylistDetailScreen(
+            playlist = detailPlaylist,
+            active = detailPlaylist.id == selectedPlaylistId,
+            contentPadding = contentPadding,
+            onBack = onClosePlaylistDetails,
+            onUse = { onUsePlaylist(detailPlaylist.id) },
+            onReload = { onReloadPlaylist(detailPlaylist) },
+            onRename = { onRenamePlaylist(detailPlaylist) },
+            onDelete = { onDeletePlaylist(detailPlaylist) },
+            onAutoUpdateHoursChange = { onAutoUpdateHoursChange(detailPlaylist, it) },
         )
         return
     }
@@ -115,9 +137,8 @@ internal fun PlaylistEntryScreen(
                 PlaylistRow(
                     playlist = playlist,
                     selected = playlist.id == lastPlaylist.id,
-                    onClick = { onSelectPlaylist(playlist.id) },
+                    onClick = { onOpenPlaylistDetails(playlist.id) },
                     onReload = null,
-                    onDelete = { onDeletePlaylist(playlist) },
                 )
             }
         }

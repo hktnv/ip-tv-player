@@ -3,6 +3,7 @@ package com.hktnv.iptvbox
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentKind
 import com.hktnv.iptvbox.model.AppScreen
+import com.hktnv.iptvbox.model.playlistAutoUpdateLabel
 import com.hktnv.iptvbox.ui.media.readableContentTitle
 import com.hktnv.iptvbox.ui.media.readableMovieTitle
 import com.hktnv.iptvbox.ui.media.restoredScreen
@@ -53,6 +54,20 @@ class StartupAndTitleFormattingTest {
         assertFalse(shouldOpenDrawerFromHorizontalMediaGrid(index = 1))
         assertTrue(shouldOpenDrawerFromHorizontalMediaGrid(index = 2))
         assertFalse(shouldOpenDrawerFromHorizontalMediaGrid(index = 3))
+    }
+
+    @Test
+    fun mobileSingleColumnSearchTreatsEveryResultAsLeftBoundary() {
+        assertTrue(shouldOpenDrawerFromHorizontalMediaGrid(index = 0, columnCount = 1))
+        assertTrue(shouldOpenDrawerFromHorizontalMediaGrid(index = 1, columnCount = 1))
+        assertTrue(shouldOpenDrawerFromHorizontalMediaGrid(index = 2, columnCount = 1))
+    }
+
+    @Test
+    fun playlistAutoUpdateLabelsAreUserReadable() {
+        assertEquals("Kapalı", playlistAutoUpdateLabel(0))
+        assertEquals("6 saatte bir", playlistAutoUpdateLabel(6))
+        assertEquals("Her gün", playlistAutoUpdateLabel(24))
     }
 
     @Test

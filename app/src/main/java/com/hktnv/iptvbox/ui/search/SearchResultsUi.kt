@@ -63,6 +63,7 @@ internal fun SearchResultsList(
     onShowItemOptions: (CatalogItem) -> Unit,
     onRequestSideMenu: () -> Unit,
     initialFocusRequester: FocusRequester,
+    columnCount: Int,
     modifier: Modifier = Modifier,
 ) {
     val favoriteKey = favoriteIds.joinToString("|")
@@ -71,6 +72,7 @@ internal fun SearchResultsList(
         items = items,
         itemKey = { it.id },
         modifier = modifier,
+        columnCount = columnCount,
         initialFocusRequester = initialFocusRequester,
         contentType = { "search-${it.kind.name}" },
     ) { item, requestSideMenuOnLeft, itemModifier ->

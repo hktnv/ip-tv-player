@@ -122,6 +122,7 @@ import com.hktnv.iptvbox.ui.common.EmptyState
 import com.hktnv.iptvbox.ui.common.LoadingPanel
 import com.hktnv.iptvbox.ui.common.ScreenHeader
 import com.hktnv.iptvbox.ui.media.seriesPreview
+import com.hktnv.iptvbox.ui.playlist.PlaylistDetailScreen
 import com.hktnv.iptvbox.ui.playlist.PlaylistRow
 
 @Composable
@@ -291,13 +292,32 @@ internal fun HomeScreen(
 internal fun PlaylistScreen(
     playlists: List<LoadedPlaylist>,
     selectedPlaylistId: String?,
+    detailPlaylistId: String?,
     onAddPlaylist: () -> Unit,
-    onSelectPlaylist: (String) -> Unit,
+    onOpenPlaylistDetails: (String) -> Unit,
+    onClosePlaylistDetails: () -> Unit,
+    onUsePlaylist: (String) -> Unit,
     onReload: (LoadedPlaylist) -> Unit,
     onRename: (LoadedPlaylist) -> Unit,
     onDelete: (LoadedPlaylist) -> Unit,
+    onAutoUpdateHoursChange: (LoadedPlaylist, Int) -> Unit,
     contentPadding: Dp,
 ) {
+    val detailPlaylist = playlists.firstOrNull { it.id == detailPlaylistId }
+    if (detailPlaylist != null) {
+        PlaylistDetailScreen(
+            playlist = detailPlaylist,
+            active = detailPlaylist.id == selectedPlaylistId,
+            contentPadding = contentPadding,
+            onBack = onClosePlaylistDetails,
+            onUse = { onUsePlaylist(detailPlaylist.id) },
+            onReload = { onReload(detailPlaylist) },
+            onRename = { onRename(detailPlaylist) },
+            onDelete = { onDelete(detailPlaylist) },
+            onAutoUpdateHoursChange = { onAutoUpdateHoursChange(detailPlaylist, it) },
+        )
+        return
+    }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -327,10 +347,8 @@ internal fun PlaylistScreen(
                 PlaylistRow(
                     playlist = playlist,
                     selected = playlist.id == selectedPlaylistId,
-                    onClick = { onSelectPlaylist(playlist.id) },
-                    onReload = { onReload(playlist) },
-                    onRename = { onRename(playlist) },
-                    onDelete = { onDelete(playlist) },
+                    onClick = { onOpenPlaylistDetails(playlist.id) },
+                    onReload = null,
                 )
             }
         }

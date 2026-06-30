@@ -21,13 +21,15 @@ internal fun <T> HorizontalMediaCardGrid(
     items: List<T>,
     itemKey: (T) -> Any,
     modifier: Modifier = Modifier,
+    columnCount: Int = HorizontalMediaGridColumnCount,
     initialFocusRequester: FocusRequester? = null,
     contentType: (T) -> Any? = { null },
     itemContent: @Composable (item: T, requestSideMenuOnLeft: Boolean, modifier: Modifier) -> Unit,
 ) {
+    val safeColumnCount = columnCount.coerceAtLeast(1)
     val firstItemKey = items.firstOrNull()?.let(itemKey)
     LazyVerticalGrid(
-        columns = GridCells.Fixed(HorizontalMediaGridColumnCount),
+        columns = GridCells.Fixed(safeColumnCount),
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(top = 4.dp, bottom = ScreenBottomPadding),
         verticalArrangement = Arrangement.spacedBy(mediaCardSpacing),
@@ -40,7 +42,7 @@ internal fun <T> HorizontalMediaCardGrid(
         ) { index, item ->
             itemContent(
                 item,
-                shouldOpenDrawerFromHorizontalMediaGrid(index),
+                shouldOpenDrawerFromHorizontalMediaGrid(index, safeColumnCount),
                 if (initialFocusRequester != null && itemKey(item) == firstItemKey) {
                     Modifier.focusRequester(initialFocusRequester)
                 } else {
