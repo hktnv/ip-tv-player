@@ -7,16 +7,34 @@ import org.junit.Test
 
 class IptvPlayerBufferProfileTest {
     @Test
-    fun defaultProfileRecoversQuicklyAfterRenderOrNetworkStalls() {
-        val profile = defaultIptvPlayerBufferProfile()
+    fun liveProfileKeepsChannelSwitchingResponsive() {
+        val profile = IptvPlaybackBufferKind.LIVE.toIptvPlayerBufferProfile()
 
-        assertTrue(profile.bufferForPlaybackAfterRebufferMs > profile.bufferForPlaybackMs)
+        assertEquals(5_000, profile.minBufferMs)
+        assertEquals(15_000, profile.maxBufferMs)
+        assertTrue(profile.bufferForPlaybackMs in 500..1_500)
+        assertTrue(profile.bufferForPlaybackAfterRebufferMs <= 2_000)
+        assertTrue(profile.backBufferMs <= 1_000)
+        assertEquals(true, profile.prioritizeTimeOverSizeThresholds)
+    }
+
+    @Test
+    fun vodProfileKeepsLongFormPlaybackStable() {
+        val profile = IptvPlaybackBufferKind.VOD.toIptvPlayerBufferProfile()
+
+        assertEquals(20_000, profile.minBufferMs)
+        assertEquals(60_000, profile.maxBufferMs)
         assertTrue(profile.bufferForPlaybackMs in 1_000..2_500)
         assertTrue(profile.bufferForPlaybackAfterRebufferMs <= 3_000)
-        assertTrue(profile.maxBufferMs <= 60_000)
-        assertTrue(profile.minBufferMs >= 20_000)
         assertTrue(profile.backBufferMs <= 2_000)
         assertEquals(true, profile.prioritizeTimeOverSizeThresholds)
+    }
+
+    @Test
+    fun defaultProfileKeepsVodCompatibility() {
+        val profile = defaultIptvPlayerBufferProfile()
+
+        assertEquals(IptvPlaybackBufferKind.VOD.toIptvPlayerBufferProfile(), profile)
     }
 
     @Test

@@ -226,7 +226,10 @@ internal fun SettingsScreen(
                 onConfirm = { onPlayerUiModeChange(playerUiMode.next()) },
                 onRequestSideMenu = onRequestSideMenu,
             ) {
-                PlayerUiModePanelContent(selectedMode = playerUiMode)
+                PlayerUiModePanelContent(
+                    selectedMode = playerUiMode,
+                    onModeSelected = onPlayerUiModeChange,
+                )
             }
         }
         item {

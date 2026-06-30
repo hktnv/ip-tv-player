@@ -16,22 +16,28 @@ import androidx.media3.ui.PlayerView
 @Composable
 internal fun StandardMedia3PlayerScreen(
     player: ExoPlayer,
-    diagnosticsContext: PlayerDiagnosticContext,
+    diagnosticsContext: PlayerDiagnosticContext?,
 ) {
     val diagnostics = remember(player, diagnosticsContext) {
-        PlayerDiagnosticLogger(
-            context = diagnosticsContext,
-            manualPauseProvider = { false },
-            bufferSnapshotProvider = { player.toBufferDiagnosticSnapshot() },
-        )
+        diagnosticsContext?.let { context ->
+            PlayerDiagnosticLogger(
+                context = context,
+                manualPauseProvider = { false },
+                bufferSnapshotProvider = { player.toBufferDiagnosticSnapshot() },
+            )
+        }
     }
     DisposableEffect(player, diagnostics) {
-        player.addAnalyticsListener(diagnostics)
-        diagnostics.syncPlaybackState(player.playWhenReady)
-        diagnostics.logAttached()
+        if (diagnostics != null) {
+            player.addAnalyticsListener(diagnostics)
+            diagnostics.syncPlaybackState(player.playWhenReady)
+            diagnostics.logAttached()
+        }
         onDispose {
-            diagnostics.logDetached()
-            player.removeAnalyticsListener(diagnostics)
+            if (diagnostics != null) {
+                diagnostics.logDetached()
+                player.removeAnalyticsListener(diagnostics)
+            }
             player.release()
         }
     }

@@ -37,6 +37,7 @@ internal fun playlistNavEntries(hasPlaylist: Boolean, stats: PlaylistStats?): Li
 internal fun bottomNavEntries(hasPlaylist: Boolean, stats: PlaylistStats?): List<NavEntry> {
     return listOf(
         NavEntry("Anasayfa", screen = AppScreen.HOME, enabled = hasPlaylist, icon = Icons.Filled.Home),
+        NavEntry("Arama", screen = AppScreen.SEARCH, enabled = hasPlaylist, icon = Icons.Filled.Search),
         NavEntry(menuLabel("Canlı TV", stats?.live), tab = CatalogTab.LIVE, enabled = hasPlaylist, icon = Icons.Filled.LiveTv),
         NavEntry(menuLabel("Filmler", stats?.movies), tab = CatalogTab.MOVIES, enabled = hasPlaylist, icon = Icons.Filled.Movie),
         NavEntry(menuLabel("Diziler", stats?.series), tab = CatalogTab.SERIES, enabled = hasPlaylist, icon = Icons.Filled.VideoLibrary),

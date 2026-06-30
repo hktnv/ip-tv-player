@@ -8,7 +8,6 @@ import androidx.compose.animation.fadeOut
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -28,8 +27,6 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -47,8 +44,13 @@ internal fun PlayerScreen(
     onBack: () -> Unit,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    PlayerOrientationLock()
     val player = remember(item.id, headers) {
-        MediaPlayerFactory.create(context, headers).apply {
+        MediaPlayerFactory.create(
+            context = context,
+            headers = headers,
+            bufferKind = item.toPlaybackBufferKind(),
+        ).apply {
             setMediaItem(MediaItem.fromUri(item.streamUrl))
             repeatMode = Player.REPEAT_MODE_OFF
             playWhenReady = true
@@ -56,7 +58,11 @@ internal fun PlayerScreen(
         }
     }
     val diagnosticsContext = remember(item.id, item.streamUrl, playerUiMode) {
-        item.toPlayerDiagnosticContext(playerUiMode)
+        if (isPlayerDiagnosticEnabled) {
+            item.toPlayerDiagnosticContext(playerUiMode)
+        } else {
+            null
+        }
     }
 
     if (playerUiMode == PlayerUiMode.StandardMedia3) {
@@ -84,11 +90,13 @@ internal fun PlayerScreen(
     var manuallyPaused by remember(player) { mutableStateOf(false) }
     var playbackState by remember(player) { mutableStateOf(player.playbackState) }
     val diagnostics = remember(player, diagnosticsContext) {
-        PlayerDiagnosticLogger(
-            context = diagnosticsContext,
-            manualPauseProvider = { manuallyPaused },
-            bufferSnapshotProvider = { player.toBufferDiagnosticSnapshot() },
-        )
+        diagnosticsContext?.let { context ->
+            PlayerDiagnosticLogger(
+                context = context,
+                manualPauseProvider = { manuallyPaused },
+                bufferSnapshotProvider = { player.toBufferDiagnosticSnapshot() },
+            )
+        }
     }
     fun updatePlaybackSnapshot() {
         isPlaying = player.isPlaying
@@ -105,13 +113,17 @@ internal fun PlayerScreen(
             }
         }
         player.addListener(listener)
-        player.addAnalyticsListener(diagnostics)
-        diagnostics.syncPlaybackState(player.playWhenReady)
-        diagnostics.logAttached()
+        if (diagnostics != null) {
+            player.addAnalyticsListener(diagnostics)
+            diagnostics.syncPlaybackState(player.playWhenReady)
+            diagnostics.logAttached()
+        }
         updatePlaybackSnapshot()
         onDispose {
-            diagnostics.logDetached()
-            player.removeAnalyticsListener(diagnostics)
+            if (diagnostics != null) {
+                diagnostics.logDetached()
+                player.removeAnalyticsListener(diagnostics)
+            }
             player.removeListener(listener)
             player.release()
         }
@@ -154,14 +166,14 @@ internal fun PlayerScreen(
     }
     fun seekBy(deltaMs: Long) {
         val target = calculateSeekTarget(player.currentPosition, durationMs, deltaMs)
-        diagnostics.logSeekRequest(targetMs = target, canSeek = canSeek, source = "remote")
+        diagnostics?.logSeekRequest(targetMs = target, canSeek = canSeek, source = "remote")
         if (!canSeek) return
         player.seekTo(target)
         updatePlaybackSnapshot()
     }
     fun seekTo(targetMs: Long) {
         val target = targetMs.coerceIn(0L, durationMs)
-        diagnostics.logSeekRequest(targetMs = target, canSeek = canSeek, source = "timeline")
+        diagnostics?.logSeekRequest(targetMs = target, canSeek = canSeek, source = "timeline")
         if (!canSeek) return
         player.seekTo(target)
         updatePlaybackSnapshot()
@@ -195,14 +207,6 @@ internal fun PlayerScreen(
         if (result.exitRequested) onBack()
         return result.consumeInput
     }
-    fun showControlsOnly() {
-        if (!contentListVisible && !exitConfirmVisible) {
-            inputState = PlayerInputState.ControlsVisible
-            controlsRevision++
-            backPressGuard.markOverlayBackHandled(SystemClock.uptimeMillis())
-        }
-    }
-
     fun keepControlsAlive() {
         if (inputState == PlayerInputState.ControlsVisible) {
             controlsRevision++
@@ -274,9 +278,6 @@ internal fun PlayerScreen(
             .background(MaterialTheme.colorScheme.background)
             .focusRequester(playerFocusRequester)
             .focusable(enabled = !controlsVisible && !contentListVisible && !exitConfirmVisible)
-            .pointerInput(item.id, inputState) {
-                detectTapGestures(onTap = { showControlsOnly() })
-            }
             .onPreviewKeyEvent { event ->
                 if (inputState != PlayerInputState.Watching) {
                     return@onPreviewKeyEvent false
@@ -296,30 +297,27 @@ internal fun PlayerScreen(
                 }
             },
     ) {
-        AndroidView(
-            factory = { ctx ->
-                TvRemotePlayerView(ctx).apply {
-                    this.player = player
-                    onOverlayKeyEvent = ::handleExitDialogKeyEvent
-                    shouldHandleKeyCode = ::shouldHandleRemoteKey
-                    onRemoteCommand = ::handleRemoteCommand
-                    useController = false
-                    keepScreenOn = true
-                    isFocusable = true
-                    isFocusableInTouchMode = true
-                }
-            },
-            update = { view ->
-                view.player = player
-                view.onOverlayKeyEvent = ::handleExitDialogKeyEvent
-                view.shouldHandleKeyCode = ::shouldHandleRemoteKey
-                view.onRemoteCommand = ::handleRemoteCommand
-                if (!contentListVisible && !exitConfirmVisible && !controlsVisible) {
-                    runCatching { playerFocusRequester.requestFocus() }
-                }
-            },
+        PlayerSurfaceView(
+            player = player,
+            controlsVisible = controlsVisible,
+            contentListVisible = contentListVisible,
+            exitConfirmVisible = exitConfirmVisible,
+            playerFocusRequester = playerFocusRequester,
+            onOverlayKeyEvent = ::handleExitDialogKeyEvent,
+            shouldHandleKeyCode = ::shouldHandleRemoteKey,
+            onRemoteCommand = ::handleRemoteCommand,
             modifier = Modifier.fillMaxSize(),
         )
+        if (!contentListVisible && !exitConfirmVisible) {
+            PlayerVideoTouchLayer(
+                inputState = inputState,
+                onInputStateChange = { nextState -> inputState = nextState },
+                onControlsShown = {
+                    controlsRevision++
+                    backPressGuard.markOverlayBackHandled(SystemClock.uptimeMillis())
+                },
+            )
+        }
         AnimatedVisibility(
             visible = osdVisible,
             enter = fadeIn(),

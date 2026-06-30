@@ -12,7 +12,34 @@ internal data class IptvPlayerBufferProfile(
     val prioritizeTimeOverSizeThresholds: Boolean,
 )
 
+enum class IptvPlaybackBufferKind {
+    LIVE,
+    VOD,
+}
+
+internal fun IptvPlaybackBufferKind.toIptvPlayerBufferProfile(): IptvPlayerBufferProfile {
+    return when (this) {
+        IptvPlaybackBufferKind.LIVE -> liveIptvPlayerBufferProfile()
+        IptvPlaybackBufferKind.VOD -> vodIptvPlayerBufferProfile()
+    }
+}
+
 internal fun defaultIptvPlayerBufferProfile(): IptvPlayerBufferProfile {
+    return vodIptvPlayerBufferProfile()
+}
+
+internal fun liveIptvPlayerBufferProfile(): IptvPlayerBufferProfile {
+    return IptvPlayerBufferProfile(
+        minBufferMs = 5_000,
+        maxBufferMs = 15_000,
+        bufferForPlaybackMs = 1_000,
+        bufferForPlaybackAfterRebufferMs = 1_500,
+        backBufferMs = 1_000,
+        prioritizeTimeOverSizeThresholds = true,
+    )
+}
+
+internal fun vodIptvPlayerBufferProfile(): IptvPlayerBufferProfile {
     return IptvPlayerBufferProfile(
         minBufferMs = 20_000,
         maxBufferMs = 60_000,
