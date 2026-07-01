@@ -40,7 +40,12 @@ internal fun <T> MediaCardGrid(
     initialFocusRequester: FocusRequester? = null,
     onRequestSideMenu: (() -> Unit)? = null,
     contentType: (T) -> Any? = { null },
-    itemContent: @Composable (item: T, modifier: Modifier, onFocused: () -> Unit) -> Unit,
+    itemContent: @Composable (
+        item: T,
+        modifier: Modifier,
+        onFocused: () -> Unit,
+        onFocusChanged: (Boolean) -> Unit,
+    ) -> Unit,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val configuration = LocalConfiguration.current
@@ -88,16 +93,19 @@ internal fun <T> MediaCardGrid(
                 key = { _, item -> itemKey(item) },
                 contentType = { _, item -> contentType(item) },
             ) { index, item ->
-                itemContent(
-                    item,
-                    if (requestInitialFocus && itemKey(item) == firstItemKey) {
+                val itemModifier = if (requestInitialFocus && itemKey(item) == firstItemKey) {
                         Modifier.focusRequester(itemFocusRequester)
                     } else {
                         Modifier
+                    }
+                itemContent(
+                    item,
+                    itemModifier,
+                    { focusedIndex = index },
+                    { focused ->
+                        if (focused) focusedIndex = index
                     },
-                ) {
-                    focusedIndex = index
-                }
+                )
             }
         }
     }

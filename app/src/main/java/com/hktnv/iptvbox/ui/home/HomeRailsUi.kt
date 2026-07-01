@@ -45,8 +45,10 @@ import com.hktnv.iptvbox.ui.common.tvFocusLift
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
 import com.hktnv.iptvbox.ui.common.TvRestingBorder
 import com.hktnv.iptvbox.ui.media.CompactContentCard
+import com.hktnv.iptvbox.ui.media.FocusedContentInfo
 import com.hktnv.iptvbox.ui.media.MediaCardCompactWidth
 import com.hktnv.iptvbox.ui.media.SeriesGroupCard
+import com.hktnv.iptvbox.ui.media.focusedContentInfo
 
 @Composable
 internal fun HomeContentRow(
@@ -62,6 +64,7 @@ internal fun HomeContentRow(
     favoriteIds: Set<String> = emptySet(),
     cardWidth: Dp? = null,
     cardRatio: Float? = null,
+    onFocusedInfoChanged: (FocusedContentInfo?) -> Unit = {},
 ) {
     var focusedIndex by remember(items) { mutableStateOf(0) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -97,7 +100,13 @@ internal fun HomeContentRow(
                             onLongClick = { onShowItemOptions(item) },
                             fixedWidth = cardWidth,
                             fixedRatio = cardRatio,
-                            onFocused = { focusedIndex = index },
+                            onFocused = {
+                                focusedIndex = index
+                                onFocusedInfoChanged(item.focusedContentInfo())
+                            },
+                            onFocusChanged = { focused ->
+                                if (focused) onFocusedInfoChanged(item.focusedContentInfo())
+                            },
                         )
                     }
                 }
@@ -116,6 +125,7 @@ internal fun HomeSeriesRow(
     headerFocusRequester: FocusRequester,
     nextRailFocusRequester: FocusRequester?,
     onRequestSideMenu: () -> Unit,
+    onFocusedInfoChanged: (FocusedContentInfo?) -> Unit = {},
 ) {
     var focusedIndex by remember(groups) { mutableStateOf(0) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -148,7 +158,13 @@ internal fun HomeSeriesRow(
                             group = group,
                             onClick = { onOpenSeries(group.title) },
                             modifier = Modifier.width(MediaCardCompactWidth),
-                            onFocused = { focusedIndex = index },
+                            onFocused = {
+                                focusedIndex = index
+                                onFocusedInfoChanged(group.focusedContentInfo())
+                            },
+                            onFocusChanged = { focused ->
+                                if (focused) onFocusedInfoChanged(group.focusedContentInfo())
+                            },
                         )
                     }
                 }

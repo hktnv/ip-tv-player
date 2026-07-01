@@ -122,6 +122,8 @@ import com.hktnv.iptvbox.model.ScreenBottomPadding
 import com.hktnv.iptvbox.ui.common.EmptyState
 import com.hktnv.iptvbox.ui.common.LoadingPanel
 import com.hktnv.iptvbox.ui.common.ScreenHeader
+import com.hktnv.iptvbox.ui.media.FocusedContentInfo
+import com.hktnv.iptvbox.ui.media.FocusedContentInfoPanel
 import com.hktnv.iptvbox.ui.media.seriesPreview
 import com.hktnv.iptvbox.ui.playlist.PlaylistDetailScreen
 import com.hktnv.iptvbox.ui.playlist.PlaylistRow
@@ -179,6 +181,8 @@ internal fun HomeScreen(
     val showFavoritesRail = favoriteItems.isNotEmpty()
     val afterRecentFocus = if (showFavoritesRail) favoritesRailFocus else latestRailFocus
     val favoriteIdSet = remember(favoriteIds.joinToString("|")) { favoriteIds.toSet() }
+    var focusedContentInfo by remember { mutableStateOf<FocusedContentInfo?>(null) }
+    Box(Modifier.fillMaxSize()) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -214,6 +218,7 @@ internal fun HomeScreen(
                     onRequestSideMenu = onRequestSideMenu,
                     favoriteIds = favoriteIdSet,
                     cardRatio = 0.78f,
+                    onFocusedInfoChanged = { focusedContentInfo = it },
                 )
             }
             if (showFavoritesRail) {
@@ -229,6 +234,7 @@ internal fun HomeScreen(
                     nextRailFocusRequester = latestRailFocus,
                     onRequestSideMenu = onRequestSideMenu,
                     favoriteIds = favoriteIdSet,
+                    onFocusedInfoChanged = { focusedContentInfo = it },
                 )
                 }
             }
@@ -244,6 +250,7 @@ internal fun HomeScreen(
                     nextRailFocusRequester = moviesRailFocus,
                     onRequestSideMenu = onRequestSideMenu,
                     favoriteIds = favoriteIdSet,
+                    onFocusedInfoChanged = { focusedContentInfo = it },
                 )
             }
             item(key = "movie-row", contentType = "media-row") {
@@ -258,6 +265,7 @@ internal fun HomeScreen(
                     nextRailFocusRequester = liveRailFocus,
                     onRequestSideMenu = onRequestSideMenu,
                     favoriteIds = favoriteIdSet,
+                    onFocusedInfoChanged = { focusedContentInfo = it },
                 )
             }
             item(key = "live-row", contentType = "media-row") {
@@ -272,6 +280,7 @@ internal fun HomeScreen(
                     nextRailFocusRequester = seriesRailFocus,
                     onRequestSideMenu = onRequestSideMenu,
                     favoriteIds = favoriteIdSet,
+                    onFocusedInfoChanged = { focusedContentInfo = it },
                 )
             }
             item(key = "series-row", contentType = "series-row") {
@@ -284,9 +293,15 @@ internal fun HomeScreen(
                     headerFocusRequester = seriesRailFocus,
                     nextRailFocusRequester = null,
                     onRequestSideMenu = onRequestSideMenu,
+                    onFocusedInfoChanged = { focusedContentInfo = it },
                 )
             }
         }
+    }
+    FocusedContentInfoPanel(
+        info = focusedContentInfo,
+        modifier = Modifier.align(Alignment.BottomCenter),
+    )
     }
 }
 @Composable

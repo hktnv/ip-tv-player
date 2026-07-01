@@ -283,9 +283,9 @@ class RemotePlaylistLoader(
                     throw TimedFetchException(IOException("HTTP ${response.code}"), connectionMs)
                 }
                 onProgress(PlaylistLoadProgress(PlaylistLoadStage.READING, totalItems = expectedItemCount))
+                val responseCharset = response.body.contentType()?.charset(Charsets.UTF_8) ?: Charsets.UTF_8
                 val parsed = response.body.byteStream()
-                    .bufferedReader(Charsets.UTF_8)
-                    .useLines { lines ->
+                    .useM3uLines(responseCharset) { lines ->
                         m3uParser.parse(playlistId, lines) { count ->
                             onProgress(
                                 PlaylistLoadProgress(

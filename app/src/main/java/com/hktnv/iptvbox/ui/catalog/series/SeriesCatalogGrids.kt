@@ -14,9 +14,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hktnv.iptvbox.model.SeasonGroup
 import com.hktnv.iptvbox.model.SeriesGroup
+import com.hktnv.iptvbox.ui.media.FocusedContentInfo
 import com.hktnv.iptvbox.ui.media.MediaCardGrid
 import com.hktnv.iptvbox.ui.media.SeasonCard
 import com.hktnv.iptvbox.ui.media.SeriesGroupCard
+import com.hktnv.iptvbox.ui.media.focusedContentInfo
 
 @Composable
 internal fun SeriesGroupGrid(
@@ -27,6 +29,7 @@ internal fun SeriesGroupGrid(
     requestInitialFocus: Boolean = false,
     initialFocusRequester: FocusRequester? = null,
     onRequestSideMenu: (() -> Unit)? = null,
+    onFocusedInfoChanged: (FocusedContentInfo?) -> Unit = {},
 ) {
     MediaCardGrid(
         items = groups,
@@ -35,12 +38,19 @@ internal fun SeriesGroupGrid(
         requestInitialFocus = requestInitialFocus,
         initialFocusRequester = initialFocusRequester,
         onRequestSideMenu = onRequestSideMenu,
-    ) { group, itemModifier, onFocused ->
+    ) { group, itemModifier, onFocused, onFocusChanged ->
         SeriesGroupCard(
             group = group,
             onClick = { onOpen(group) },
             onLongClick = onLongClick?.let { { it(group) } },
-            onFocused = onFocused,
+            onFocused = {
+                onFocused()
+                onFocusedInfoChanged(group.focusedContentInfo())
+            },
+            onFocusChanged = { focused ->
+                onFocusChanged(focused)
+                if (focused) onFocusedInfoChanged(group.focusedContentInfo())
+            },
             modifier = itemModifier,
         )
     }
@@ -56,6 +66,7 @@ internal fun SeasonGroupGrid(
     requestInitialFocus: Boolean = false,
     initialFocusRequester: FocusRequester? = null,
     onRequestSideMenu: (() -> Unit)? = null,
+    onFocusedInfoChanged: (FocusedContentInfo?) -> Unit = {},
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -74,12 +85,19 @@ internal fun SeasonGroupGrid(
             requestInitialFocus = requestInitialFocus,
             initialFocusRequester = initialFocusRequester,
             onRequestSideMenu = onRequestSideMenu,
-        ) { season, itemModifier, onFocused ->
+        ) { season, itemModifier, onFocused, onFocusChanged ->
             SeasonCard(
                 season = season,
                 onClick = { onOpen(season) },
                 onLongClick = onLongClick?.let { { it(season) } },
-                onFocused = onFocused,
+                onFocused = {
+                    onFocused()
+                    onFocusedInfoChanged(season.focusedContentInfo())
+                },
+                onFocusChanged = { focused ->
+                    onFocusChanged(focused)
+                    if (focused) onFocusedInfoChanged(season.focusedContentInfo())
+                },
                 modifier = itemModifier,
             )
         }

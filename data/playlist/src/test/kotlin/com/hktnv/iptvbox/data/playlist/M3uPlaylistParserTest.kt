@@ -5,7 +5,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
+import java.io.ByteArrayInputStream
 import java.io.File
+import java.nio.charset.Charset
 import kotlin.system.measureTimeMillis
 
 class M3uPlaylistParserTest {
@@ -161,6 +163,25 @@ class M3uPlaylistParserTest {
         assertEquals(125, playlist.items.size)
         assertEquals(listOf(1, 100, 125), progress)
         assertEquals(1, source.iteratorCount)
+    }
+
+    @Test
+    fun decodesTurkishLinesWhenServerCharsetIsWrong() {
+        val text = """
+            #EXTM3U
+            #EXTINF:-1 tvg-name="ÇÖL GEZEGENİ BÖLÜM İKİ 2024" group-title="Türk Bilim Kurgu",ÇÖL GEZEGENİ BÖLÜM İKİ 2024
+            http://example.com/movie/user/pass/dune-part-two.mp4
+        """.trimIndent()
+        val bytes = text.toByteArray(Charset.forName("ISO-8859-9"))
+
+        val playlist = ByteArrayInputStream(bytes).useM3uLines(Charsets.UTF_8) { lines ->
+            M3uPlaylistParser().parse("fallback-charset", lines)
+        }
+
+        val item = playlist.items.first()
+        assertEquals("ÇÖL GEZEGENİ BÖLÜM İKİ 2024", item.title)
+        assertEquals("Türk Bilim Kurgu", item.category)
+        assertEquals(ContentKind.MOVIE, item.kind)
     }
 
     private fun syntheticLargeM3uLines(live: Int, movies: Int, series: Int): Sequence<String> = sequence {

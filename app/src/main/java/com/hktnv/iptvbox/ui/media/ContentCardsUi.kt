@@ -59,6 +59,7 @@ internal fun CompactContentCard(
     fixedWidth: Dp? = null,
     fixedRatio: Float? = null,
     onFocused: () -> Unit = {},
+    onFocusChanged: (Boolean) -> Unit = {},
 ) {
     var focused by remember { mutableStateOf(false) }
     val cardWidth = fixedWidth ?: MediaCardCompactWidth
@@ -71,6 +72,7 @@ internal fun CompactContentCard(
             .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -5f)
             .onFocusChanged {
                 focused = it.isFocused
+                onFocusChanged(it.isFocused)
                 if (it.isFocused) onFocused()
             }
             .tvClickable(onLongClick = onLongClick, onClick = onClick),
@@ -128,6 +130,7 @@ internal fun SeriesGroupCard(
     onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     onFocused: () -> Unit = {},
+    onFocusChanged: (Boolean) -> Unit = {},
 ) {
     var focused by remember { mutableStateOf(false) }
     val title = group.title.readableContentTitle()
@@ -138,6 +141,7 @@ internal fun SeriesGroupCard(
             .tvFocusLift(focused = focused, scale = 1.03f, liftPx = -5f)
             .onFocusChanged {
                 focused = it.isFocused
+                onFocusChanged(it.isFocused)
                 if (it.isFocused) onFocused()
             }
             .tvClickable(onLongClick = onLongClick, onClick = onClick),
@@ -189,6 +193,7 @@ internal fun SeasonCard(
     onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     onFocused: () -> Unit = {},
+    onFocusChanged: (Boolean) -> Unit = {},
 ) {
     var focused by remember { mutableStateOf(false) }
     val title = season.title.readableContentTitle()
@@ -199,6 +204,7 @@ internal fun SeasonCard(
             .tvFocusLift(focused = focused, scale = 1.02f, liftPx = -4f)
             .onFocusChanged {
                 focused = it.isFocused
+                onFocusChanged(it.isFocused)
                 if (it.isFocused) onFocused()
             }
             .tvClickable(onLongClick = onLongClick, onClick = onClick),
@@ -233,6 +239,7 @@ internal fun ContentCard(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     onFocused: () -> Unit = {},
+    onFocusChanged: (Boolean) -> Unit = {},
 ) {
     var focused by remember { mutableStateOf(false) }
     val title = item.compactTitle()
@@ -243,6 +250,7 @@ internal fun ContentCard(
             .tvFocusLift(focused = focused, scale = 1.025f, liftPx = -5f)
             .onFocusChanged {
                 focused = it.isFocused
+                onFocusChanged(it.isFocused)
                 if (it.isFocused) onFocused()
             }
             .tvClickable(onLongClick = onLongClick, onClick = onOpen),

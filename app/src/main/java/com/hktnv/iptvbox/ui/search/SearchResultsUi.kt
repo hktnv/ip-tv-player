@@ -40,6 +40,7 @@ import com.hktnv.iptvbox.core.model.ContentKind
 import com.hktnv.iptvbox.ui.catalog.badgeContainerColor
 import com.hktnv.iptvbox.ui.catalog.badgeContentColor
 import com.hktnv.iptvbox.ui.catalog.badgeLabel
+import com.hktnv.iptvbox.ui.catalog.label
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
 import com.hktnv.iptvbox.ui.common.TvRestingBorder
@@ -48,7 +49,9 @@ import com.hktnv.iptvbox.ui.common.tvFocusElevation
 import com.hktnv.iptvbox.ui.common.tvFocusLift
 import com.hktnv.iptvbox.ui.media.ContentArtwork
 import com.hktnv.iptvbox.ui.media.FavoriteIndicator
+import com.hktnv.iptvbox.ui.media.FocusedContentInfo
 import com.hktnv.iptvbox.ui.media.HorizontalMediaCardGrid
+import com.hktnv.iptvbox.ui.media.cleanUiTitle
 
 private val SearchResultRowHeight = 118.dp
 private val CompactSearchResultRowHeight = 96.dp
@@ -69,6 +72,7 @@ internal fun SearchResultsList(
     columnCount: Int,
     compact: Boolean,
     modifier: Modifier = Modifier,
+    onFocusedInfoChanged: (FocusedContentInfo?) -> Unit = {},
 ) {
     val favoriteKey = favoriteIds.joinToString("|")
     val favoriteSet = remember(favoriteKey) { favoriteIds.toSet() }
@@ -92,6 +96,7 @@ internal fun SearchResultsList(
             requestSideMenuOnLeft = requestSideMenuOnLeft,
             compact = compact,
             modifier = itemModifier,
+            onFocusedInfoChanged = onFocusedInfoChanged,
         )
     }
 }
@@ -106,6 +111,7 @@ private fun SearchResultRow(
     requestSideMenuOnLeft: Boolean,
     compact: Boolean,
     modifier: Modifier = Modifier,
+    onFocusedInfoChanged: (FocusedContentInfo?) -> Unit = {},
 ) {
     var focused by remember { mutableStateOf(false) }
     val title = item.searchResultTitle()
@@ -116,7 +122,10 @@ private fun SearchResultRow(
             .height(if (compact) CompactSearchResultRowHeight else SearchResultRowHeight)
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.015f, liftPx = -3f)
-            .onFocusChanged { focused = it.isFocused }
+            .onFocusChanged {
+                focused = it.isFocused
+                if (it.isFocused) onFocusedInfoChanged(item.searchFocusedContentInfo(title, displayKind))
+            }
             .onPreviewKeyEvent { event ->
                 if (
                     event.type == KeyEventType.KeyDown &&
@@ -167,6 +176,20 @@ private fun SearchResultRow(
             )
         }
     }
+}
+
+private fun CatalogItem.searchFocusedContentInfo(
+    title: String,
+    kind: ContentKind,
+): FocusedContentInfo {
+    val cleanCategory = category?.cleanUiTitle()?.ifBlank { null }
+    val meta = searchResultMetaLine()
+    return FocusedContentInfo(
+        title = title,
+        type = kind.label(),
+        category = cleanCategory,
+        detail = meta.takeUnless { it == cleanCategory || it.isBlank() },
+    )
 }
 
 @Composable

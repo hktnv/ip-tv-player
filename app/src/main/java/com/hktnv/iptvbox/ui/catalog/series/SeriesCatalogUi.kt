@@ -17,6 +17,7 @@ import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
 import com.hktnv.iptvbox.ui.common.EmptyState
 import com.hktnv.iptvbox.ui.media.ContentGrid
+import com.hktnv.iptvbox.ui.media.FocusedContentInfo
 
 @Composable
 internal fun SeriesCatalogContent(
@@ -33,6 +34,7 @@ internal fun SeriesCatalogContent(
     modifier: Modifier = Modifier,
     requestInitialFocus: Boolean = false,
     initialFocusRequester: FocusRequester? = null,
+    onFocusedInfoChanged: (FocusedContentInfo?) -> Unit = {},
 ) {
     val seriesGroups = remember(snapshot, selectedCategory) { snapshot.seriesGroups(selectedCategory) }
     val seasons = remember(snapshot, selectedSeriesTitle) {
@@ -69,6 +71,7 @@ internal fun SeriesCatalogContent(
             requestInitialFocus = requestInitialFocus,
             initialFocusRequester = initialFocusRequester,
             onRequestSideMenu = onRequestSideMenu,
+            onFocusedInfoChanged = onFocusedInfoChanged,
         )
         SeriesCatalogStage.Seasons -> SeasonGroupGrid(
             seasons = seasons,
@@ -83,6 +86,7 @@ internal fun SeriesCatalogContent(
             requestInitialFocus = requestInitialFocus,
             initialFocusRequester = initialFocusRequester,
             onRequestSideMenu = onRequestSideMenu,
+            onFocusedInfoChanged = onFocusedInfoChanged,
         )
         SeriesCatalogStage.Episodes -> SeriesEpisodesGrid(
             title = selectedSeriesTitle.orEmpty(),
@@ -95,6 +99,7 @@ internal fun SeriesCatalogContent(
             requestInitialFocus = requestInitialFocus,
             initialFocusRequester = initialFocusRequester,
             onRequestSideMenu = onRequestSideMenu,
+            onFocusedInfoChanged = onFocusedInfoChanged,
         )
         SeriesCatalogStage.EmptyDetail -> EmptyState(
             title = "Dizi içeriği bulunamadı",
@@ -118,6 +123,7 @@ private fun SeriesEpisodesGrid(
     modifier: Modifier = Modifier,
     requestInitialFocus: Boolean = false,
     initialFocusRequester: FocusRequester? = null,
+    onFocusedInfoChanged: (FocusedContentInfo?) -> Unit = {},
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -138,6 +144,7 @@ private fun SeriesEpisodesGrid(
             requestInitialFocus = requestInitialFocus,
             initialFocusRequester = initialFocusRequester,
             onRequestSideMenu = onRequestSideMenu,
+            onFocusedInfoChanged = onFocusedInfoChanged,
         )
     }
 }

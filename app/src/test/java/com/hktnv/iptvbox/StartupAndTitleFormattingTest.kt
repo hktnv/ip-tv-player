@@ -35,17 +35,18 @@ class StartupAndTitleFormattingTest {
             "Sihirbazlar \u00C7etesi: Daha",
             "S\u0130H\u0130RBAZLAR \u00C7ETES\u0130: DAHA".readableMovieTitle(),
         )
-        assertEquals("THE Electric State - 2025", "THE ELECTRIC STATE - 2025".readableMovieTitle())
+        assertEquals("The Electric State - 2025", "THE ELECTRIC STATE - 2025".readableMovieTitle())
         assertEquals("The Electric State - 2025", "The Electric State - 2025".readableMovieTitle())
     }
 
     @Test
     fun contentTitleCaseFormatsAllCapsAcrossKinds() {
-        assertEquals("TRT 1 HD", "TRT 1 HD".readableContentTitle())
-        assertEquals("FOX TV", "FOX TV".readableContentTitle())
+        assertEquals("Trt 1 HD", "TRT 1 HD".readableContentTitle())
+        assertEquals("Fox TV", "FOX TV".readableContentTitle())
         assertEquals("Haber Global", "HABER GLOBAL".readableContentTitle())
         assertEquals("Avengers Endgame", "AVENGERS ENDGAME".readableContentTitle())
-        assertEquals("THE Electric State - 2025", "THE ELECTRIC STATE - 2025".readableContentTitle())
+        assertEquals("The Electric State - 2025", "THE ELECTRIC STATE - 2025".readableContentTitle())
+        assertEquals("Çöl Gezegeni Bölüm İki", "ÇÖL GEZEGENİ BÖLÜM İKİ".readableContentTitle())
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.hktnv.iptvbox.ui.search
 import androidx.compose.material3.MaterialTheme
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.WindowInsets
@@ -43,6 +44,8 @@ import com.hktnv.iptvbox.telemetry.AppPerformanceTelemetry
 import com.hktnv.iptvbox.ui.common.EmptyCatalog
 import com.hktnv.iptvbox.ui.common.EmptyState
 import com.hktnv.iptvbox.ui.common.LoadingPanel
+import com.hktnv.iptvbox.ui.media.FocusedContentInfo
+import com.hktnv.iptvbox.ui.media.FocusedContentInfoPanel
 import kotlinx.coroutines.delay
 
 @Composable
@@ -88,6 +91,7 @@ internal fun SearchScreen(
     val inputFocusRequester = initialFocusRequester ?: remember { FocusRequester() }
     val searchButtonFocusRequester = remember { FocusRequester() }
     val firstResultFocusRequester = remember { FocusRequester() }
+    var focusedContentInfo by remember { mutableStateOf<FocusedContentInfo?>(null) }
 
     LaunchedEffect(Unit) {
         keyboardActivationReady = false
@@ -195,6 +199,7 @@ internal fun SearchScreen(
         }
     }
 
+    Box(Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -273,7 +278,13 @@ internal fun SearchScreen(
                 columnCount = searchResultColumnCount,
                 compact = compactSearchControls,
                 modifier = Modifier.weight(1f),
+                onFocusedInfoChanged = { focusedContentInfo = it },
             )
         }
+    }
+    FocusedContentInfoPanel(
+        info = focusedContentInfo,
+        modifier = Modifier.align(Alignment.BottomCenter),
+    )
     }
 }
