@@ -23,14 +23,7 @@ internal data class SeriesEpisodeRemoteDetails(
 
 internal fun CatalogStore.queuedXtreamCategories(playlistId: String): List<QueuedXtreamCategory> {
     return readableDatabase.rawQuery(
-        """
-        SELECT name, kind, xtream_category_id FROM categories
-        WHERE playlist_id=?
-            AND kind IN (?, ?)
-            AND xtream_category_id IS NOT NULL
-            AND xtream_category_id != ''
-        ORDER BY kind ASC, name COLLATE NOCASE ASC
-        """.trimIndent(),
+        queuedXtreamCategoriesSql(),
         arrayOf(playlistId, CategoryKindMovie, CategoryKindSeries),
     ).use { cursor ->
         buildList {
@@ -45,6 +38,23 @@ internal fun CatalogStore.queuedXtreamCategories(playlistId: String): List<Queue
             }
         }
     }
+}
+
+internal fun queuedXtreamCategoriesSql(): String {
+    return """
+        SELECT name, kind, xtream_category_id FROM categories
+        WHERE playlist_id=?
+            AND kind IN (?, ?)
+            AND xtream_category_id IS NOT NULL
+            AND xtream_category_id != ''
+            AND EXISTS (
+                SELECT 1 FROM items
+                WHERE items.category_id = categories.id
+                    AND items.xtream_id IS NULL
+                LIMIT 1
+            )
+        ORDER BY kind ASC, name COLLATE NOCASE ASC
+        """.trimIndent()
 }
 
 internal fun CatalogStore.updateItemsFromXtreamCategory(

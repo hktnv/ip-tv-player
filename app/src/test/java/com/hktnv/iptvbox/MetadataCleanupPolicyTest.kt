@@ -7,6 +7,11 @@ import org.junit.Test
 
 class MetadataCleanupPolicyTest {
     @Test
+    fun cleanupStartsAfterTenSecondStartupDelay() {
+        assertTrue(MetadataCleanupPolicy.StartupDelayMs == 10_000L)
+    }
+
+    @Test
     fun cleanupRunsWhenThereIsNoPreviousRun() {
         assertTrue(MetadataCleanupPolicy.shouldRun(nowMs = 1000L, lastRunAtMs = null))
     }
