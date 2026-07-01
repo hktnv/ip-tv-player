@@ -15,21 +15,27 @@ class RemotePlaylistLoader(
     private val client: OkHttpClient = HttpClientFactory.create(),
     private val directoryParser: PlaylistDirectoryParser = PlaylistDirectoryParser(),
     private val m3uParser: M3uPlaylistParser = M3uPlaylistParser(),
+    private val m3uSpooler: StreamingM3uSpooler = StreamingM3uSpooler(),
 ) {
     suspend fun load(
         playlistId: String,
         request: CreatePlaylistSourceRequest,
+        expectedItemCount: Int? = null,
+        onProgress: (PlaylistLoadProgress) -> Unit = {},
     ): PlaylistLoadResult = withContext(Dispatchers.IO) {
         val startedNs = System.nanoTime()
+        onProgress(PlaylistLoadProgress(PlaylistLoadStage.CONNECTING, totalItems = expectedItemCount))
         val result = when (request.type) {
             PlaylistSourceType.M3U_URL -> loadM3u(
                 playlistId = playlistId,
                 name = request.name,
                 url = request.endpoint,
                 headers = request.headers,
+                expectedItemCount = expectedItemCount,
+                onProgress = onProgress,
             )
 
-            PlaylistSourceType.JSON_DIRECTORY -> loadDirectory(playlistId, request)
+            PlaylistSourceType.JSON_DIRECTORY -> loadDirectory(playlistId, request, expectedItemCount, onProgress)
 
             PlaylistSourceType.XTREAM -> loadM3u(
                 playlistId = playlistId,
@@ -40,16 +46,28 @@ class RemotePlaylistLoader(
                     password = request.xtreamPassword.orEmpty(),
                 ),
                 headers = request.headers,
+                expectedItemCount = expectedItemCount,
+                onProgress = onProgress,
             )
         }
+        onProgress(
+            PlaylistLoadProgress(
+                stage = PlaylistLoadStage.COMPLETED,
+                processedItems = result.items.size,
+                totalItems = result.items.size,
+            ),
+        )
         result.copy(metrics = result.metrics.copy(totalMs = elapsedMs(startedNs)))
     }
 
     private fun loadDirectory(
         playlistId: String,
         request: CreatePlaylistSourceRequest,
+        expectedItemCount: Int?,
+        onProgress: (PlaylistLoadProgress) -> Unit,
     ): PlaylistLoadResult {
         val directoryStartedNs = System.nanoTime()
+        onProgress(PlaylistLoadProgress(PlaylistLoadStage.DOWNLOADING, totalItems = expectedItemCount))
         val directoryFetch = fetchTextWithFallback(request.endpoint, request.headers)
         val candidates = directoryParser.parse(directoryFetch.text)
         val warnings = directoryFetch.warnings.toMutableList()
@@ -68,6 +86,8 @@ class RemotePlaylistLoader(
                     name = candidate.name,
                     url = candidate.url,
                     headers = request.headers + candidate.headers,
+                    expectedItemCount = expectedItemCount,
+                    onProgress = onProgress,
                 )
             }.onSuccess { loaded ->
                 epgUrls += loaded.epgUrls
@@ -97,12 +117,21 @@ class RemotePlaylistLoader(
         name: String,
         url: String,
         headers: Map<String, String>,
+        expectedItemCount: Int?,
+        onProgress: (PlaylistLoadProgress) -> Unit,
     ): PlaylistLoadResult {
-        val fetch = fetchM3uWithFallback(playlistId, url, headers)
+        val fetch = fetchM3uWithFallback(playlistId, url, headers, expectedItemCount, onProgress)
         val parsed = fetch.parsed
         if (parsed.items.isEmpty()) {
             error("İçerik bulunamadı.")
         }
+        onProgress(
+            PlaylistLoadProgress(
+                stage = PlaylistLoadStage.PREPARING,
+                processedItems = parsed.items.size,
+                totalItems = parsed.items.size,
+            ),
+        )
         return PlaylistLoadResult(
             playlistName = name,
             items = parsed.items,
@@ -128,12 +157,14 @@ class RemotePlaylistLoader(
         playlistId: String,
         rawUrl: String,
         headers: Map<String, String>,
+        expectedItemCount: Int?,
+        onProgress: (PlaylistLoadProgress) -> Unit,
     ): M3uFetchResult {
         val normalizeStartedNs = System.nanoTime()
         val normalizedUrl = normalizeUserUrl(rawUrl)
         val normalizeMs = elapsedMs(normalizeStartedNs)
         return runCatching {
-            val fetch = fetchM3u(normalizedUrl, headers, playlistId)
+            val fetch = fetchM3u(normalizedUrl, headers, playlistId, expectedItemCount, onProgress)
             M3uFetchResult(
                 parsed = fetch.parsed,
                 urlNormalizeMs = normalizeMs,
@@ -150,7 +181,7 @@ class RemotePlaylistLoader(
 
             val httpUrl = "http://" + normalizedUrl.substringAfter("://")
             runCatching {
-                val fetch = fetchM3u(httpUrl, headers, playlistId)
+                val fetch = fetchM3u(httpUrl, headers, playlistId, expectedItemCount, onProgress)
                 M3uFetchResult(
                     parsed = fetch.parsed,
                     urlNormalizeMs = normalizeMs,
@@ -234,6 +265,8 @@ class RemotePlaylistLoader(
         url: String,
         headers: Map<String, String>,
         playlistId: String,
+        expectedItemCount: Int?,
+        onProgress: (PlaylistLoadProgress) -> Unit,
     ): M3uFetchPayload {
         val builder = Request.Builder().url(url)
         headers.forEach { (key, value) ->
@@ -243,20 +276,45 @@ class RemotePlaylistLoader(
         }
         val request = builder.build()
         val connectionStartedNs = System.nanoTime()
+        onProgress(PlaylistLoadProgress(PlaylistLoadStage.DOWNLOADING, totalItems = expectedItemCount))
         return try {
             client.newCall(request).execute().use { response ->
                 val connectionMs = elapsedMs(connectionStartedNs)
                 if (!response.isSuccessful) {
                     throw TimedFetchException(IOException("HTTP ${response.code}"), connectionMs)
                 }
-                val streamStartedNs = System.nanoTime()
-                val parsed = response.body.byteStream()
-                    .bufferedReader(Charsets.UTF_8)
-                    .useLines { lines -> m3uParser.parse(playlistId, lines) }
+                val downloadStartedNs = System.nanoTime()
+                val spooled = m3uSpooler.spool(response.body.byteStream()) { count ->
+                    onProgress(
+                        PlaylistLoadProgress(
+                            stage = PlaylistLoadStage.DOWNLOADING,
+                            processedItems = count,
+                            totalItems = expectedItemCount,
+                        ),
+                    )
+                }
+                val downloadMs = elapsedMs(downloadStartedNs)
+                val totalItems = expectedItemCount ?: spooled.itemCount.takeIf { it > 0 }
+                onProgress(PlaylistLoadProgress(PlaylistLoadStage.READING, totalItems = totalItems))
+                val parsed = try {
+                    spooled.file.bufferedReader(Charsets.UTF_8).useLines { lines ->
+                        m3uParser.parse(playlistId, lines) { count ->
+                            onProgress(
+                                PlaylistLoadProgress(
+                                    stage = PlaylistLoadStage.READING,
+                                    processedItems = count,
+                                    totalItems = totalItems,
+                                ),
+                            )
+                        }
+                    }
+                } finally {
+                    spooled.file.delete()
+                }
                 M3uFetchPayload(
                     parsed = parsed,
                     connectionOpenMs = connectionMs,
-                    downloadMs = (elapsedMs(streamStartedNs) - parsed.parseMs).coerceAtLeast(0L),
+                    downloadMs = downloadMs,
                 )
             }
         } catch (throwable: Throwable) {

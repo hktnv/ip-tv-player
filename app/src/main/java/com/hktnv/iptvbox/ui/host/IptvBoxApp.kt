@@ -19,6 +19,7 @@ import com.hktnv.iptvbox.model.AppPerformanceMode
 import com.hktnv.iptvbox.model.AppScreen
 import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.model.LoadedPlaylist
+import com.hktnv.iptvbox.model.PlaylistImportProgress
 import com.hktnv.iptvbox.model.playlistAutoUpdateLabel
 import com.hktnv.iptvbox.navigation.NavigationDrawerEvent
 import com.hktnv.iptvbox.navigation.NavigationDrawerFocusExpansion
@@ -83,6 +84,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var submittedSearch by rememberSaveable { mutableStateOf("") }; var showAddDialog by rememberSaveable { mutableStateOf(false) }; var showExitDialog by rememberSaveable { mutableStateOf(false) }
     var renamingPlaylist by remember { mutableStateOf<LoadedPlaylist?>(null) }; var deletingPlaylist by remember { mutableStateOf<LoadedPlaylist?>(null) }; var banner by rememberSaveable { mutableStateOf<String?>(null) }
     var playlistDetailId by rememberSaveable { mutableStateOf<String?>(null) }
+    var playlistImportProgress by remember { mutableStateOf<PlaylistImportProgress?>(null) }
     var currentItem by remember { mutableStateOf<CatalogItem?>(null) }; var currentHeaders by remember { mutableStateOf<Map<String, String>>(emptyMap()) }; var playerContextItems by remember { mutableStateOf<List<CatalogItem>>(emptyList()) }; var contentOptionsItem by remember { mutableStateOf<CatalogItem?>(null) }
     var catalogSnapshot by remember { mutableStateOf<CatalogSnapshot?>(null) }; var catalogIndexLoading by remember { mutableStateOf(false) }
     var firstDrawRecorded by remember { mutableStateOf(false) }; var updateCheckStarted by rememberSaveable { mutableStateOf(false) }
@@ -255,6 +257,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             telemetry = telemetry,
             catalogStore = catalogStore,
             onBanner = { banner = it },
+            onProgress = { playlistImportProgress = it },
             onStored = { stored ->
                 val index = playlists.indexOfFirst { it.id == stored.id }; if (index >= 0) playlists[index] = stored
             },
@@ -329,6 +332,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         selectedTab = selectedTab, selectedCategory = selectedCategory, showCatalogCategoryLanding = showCatalogCategoryLanding, selectedSeriesTitle = selectedSeriesTitle,
         selectedSeasonNumber = selectedSeasonNumber, favoriteIds = favoriteIds, recentIds = recentIds, favoriteItems = favoriteItems,
         recentItems = recentItems, playlistDetailId = playlistDetailId, diagnostics = diagnostics, banner = banner, sideMenuExpanded = drawerModel.state.expanded, drawerFocusExpansion = drawerModel.focusExpansion,
+        playlistImportProgress = playlistImportProgress,
         contentFocusRequest = contentFocusRequest, contentInitialFocusRequester = contentInitialFocusRequester,
         catalogRepository = catalogRepository, telemetry = telemetry, searchDraft = searchDraft, submittedSearch = submittedSearch,
         onPlayerBack = { screen = returnScreen; currentItem = null; playerContextItems = emptyList() },
@@ -363,6 +367,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             scope.saveLoadedPlaylistAction(draft, result, telemetry, catalogStore, onSaving = { banner = "Oynatma listesi kaydediliyor" },
                 onStored = { stored, itemCount, playlistName ->
                     playlists.removeAll { it.id == stored.id }; playlists += stored; selectedPlaylistId = stored.id
+                    playlistImportProgress = null
                     selectedTab = firstAvailableTab(stored); selectedCategory = null; showCatalogCategoryLanding = true; selectedSeriesTitle = null; selectedSeasonNumber = null
                     submittedSearch = ""; screen = AppScreen.HOME; showPlaylistEntry = false; requestContentFocus()
                     banner = "$playlistName yüklendi: $itemCount içerik"; showAddDialog = false

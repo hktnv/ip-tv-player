@@ -29,6 +29,7 @@ import com.hktnv.iptvbox.model.AppScreen
 import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.LocalPerformanceMode
+import com.hktnv.iptvbox.model.PlaylistImportProgress
 import com.hktnv.iptvbox.navigation.NavigationDrawerEvent
 import com.hktnv.iptvbox.navigation.NavigationDrawerFocusExpansion
 import com.hktnv.iptvbox.navigation.PlaylistContentScaffold
@@ -70,6 +71,7 @@ internal fun IptvContentHost(
     playlistDetailId: String?,
     diagnostics: PerformanceDiagnostics,
     banner: String?,
+    playlistImportProgress: PlaylistImportProgress?,
     sideMenuExpanded: Boolean,
     drawerFocusExpansion: NavigationDrawerFocusExpansion,
     contentFocusRequest: Int,
@@ -216,6 +218,7 @@ internal fun IptvContentHost(
                     onDeletePlaylist = onDeletePlaylist,
                     onAutoUpdateHoursChange = onAutoUpdateHoursChange,
                     onOpenSettings = onOpenSettingsFromEntry,
+                    progress = playlistImportProgress,
                 )
                 else -> PlaylistContentScaffold(
                     wide = wide,
@@ -238,6 +241,7 @@ internal fun IptvContentHost(
                     diagnostics = diagnostics,
                     playerUiMode = playerUiMode,
                     banner = banner,
+                    playlistImportProgress = playlistImportProgress,
                     sideMenuExpanded = sideMenuExpanded,
                     drawerFocusExpansion = drawerFocusExpansion,
                     contentInitialFocusRequester = contentInitialFocusRequester,

@@ -116,6 +116,7 @@ import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.model.HomePreviewLimit
 import com.hktnv.iptvbox.model.LoadedPlaylist
+import com.hktnv.iptvbox.model.PlaylistImportProgress
 import com.hktnv.iptvbox.model.LocalPerformanceMode
 import com.hktnv.iptvbox.model.ScreenBottomPadding
 import com.hktnv.iptvbox.ui.common.EmptyState
@@ -302,6 +303,7 @@ internal fun PlaylistScreen(
     onDelete: (LoadedPlaylist) -> Unit,
     onAutoUpdateHoursChange: (LoadedPlaylist, Int) -> Unit,
     contentPadding: Dp,
+    progress: PlaylistImportProgress? = null,
 ) {
     val detailPlaylist = playlists.firstOrNull { it.id == detailPlaylistId }
     if (detailPlaylist != null) {
@@ -315,6 +317,7 @@ internal fun PlaylistScreen(
             onRename = { onRename(detailPlaylist) },
             onDelete = { onDelete(detailPlaylist) },
             onAutoUpdateHoursChange = { onAutoUpdateHoursChange(detailPlaylist, it) },
+            progress = progress?.takeIf { it.playlistId == detailPlaylist.id },
         )
         return
     }

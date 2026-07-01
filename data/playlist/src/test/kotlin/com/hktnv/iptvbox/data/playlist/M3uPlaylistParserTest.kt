@@ -149,6 +149,20 @@ class M3uPlaylistParserTest {
         assertTrue(playlist.parseMs >= playlist.parseOtherMs)
     }
 
+    @Test
+    fun reportsStreamingItemProgress() {
+        val progress = mutableListOf<Int>()
+        val source = SingleUseSequence(syntheticLargeM3uLines(live = 3, movies = 120, series = 2))
+
+        val playlist = M3uPlaylistParser().parse("progress-stream", source) { count ->
+            progress += count
+        }
+
+        assertEquals(125, playlist.items.size)
+        assertEquals(listOf(1, 100, 125), progress)
+        assertEquals(1, source.iteratorCount)
+    }
+
     private fun syntheticLargeM3uLines(live: Int, movies: Int, series: Int): Sequence<String> = sequence {
         yield("#EXTM3U url-tvg=\"https://example.com/epg.xml\"")
         repeat(live) { index ->

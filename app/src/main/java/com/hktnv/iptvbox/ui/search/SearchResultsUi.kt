@@ -51,8 +51,11 @@ import com.hktnv.iptvbox.ui.media.FavoriteIndicator
 import com.hktnv.iptvbox.ui.media.HorizontalMediaCardGrid
 
 private val SearchResultRowHeight = 118.dp
+private val CompactSearchResultRowHeight = 96.dp
 private val SearchResultArtworkWidth = 104.dp
 private val SearchResultArtworkHeight = 94.dp
+private val CompactSearchResultArtworkWidth = 78.dp
+private val CompactSearchResultArtworkHeight = 72.dp
 
 @Composable
 internal fun SearchResultsList(
@@ -64,6 +67,7 @@ internal fun SearchResultsList(
     onRequestSideMenu: () -> Unit,
     initialFocusRequester: FocusRequester,
     columnCount: Int,
+    compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val favoriteKey = favoriteIds.joinToString("|")
@@ -86,6 +90,7 @@ internal fun SearchResultsList(
             onLongClick = { onShowItemOptions(item) },
             onRequestSideMenu = onRequestSideMenu,
             requestSideMenuOnLeft = requestSideMenuOnLeft,
+            compact = compact,
             modifier = itemModifier,
         )
     }
@@ -99,6 +104,7 @@ private fun SearchResultRow(
     onLongClick: () -> Unit,
     onRequestSideMenu: () -> Unit,
     requestSideMenuOnLeft: Boolean,
+    compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
     var focused by remember { mutableStateOf(false) }
@@ -107,7 +113,7 @@ private fun SearchResultRow(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(SearchResultRowHeight)
+            .height(if (compact) CompactSearchResultRowHeight else SearchResultRowHeight)
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.015f, liftPx = -3f)
             .onFocusChanged { focused = it.isFocused }
@@ -130,7 +136,7 @@ private fun SearchResultRow(
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
     ) {
         Row(
-            modifier = Modifier.padding(8.dp),
+            modifier = Modifier.padding(if (compact) 7.dp else 8.dp),
             horizontalArrangement = Arrangement.spacedBy(mediaCardSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -141,8 +147,8 @@ private fun SearchResultRow(
                     logoUrl = item.logoUrl,
                     showBadge = false,
                     modifier = Modifier
-                        .width(SearchResultArtworkWidth)
-                        .height(SearchResultArtworkHeight),
+                        .width(if (compact) CompactSearchResultArtworkWidth else SearchResultArtworkWidth)
+                        .height(if (compact) CompactSearchResultArtworkHeight else SearchResultArtworkHeight),
                 )
                 if (favorite) {
                     FavoriteIndicator(
@@ -152,7 +158,13 @@ private fun SearchResultRow(
                     )
                 }
             }
-            SearchResultText(item = item, title = title, kind = displayKind, modifier = Modifier.weight(1f))
+            SearchResultText(
+                item = item,
+                title = title,
+                kind = displayKind,
+                compact = compact,
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }
@@ -162,6 +174,7 @@ private fun SearchResultText(
     item: CatalogItem,
     title: String,
     kind: ContentKind,
+    compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -171,8 +184,8 @@ private fun SearchResultText(
         Text(
             text = title,
             color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 14.sp,
-            lineHeight = 17.sp,
+            fontSize = if (compact) 13.sp else 14.sp,
+            lineHeight = if (compact) 16.sp else 17.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -185,7 +198,7 @@ private fun SearchResultText(
             Text(
                 text = item.searchResultMetaLine(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
+                fontSize = if (compact) 11.sp else 12.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

@@ -157,7 +157,10 @@ private fun Key.isDialogSelectKey(): Boolean {
 }
 
 @Composable
-internal fun LoadingStepText(text: String) {
+internal fun LoadingStepText(
+    text: String,
+    progress: String? = null,
+) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(10.dp),
@@ -173,6 +176,15 @@ internal fun LoadingStepText(text: String) {
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
             )
+            progress?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    lineHeight = 17.sp,
+                )
+            }
             Text(
                 text = "Lütfen bekleyin, işlem devam ediyor.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

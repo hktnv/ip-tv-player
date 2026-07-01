@@ -149,6 +149,14 @@ internal fun SearchScreen(
         return false
     }
 
+    fun submitSearch() {
+        keyboardRequested = false
+        pendingKeyboardCloseAfterClear = false
+        keyboardController?.hide()
+        if (!television) focusManager.clearFocus(force = false)
+        onSearch()
+    }
+
     BackHandler(
         enabled = television &&
             queryFocused &&
@@ -211,7 +219,7 @@ internal fun SearchScreen(
         SearchControls(
             query = query,
             onQueryChange = onQueryChange,
-            onSearch = onSearch,
+            onSearch = ::submitSearch,
             compact = compactSearchControls,
             television = television,
             queryFocused = queryFocused,
@@ -263,6 +271,7 @@ internal fun SearchScreen(
                 onRequestSideMenu = onRequestSideMenu,
                 initialFocusRequester = firstResultFocusRequester,
                 columnCount = searchResultColumnCount,
+                compact = compactSearchControls,
                 modifier = Modifier.weight(1f),
             )
         }

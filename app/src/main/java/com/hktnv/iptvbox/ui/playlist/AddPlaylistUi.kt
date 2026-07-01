@@ -72,6 +72,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.model.DraftLoadState
+import com.hktnv.iptvbox.state.contentProgressLabel
+import com.hktnv.iptvbox.state.toDraftLoadState
 import com.hktnv.iptvbox.telemetry.AppPerformanceTelemetry
 import com.hktnv.iptvbox.ui.common.ErrorText
 import com.hktnv.iptvbox.ui.media.label
@@ -143,6 +145,7 @@ internal fun AddPlaylistDialog(
             return
         }
         state = DraftLoadState(loading = true, message = "Bağlantı kuruluyor")
+        state = DraftLoadState(loading = true, message = "İndiriliyor")
         val firstResponseMs = android.os.SystemClock.elapsedRealtime() - pressStartedAt
         telemetry.recordMany(
             mapOf(
@@ -155,10 +158,25 @@ internal fun AddPlaylistDialog(
         val playlistId = UUID.randomUUID().toString()
         scope.launch {
             runCatching {
-                state = DraftLoadState(loading = true, message = "Liste okunuyor")
-                withContext(Dispatchers.IO) { loader.load(playlistId, req) }
+                withContext(Dispatchers.IO) {
+                    loader.load(playlistId, req) { progress ->
+                        scope.launch { state = progress.toDraftLoadState() }
+                    }
+                }
             }.onSuccess { result ->
+                state = DraftLoadState(
+                    loading = true,
+                    message = "Katalog hazırlanıyor",
+                    processedItems = result.items.size,
+                    totalItems = result.items.size,
+                )
                 state = DraftLoadState(loading = true, message = "Katalog hazırlanıyor")
+                state = DraftLoadState(
+                    loading = true,
+                    message = "Katalog hazırlanıyor",
+                    processedItems = result.items.size,
+                    totalItems = result.items.size,
+                )
                 onLoaded(
                     DraftPlaylist(
                         id = playlistId,
@@ -287,7 +305,12 @@ internal fun AddPlaylistDialog(
                     )
                 }
                 state.message?.let {
-                    LoadingStepText(it)
+                    LoadingStepText(
+                        text = it,
+                        progress = state.processedItems.takeIf { count -> count > 0 }?.let { count ->
+                            contentProgressLabel(count, state.totalItems)
+                        },
+                    )
                 }
                 state.error?.let { ErrorText(it) }
                 if (!canSubmit && !state.loading) {

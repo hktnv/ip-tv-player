@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.hktnv.iptvbox.data.catalog.CatalogStore
 import com.hktnv.iptvbox.model.LoadedPlaylist
+import com.hktnv.iptvbox.model.PlaylistImportProgress
 import com.hktnv.iptvbox.telemetry.AppPerformanceTelemetry
 import com.hktnv.iptvbox.telemetry.finishPlaylistImportTelemetry
 import com.hktnv.iptvbox.telemetry.recordCatalogWriteTimings
@@ -30,11 +31,20 @@ internal fun CoroutineScope.reloadPlaylistAction(
     telemetry: AppPerformanceTelemetry,
     catalogStore: CatalogStore,
     onBanner: (String) -> Unit,
+    onProgress: (PlaylistImportProgress?) -> Unit,
     onStored: (LoadedPlaylist) -> Unit,
 ) {
     onBanner("${playlist.name} yenileniyor")
     launch {
         val importStartedAtMs = SystemClock.elapsedRealtime()
+        val expectedItemCount = playlist.cachedItemCount ?: playlist.items.size.takeIf { it > 0 }
+        onProgress(
+            PlaylistImportProgress(
+                playlistId = playlist.id,
+                message = "İndiriliyor",
+                totalItems = expectedItemCount,
+            ),
+        )
         val request = CreatePlaylistSourceRequest(
             type = playlist.type,
             name = playlist.name,
@@ -42,11 +52,27 @@ internal fun CoroutineScope.reloadPlaylistAction(
             headers = playlist.headers,
             contentHint = ContentHint.AUTO,
         )
-        runCatching { loader.load(playlist.id, request) }
+        runCatching {
+            loader.load(
+                playlistId = playlist.id,
+                request = request,
+                expectedItemCount = expectedItemCount,
+            ) { progress ->
+                launch { onProgress(progress.toPlaylistImportProgress(playlist.id)) }
+            }
+        }
             .onSuccess { result ->
                 recordPlaylistLoadMetrics(telemetry, result.metrics)
                 telemetry.record("playlist_import_image_ms", 0L)
                 val normalizeStartedAt = SystemClock.elapsedRealtime()
+                onProgress(
+                    PlaylistImportProgress(
+                        playlistId = playlist.id,
+                        message = "Katalog hazırlanıyor",
+                        processedItems = result.items.size,
+                        totalItems = result.items.size,
+                    ),
+                )
                 val loaded = withContext(Dispatchers.Default) {
                     playlist.copy(
                         items = result.items,
@@ -74,9 +100,27 @@ internal fun CoroutineScope.reloadPlaylistAction(
                     itemCount = result.items.size,
                 )
                 telemetry.record("playlist_import_item_count", result.items.size.toLong())
+                onProgress(
+                    PlaylistImportProgress(
+                        playlistId = playlist.id,
+                        message = "Tamamlandı",
+                        processedItems = result.items.size,
+                        totalItems = result.items.size,
+                        complete = true,
+                    ),
+                )
                 onBanner("${playlist.name} yenilendi: ${result.items.size} içerik")
             }
             .onFailure { throwable ->
+                val message = simpleUserMessage(throwable.message.orEmpty()).ifBlank { "Liste yüklenemedi" }
+                onProgress(
+                    PlaylistImportProgress(
+                        playlistId = playlist.id,
+                        message = "Liste yüklenemedi",
+                        totalItems = expectedItemCount,
+                        error = message,
+                    ),
+                )
                 telemetry.recordError("Liste yenileme hatası", throwable)
                 onBanner(simpleUserMessage(throwable.message.orEmpty()).ifBlank { "Liste yüklenemedi" })
             }

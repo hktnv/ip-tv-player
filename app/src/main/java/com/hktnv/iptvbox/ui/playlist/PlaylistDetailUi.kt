@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -30,8 +31,10 @@ import androidx.compose.ui.unit.sp
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.PlaylistAutoUpdateHourOptions
+import com.hktnv.iptvbox.model.PlaylistImportProgress
 import com.hktnv.iptvbox.model.ScreenBottomPadding
 import com.hktnv.iptvbox.model.playlistAutoUpdateLabel
+import com.hktnv.iptvbox.state.contentProgressLabel
 import com.hktnv.iptvbox.ui.common.ScreenHeader
 import com.hktnv.iptvbox.ui.media.label
 import com.hktnv.iptvbox.ui.media.stats
@@ -47,6 +50,7 @@ internal fun PlaylistDetailScreen(
     onRename: () -> Unit,
     onDelete: () -> Unit,
     onAutoUpdateHoursChange: (Int) -> Unit,
+    progress: PlaylistImportProgress? = null,
 ) {
     BackHandler(onBack = onBack)
     val stats = remember(playlist.id, playlist.items) { playlist.stats() }
@@ -78,9 +82,13 @@ internal fun PlaylistDetailScreen(
                 onSelect = onAutoUpdateHoursChange,
             )
         }
+        progress?.let {
+            item { PlaylistProgressPanel(it) }
+        }
         item {
             PlaylistDetailActions(
                 active = active,
+                refreshing = progress?.active == true,
                 onUse = onUse,
                 onReload = onReload,
                 onRename = onRename,
@@ -160,8 +168,40 @@ private fun AutoUpdateSelector(
 }
 
 @Composable
+private fun PlaylistProgressPanel(progress: PlaylistImportProgress) {
+    DetailPanel {
+        Text(
+            progress.message,
+            color = if (progress.error == null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        if (progress.error == null) {
+            LinearProgressIndicator(
+                progress = {
+                    val total = progress.totalItems ?: 0
+                    if (total > 0) {
+                        (progress.processedItems.toFloat() / total.toFloat()).coerceIn(0f, 1f)
+                    } else {
+                        0f
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        Text(
+            text = progress.error ?: contentProgressLabel(progress.processedItems, progress.totalItems),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 13.sp,
+            lineHeight = 17.sp,
+        )
+    }
+}
+
+@Composable
 private fun PlaylistDetailActions(
     active: Boolean,
+    refreshing: Boolean,
     onUse: () -> Unit,
     onReload: () -> Unit,
     onRename: () -> Unit,
@@ -176,8 +216,12 @@ private fun PlaylistDetailActions(
             Text(if (active) "Listeyi Aç" else "Listeyi Aç / Kullan")
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(onClick = onReload, modifier = Modifier.weight(1f)) {
-                Text("Yenile")
+            OutlinedButton(
+                onClick = onReload,
+                enabled = !refreshing,
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(if (refreshing) "Yenileniyor" else "Yenile")
             }
             OutlinedButton(onClick = onRename, modifier = Modifier.weight(1f)) {
                 Text("Düzenle")

@@ -63,8 +63,21 @@ internal data class PlaylistStats(
 internal data class DraftLoadState(
     val loading: Boolean = false,
     val message: String? = null,
+    val processedItems: Int = 0,
+    val totalItems: Int? = null,
     val error: String? = null,
 )
+
+internal data class PlaylistImportProgress(
+    val playlistId: String,
+    val message: String,
+    val processedItems: Int = 0,
+    val totalItems: Int? = null,
+    val complete: Boolean = false,
+    val error: String? = null,
+) {
+    val active: Boolean get() = !complete && error == null
+}
 
 internal val ScreenBottomPadding = 88.dp
 internal const val HomePreviewLimit = 8

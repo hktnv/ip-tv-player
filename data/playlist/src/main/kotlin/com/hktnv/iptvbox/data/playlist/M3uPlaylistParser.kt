@@ -6,7 +6,11 @@ import com.hktnv.iptvbox.core.model.ContentKind
 import com.hktnv.iptvbox.core.model.KindGuess
 
 class M3uPlaylistParser {
-    fun parse(sourceId: String, lines: Sequence<String>): ParsedM3uPlaylist {
+    fun parse(
+        sourceId: String,
+        lines: Sequence<String>,
+        onItemParsed: (Int) -> Unit = {},
+    ): ParsedM3uPlaylist {
         val parseStartedNs = System.nanoTime()
         val epgUrls = linkedSetOf<String>()
         val items = ArrayList<CatalogItem>(8_192)
@@ -52,11 +56,15 @@ class M3uPlaylistParser {
                         kindNs += parsed.kindNs
                         categoryNs += parsed.categoryNs
                         items += parsed.item
+                        if (items.size == 1 || items.size % PROGRESS_STEP == 0) {
+                            onItemParsed(items.size)
+                        }
                     }
                     pendingExtInfLine = null
                 }
             }
         }
+        if (items.isNotEmpty()) onItemParsed(items.size)
 
         val parseMs = elapsedMs(parseStartedNs)
         val lineReadMs = nsToMs(lineReadNs)
@@ -341,4 +349,8 @@ class M3uPlaylistParser {
     private fun elapsedMs(startedNs: Long): Long = nsToMs(System.nanoTime() - startedNs)
 
     private fun nsToMs(ns: Long): Long = ns / 1_000_000L
+
+    private companion object {
+        const val PROGRESS_STEP = 100
+    }
 }
