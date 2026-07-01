@@ -15,6 +15,7 @@ class LocalizationResourcesTest {
         assertEquals("Oynatma listesi silinsin mi?", strings["playlist_delete_title"])
         assertEquals("Oynatıcı arayüzü", strings["settings_player_ui_title"])
         assertEquals("Modern OSD", strings["settings_player_ui_value"])
+        assertTrue(strings["settings_player_ui_detail_body"]?.contains("Modern OSD") == true)
     }
 
     private fun readDefaultStrings(): Map<String, String> {

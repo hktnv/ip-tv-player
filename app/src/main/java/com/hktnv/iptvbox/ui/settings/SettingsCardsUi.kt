@@ -97,27 +97,6 @@ internal fun SettingsActionCard(
 }
 
 @Composable
-internal fun SettingsStaticCard(
-    title: String,
-    body: String,
-    caption: String,
-    icon: ImageVector,
-    modifier: Modifier = Modifier,
-    padding: Dp,
-) {
-    SettingsCardSurface(focused = false, modifier = modifier) {
-        SettingsCardContent(
-            title = title,
-            body = body,
-            caption = caption,
-            icon = icon,
-            padding = padding,
-            showChevron = false,
-        )
-    }
-}
-
-@Composable
 private fun SettingsCardSurface(
     focused: Boolean,
     modifier: Modifier,

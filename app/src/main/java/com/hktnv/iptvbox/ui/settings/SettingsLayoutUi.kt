@@ -34,6 +34,8 @@ internal fun ExpandedSettingsGrid(
     privacyFocusRequester: FocusRequester,
     aboutFocusRequester: FocusRequester,
     onOpenPlaylistEntry: () -> Unit,
+    playerUiFocusRequester: FocusRequester,
+    onShowPlayerUi: () -> Unit,
     onShowStartupDialog: () -> Unit,
     onShowPrivacy: () -> Unit,
     onShowAbout: () -> Unit,
@@ -45,70 +47,19 @@ internal fun ExpandedSettingsGrid(
             modifier = Modifier.weight(1f).fillMaxHeight(),
             padding = cardPadding,
             focusRequester = playlistsFocusRequester,
-            right = startupFocusRequester,
-            down = privacyFocusRequester,
-            onRequestSideMenu = onRequestSideMenu,
-            onClick = onOpenPlaylistEntry,
-        )
-        PlayerUiCard(Modifier.weight(1f).fillMaxHeight(), cardPadding)
-        StartupCard(
-            behavior = startupBehavior,
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-            padding = cardPadding,
-            focusRequester = startupFocusRequester,
-            left = playlistsFocusRequester,
-            down = aboutFocusRequester,
-            onClick = onShowStartupDialog,
-        )
-    }
-    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(gap)) {
-        PrivacyCard(
-            modifier = Modifier.weight(2f).fillMaxHeight(),
-            padding = cardPadding,
-            focusRequester = privacyFocusRequester,
-            up = playlistsFocusRequester,
-            right = aboutFocusRequester,
-            onRequestSideMenu = onRequestSideMenu,
-            onShowPrivacy = onShowPrivacy,
-        )
-        AboutCard(
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-            padding = cardPadding,
-            focusRequester = aboutFocusRequester,
-            left = privacyFocusRequester,
-            up = startupFocusRequester,
-            onClick = onShowAbout,
-        )
-    }
-}
-
-@Composable
-internal fun MediumSettingsGrid(
-    playlistCount: Int,
-    startupBehavior: StartupBehavior,
-    cardPadding: Dp,
-    gap: Dp,
-    playlistsFocusRequester: FocusRequester,
-    startupFocusRequester: FocusRequester,
-    privacyFocusRequester: FocusRequester,
-    aboutFocusRequester: FocusRequester,
-    onOpenPlaylistEntry: () -> Unit,
-    onShowStartupDialog: () -> Unit,
-    onShowPrivacy: () -> Unit,
-    onShowAbout: () -> Unit,
-    onRequestSideMenu: (() -> Unit)?,
-) {
-    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(gap)) {
-        PlaylistsCard(
-            count = playlistCount,
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-            padding = cardPadding,
-            focusRequester = playlistsFocusRequester,
+            right = playerUiFocusRequester,
             down = startupFocusRequester,
             onRequestSideMenu = onRequestSideMenu,
             onClick = onOpenPlaylistEntry,
         )
-        PlayerUiCard(Modifier.weight(1f).fillMaxHeight(), cardPadding)
+        PlayerUiCard(
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+            padding = cardPadding,
+            focusRequester = playerUiFocusRequester,
+            left = playlistsFocusRequester,
+            down = privacyFocusRequester,
+            onClick = onShowPlayerUi,
+        )
     }
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(gap)) {
         StartupCard(
@@ -127,6 +78,77 @@ internal fun MediumSettingsGrid(
             padding = cardPadding,
             focusRequester = privacyFocusRequester,
             left = startupFocusRequester,
+            up = playerUiFocusRequester,
+            down = aboutFocusRequester,
+            onRequestSideMenu = onRequestSideMenu,
+            onShowPrivacy = onShowPrivacy,
+        )
+    }
+    AboutCard(
+        modifier = Modifier.fillMaxWidth(),
+        padding = cardPadding,
+        focusRequester = aboutFocusRequester,
+        up = startupFocusRequester,
+        onRequestSideMenu = onRequestSideMenu,
+        onClick = onShowAbout,
+    )
+}
+
+@Composable
+internal fun MediumSettingsGrid(
+    playlistCount: Int,
+    startupBehavior: StartupBehavior,
+    cardPadding: Dp,
+    gap: Dp,
+    playlistsFocusRequester: FocusRequester,
+    startupFocusRequester: FocusRequester,
+    privacyFocusRequester: FocusRequester,
+    aboutFocusRequester: FocusRequester,
+    onOpenPlaylistEntry: () -> Unit,
+    playerUiFocusRequester: FocusRequester,
+    onShowPlayerUi: () -> Unit,
+    onShowStartupDialog: () -> Unit,
+    onShowPrivacy: () -> Unit,
+    onShowAbout: () -> Unit,
+    onRequestSideMenu: (() -> Unit)?,
+) {
+    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(gap)) {
+        PlaylistsCard(
+            count = playlistCount,
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+            padding = cardPadding,
+            focusRequester = playlistsFocusRequester,
+            down = startupFocusRequester,
+            onRequestSideMenu = onRequestSideMenu,
+            onClick = onOpenPlaylistEntry,
+        )
+        PlayerUiCard(
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+            padding = cardPadding,
+            focusRequester = playerUiFocusRequester,
+            left = playlistsFocusRequester,
+            down = privacyFocusRequester,
+            onClick = onShowPlayerUi,
+        )
+    }
+    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(gap)) {
+        StartupCard(
+            behavior = startupBehavior,
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+            padding = cardPadding,
+            focusRequester = startupFocusRequester,
+            right = privacyFocusRequester,
+            up = playlistsFocusRequester,
+            down = aboutFocusRequester,
+            onRequestSideMenu = onRequestSideMenu,
+            onClick = onShowStartupDialog,
+        )
+        PrivacyCard(
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+            padding = cardPadding,
+            focusRequester = privacyFocusRequester,
+            left = startupFocusRequester,
+            up = playerUiFocusRequester,
             down = aboutFocusRequester,
             onShowPrivacy = onShowPrivacy,
         )
@@ -152,15 +174,17 @@ internal fun CompactSettingsGrid(
     privacyFocusRequester: FocusRequester,
     aboutFocusRequester: FocusRequester,
     onOpenPlaylistEntry: () -> Unit,
+    playerUiFocusRequester: FocusRequester,
+    onShowPlayerUi: () -> Unit,
     onShowStartupDialog: () -> Unit,
     onShowPrivacy: () -> Unit,
     onShowAbout: () -> Unit,
     onRequestSideMenu: (() -> Unit)?,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(gap)) {
-        PlaylistsCard(playlistCount, Modifier.fillMaxWidth(), cardPadding, playlistsFocusRequester, down = startupFocusRequester, onRequestSideMenu = onRequestSideMenu, onClick = onOpenPlaylistEntry)
-        PlayerUiCard(Modifier.fillMaxWidth(), cardPadding)
-        StartupCard(startupBehavior, Modifier.fillMaxWidth(), cardPadding, startupFocusRequester, up = playlistsFocusRequester, down = privacyFocusRequester, onRequestSideMenu = onRequestSideMenu, onClick = onShowStartupDialog)
+        PlaylistsCard(playlistCount, Modifier.fillMaxWidth(), cardPadding, playlistsFocusRequester, down = playerUiFocusRequester, onRequestSideMenu = onRequestSideMenu, onClick = onOpenPlaylistEntry)
+        PlayerUiCard(Modifier.fillMaxWidth(), cardPadding, playerUiFocusRequester, up = playlistsFocusRequester, down = startupFocusRequester, onRequestSideMenu = onRequestSideMenu, onClick = onShowPlayerUi)
+        StartupCard(startupBehavior, Modifier.fillMaxWidth(), cardPadding, startupFocusRequester, up = playerUiFocusRequester, down = privacyFocusRequester, onRequestSideMenu = onRequestSideMenu, onClick = onShowStartupDialog)
         PrivacyCard(Modifier.fillMaxWidth(), cardPadding, privacyFocusRequester, up = startupFocusRequester, down = aboutFocusRequester, onRequestSideMenu = onRequestSideMenu, onShowPrivacy = onShowPrivacy)
         AboutCard(Modifier.fillMaxWidth(), cardPadding, aboutFocusRequester, up = privacyFocusRequester, onRequestSideMenu = onRequestSideMenu, onClick = onShowAbout)
     }
@@ -191,13 +215,28 @@ private fun PlaylistsCard(
 )
 
 @Composable
-private fun PlayerUiCard(modifier: Modifier, padding: Dp) = SettingsStaticCard(
+private fun PlayerUiCard(
+    modifier: Modifier,
+    padding: Dp,
+    focusRequester: FocusRequester,
+    left: FocusRequester? = null,
+    up: FocusRequester? = null,
+    down: FocusRequester? = null,
+    onRequestSideMenu: (() -> Unit)? = null,
+    onClick: () -> Unit,
+) = SettingsActionCard(
     title = stringResource(R.string.settings_player_ui_title),
     body = stringResource(R.string.settings_player_ui_value),
     caption = stringResource(R.string.settings_player_ui_caption),
     icon = Icons.Outlined.Tv,
     modifier = modifier,
+    focusRequester = focusRequester,
     padding = padding,
+    leftFocusRequester = left,
+    upFocusRequester = up,
+    downFocusRequester = down,
+    onRequestSideMenu = onRequestSideMenu,
+    onClick = onClick,
 )
 
 @Composable

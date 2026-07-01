@@ -45,6 +45,7 @@ internal fun SettingsScreen(
     val cardPadding = layout.cardPadding
     val gap = 12.dp
     val playlistsFocusRequester = initialFocusRequester ?: remember { FocusRequester() }
+    val playerUiFocusRequester = remember { FocusRequester() }
     val startupFocusRequester = remember { FocusRequester() }
     val privacyFocusRequester = remember { FocusRequester() }
     val aboutFocusRequester = remember { FocusRequester() }
@@ -74,10 +75,12 @@ internal fun SettingsScreen(
                 cardPadding = cardPadding,
                 gap = gap,
                 playlistsFocusRequester = playlistsFocusRequester,
+                playerUiFocusRequester = playerUiFocusRequester,
                 startupFocusRequester = startupFocusRequester,
                 privacyFocusRequester = privacyFocusRequester,
                 aboutFocusRequester = aboutFocusRequester,
                 onOpenPlaylistEntry = onOpenPlaylistEntry,
+                onShowPlayerUi = { infoDialog = SettingsInfoDialogState.PlayerUi },
                 onShowStartupDialog = { showStartupDialog = true },
                 onShowPrivacy = { infoDialog = SettingsInfoDialogState.Privacy },
                 onShowAbout = { infoDialog = SettingsInfoDialogState.About },
@@ -89,10 +92,12 @@ internal fun SettingsScreen(
                 cardPadding = cardPadding,
                 gap = gap,
                 playlistsFocusRequester = playlistsFocusRequester,
+                playerUiFocusRequester = playerUiFocusRequester,
                 startupFocusRequester = startupFocusRequester,
                 privacyFocusRequester = privacyFocusRequester,
                 aboutFocusRequester = aboutFocusRequester,
                 onOpenPlaylistEntry = onOpenPlaylistEntry,
+                onShowPlayerUi = { infoDialog = SettingsInfoDialogState.PlayerUi },
                 onShowStartupDialog = { showStartupDialog = true },
                 onShowPrivacy = { infoDialog = SettingsInfoDialogState.Privacy },
                 onShowAbout = { infoDialog = SettingsInfoDialogState.About },
@@ -104,10 +109,12 @@ internal fun SettingsScreen(
                 cardPadding = cardPadding,
                 gap = gap,
                 playlistsFocusRequester = playlistsFocusRequester,
+                playerUiFocusRequester = playerUiFocusRequester,
                 startupFocusRequester = startupFocusRequester,
                 privacyFocusRequester = privacyFocusRequester,
                 aboutFocusRequester = aboutFocusRequester,
                 onOpenPlaylistEntry = onOpenPlaylistEntry,
+                onShowPlayerUi = { infoDialog = SettingsInfoDialogState.PlayerUi },
                 onShowStartupDialog = { showStartupDialog = true },
                 onShowPrivacy = { infoDialog = SettingsInfoDialogState.Privacy },
                 onShowAbout = { infoDialog = SettingsInfoDialogState.About },
@@ -167,5 +174,6 @@ private enum class SettingsInfoDialogState(
     val bodyRes: Int,
 ) {
     Privacy(R.string.settings_privacy_title, R.string.settings_privacy_detail_body),
+    PlayerUi(R.string.settings_player_ui_title, R.string.settings_player_ui_detail_body),
     About(R.string.settings_about_title, R.string.settings_about_detail_body),
 }

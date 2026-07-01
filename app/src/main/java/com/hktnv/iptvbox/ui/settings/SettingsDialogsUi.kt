@@ -20,17 +20,28 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
+import com.hktnv.iptvbox.ui.common.TvFocusBorder
+import com.hktnv.iptvbox.ui.common.TvFocusPanel
 import com.hktnv.iptvbox.state.StartupBehavior
 
 @Composable
@@ -39,7 +50,10 @@ internal fun StartupBehaviorDialog(
     onSelect: (StartupBehavior) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val selectedFocusRequester = remember(selectedBehavior) { FocusRequester() }
+    val focusRequesters = remember {
+        StartupBehavior.entries.associateWith { FocusRequester() }
+    }
+    val selectedFocusRequester = focusRequesters.getValue(selectedBehavior)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -51,11 +65,13 @@ internal fun StartupBehaviorDialog(
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                StartupBehavior.entries.forEach { behavior ->
+                StartupBehavior.entries.forEachIndexed { index, behavior ->
                     StartupBehaviorRow(
                         behavior = behavior,
                         selected = behavior == selectedBehavior,
-                        focusRequester = if (behavior == selectedBehavior) selectedFocusRequester else null,
+                        focusRequester = focusRequesters.getValue(behavior),
+                        upFocusRequester = focusRequesters[StartupBehavior.entries.getOrNull(index - 1)],
+                        downFocusRequester = focusRequesters[StartupBehavior.entries.getOrNull(index + 1)],
                         onSelect = {
                             onSelect(behavior)
                             onDismiss()
@@ -107,22 +123,43 @@ internal fun SettingsInfoDialog(
 private fun StartupBehaviorRow(
     behavior: StartupBehavior,
     selected: Boolean,
-    focusRequester: FocusRequester?,
+    focusRequester: FocusRequester,
+    upFocusRequester: FocusRequester?,
+    downFocusRequester: FocusRequester?,
     onSelect: () -> Unit,
 ) {
+    var focused by remember { mutableStateOf(false) }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+            .focusRequester(focusRequester)
+            .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                when (event.key) {
+                    Key.DirectionUp -> upFocusRequester.requestFocusSafely()
+                    Key.DirectionDown -> downFocusRequester.requestFocusSafely()
+                    Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
+                        onSelect()
+                        true
+                    }
+                    else -> false
+                }
+            }
+            .onFocusChanged { focused = it.isFocused }
             .focusable()
             .clickable(onClick = onSelect),
-        color = if (selected) {
+        color = if (focused) {
+            TvFocusPanel
+        } else if (selected) {
             MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
         } else {
             MaterialTheme.colorScheme.surface
         },
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceBorder),
+        border = BorderStroke(
+            width = if (focused) 2.dp else 1.dp,
+            color = if (focused) TvFocusBorder else MaterialTheme.colorScheme.surfaceBorder,
+        ),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
@@ -156,6 +193,10 @@ private fun StartupBehaviorRow(
             }
         }
     }
+}
+
+private fun FocusRequester?.requestFocusSafely(): Boolean {
+    return this != null && runCatching { requestFocus() }.getOrDefault(false)
 }
 
 @Composable

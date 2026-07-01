@@ -233,6 +233,9 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     fun openPlaylistEntry() {
         screen = AppScreen.PLAYLISTS; showPlaylistEntry = true; playlistDetailId = null; applyDrawerEvent(NavigationDrawerEvent.CollapseForContentFocus)
     }
+    fun openPlaylistLibrary() {
+        screen = AppScreen.PLAYLISTS; showPlaylistEntry = false; playlistDetailId = null; applyDrawerEvent(NavigationDrawerEvent.CollapseForContentFocus); requestContentFocus()
+    }
     fun navigate(target: AppScreen) {
         pendingNavigationStartedAt = SystemClock.elapsedRealtime()
         if (!showPlaylistEntry && target == screen && target != AppScreen.CATALOG) {
@@ -399,7 +402,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onSeasonSelected = { selectedSeasonNumber = it }, onShowItemOptions = { contentOptionsItem = it },
         onQueryChange = { searchDraft = it }, onSearch = { submittedSearch = searchDraft.trim() },
         onSelectPlayerItem = ::selectPlayerItem,
-        onOpenPlaylistEntry = ::openPlaylistEntry, onNavigate = ::navigate, onDrawerEvent = ::applyDrawerEvent,
+        onOpenPlaylistEntry = ::openPlaylistLibrary, onNavigate = ::navigate, onDrawerEvent = ::applyDrawerEvent,
         onStartupBehaviorChange = startupBehaviorStore::setBehavior,
         onRequestExitConfirmation = { showExitDialog = true }, onDismissBanner = { banner = null },
     )

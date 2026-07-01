@@ -52,6 +52,7 @@
     <string name="settings_player_ui_title">Oynatıcı arayüzü</string>
     <string name="settings_player_ui_value">Modern OSD</string>
     <string name="settings_player_ui_caption">IPTV Box kumanda kontrolleri ve içerik listesi</string>
+    <string name="settings_player_ui_detail_body">Modern OSD, IPTV Box için orijinal olarak geliştirilmiş tam ekran oynatıcı arayüzüdür. Kumanda ile oynat/duraklat, kanal geçişi, içerik listesi ve izleme bilgilerini sade bir deneyimde toplar.</string>
     <string name="settings_startup_title">Başlangıç davranışı</string>
     <string name="settings_startup_subtitle">Uygulama açıldığında ne yapılsın</string>
     <string name="settings_startup_option_home">Ana sayfa</string>
