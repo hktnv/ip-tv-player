@@ -23,11 +23,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.PlaylistAutoUpdateHourOptions
@@ -64,7 +66,11 @@ internal fun PlaylistDetailScreen(
         item {
             ScreenHeader(
                 title = playlist.name,
-                subtitle = if (active) "Aktif oynatma listesi" else "Oynatma listesi yönetimi",
+                subtitle = if (active) {
+                    stringResource(R.string.playlist_active_subtitle)
+                } else {
+                    stringResource(R.string.playlist_management_subtitle)
+                },
                 actionLabel = null,
                 onAction = null,
             )
@@ -72,15 +78,18 @@ internal fun PlaylistDetailScreen(
         item {
             DetailPanel {
                 DetailLine(
-                    "Kaynak tipi",
+                    stringResource(R.string.playlist_source_type),
                     if (playlist.xtreamApiSupported) {
-                        "${playlist.type.label()} · Xtream API Destekli"
+                        "${playlist.type.label()} · ${stringResource(R.string.playlist_xtream_supported)}"
                     } else {
                         playlist.type.label()
                     },
                 )
-                DetailLine("İçerik özeti", "${stats.total} içerik · ${stats.live} canlı · ${stats.movies} film · ${stats.series} dizi")
-                DetailLine("Otomatik güncelleme", playlistAutoUpdateLabel(playlist.autoUpdateHours))
+                DetailLine(
+                    stringResource(R.string.playlist_content_summary),
+                    "${stats.total} içerik · ${stats.live} canlı · ${stats.movies} film · ${stats.series} dizi",
+                )
+                DetailLine(stringResource(R.string.playlist_auto_refresh), playlistAutoUpdateLabel(playlist.autoUpdateHours))
             }
         }
         item {
@@ -142,7 +151,7 @@ private fun AutoUpdateSelector(
 ) {
     DetailPanel {
         Text(
-            "Otomatik güncelleme aralığı",
+            stringResource(R.string.playlist_auto_refresh_interval),
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
@@ -220,7 +229,13 @@ private fun PlaylistDetailActions(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
         ) {
-            Text(if (active) "Listeyi Aç" else "Listeyi Aç / Kullan")
+            Text(
+                if (active) {
+                    stringResource(R.string.action_open_playlist)
+                } else {
+                    stringResource(R.string.action_open_or_use_playlist)
+                },
+            )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedButton(
@@ -228,14 +243,20 @@ private fun PlaylistDetailActions(
                 enabled = !refreshing,
                 modifier = Modifier.weight(1f),
             ) {
-                Text(if (refreshing) "Yenileniyor" else "Yenile")
+                Text(
+                    if (refreshing) {
+                        stringResource(R.string.action_refreshing)
+                    } else {
+                        stringResource(R.string.action_refresh)
+                    },
+                )
             }
             OutlinedButton(onClick = onRename, modifier = Modifier.weight(1f)) {
-                Text("Düzenle")
+                Text(stringResource(R.string.action_edit))
             }
         }
         OutlinedButton(onClick = onDelete, modifier = Modifier.fillMaxWidth()) {
-            Text("Sil", color = MaterialTheme.colorScheme.error)
+            Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
         }
     }
 }

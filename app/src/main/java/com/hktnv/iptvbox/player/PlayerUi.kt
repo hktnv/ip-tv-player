@@ -337,6 +337,7 @@ internal fun PlayerScreen(
     ) {
         PlayerSurfaceView(
             player = player,
+            surfaceKey = item.id,
             controlsVisible = controlsVisible,
             contentListVisible = contentListVisible,
             exitConfirmVisible = exitConfirmVisible || connectionTimeoutVisible,

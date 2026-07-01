@@ -30,33 +30,33 @@ internal fun PlayerMediaSwitchLifecycle(
         onBeforeSwitch()
         pendingSwitchStartedAtMs = SystemClock.elapsedRealtime()
         latestDiagnostics?.logChannelSwitchStart(targetItemId)
-        val shouldPrepare = if (activeQueueSignature != queue.signature || player.mediaItemCount != queue.mediaItems.size) {
-            latestDiagnostics?.logMediaSwitchPlan(
-                plan = "set_media_items",
-                index = queue.currentIndex,
-                queueSize = queue.mediaItems.size,
-            )
-            player.setMediaItems(queue.mediaItems, queue.currentIndex, C.TIME_UNSET)
-            activeQueueSignature = queue.signature
-            true
-        } else if (
-            player.currentMediaItemIndex != queue.currentIndex ||
-            player.currentMediaItem?.mediaId != targetItemId
-        ) {
-            latestDiagnostics?.logMediaSwitchPlan(
-                plan = "seek_to_queue_index",
-                index = queue.currentIndex,
-                queueSize = queue.mediaItems.size,
-            )
-            player.seekToDefaultPosition(queue.currentIndex)
-            player.playbackState == Player.STATE_IDLE
-        } else {
-            latestDiagnostics?.logMediaSwitchPlan(
-                plan = "reuse_current_item",
-                index = queue.currentIndex,
-                queueSize = queue.mediaItems.size,
-            )
-            player.playbackState == Player.STATE_IDLE
+        val switchPlan = choosePlayerMediaSwitchPlan(
+            activeQueueSignature = activeQueueSignature,
+            playerMediaItemCount = player.mediaItemCount,
+            currentMediaItemIndex = player.currentMediaItemIndex,
+            currentMediaId = player.currentMediaItem?.mediaId,
+            queue = queue,
+        )
+        val shouldPrepare = when (switchPlan) {
+            PlayerMediaSwitchPlan.SetQueue,
+            PlayerMediaSwitchPlan.ResetQueueAtTarget -> {
+                latestDiagnostics?.logMediaSwitchPlan(
+                    plan = switchPlan.name.lowercase(),
+                    index = queue.currentIndex,
+                    queueSize = queue.mediaItems.size,
+                )
+                player.setMediaItems(queue.mediaItems, queue.currentIndex, C.TIME_UNSET)
+                activeQueueSignature = queue.signature
+                true
+            }
+            PlayerMediaSwitchPlan.ReuseCurrent -> {
+                latestDiagnostics?.logMediaSwitchPlan(
+                    plan = "reuse_current_item",
+                    index = queue.currentIndex,
+                    queueSize = queue.mediaItems.size,
+                )
+                player.playbackState == Player.STATE_IDLE
+            }
         }
         player.playWhenReady = true
         if (shouldPrepare) {

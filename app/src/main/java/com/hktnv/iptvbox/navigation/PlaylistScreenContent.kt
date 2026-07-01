@@ -203,6 +203,7 @@ internal fun PlaylistScreenContent(
             onReload = { selectedPlaylist?.let(onReloadPlaylist) },
             onAddPlaylist = onAddPlaylist,
             onOpenPlaylistEntry = onOpenPlaylistEntry,
+            refreshProgress = playlistImportProgress,
             contentPadding = contentPadding,
             initialFocusRequester = contentInitialFocusRequester,
             onRequestSideMenu = onRequestSideMenu,

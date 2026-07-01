@@ -223,27 +223,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     NavigationTimingEffect(restoredApplied, screen, pendingNavigationStartedAt, telemetry) { pendingNavigationStartedAt = null }
     AutoDismissBannerEffect(banner = banner, onDismiss = { banner = null })
     fun currentContextItemsForPlayer(item: CatalogItem): List<CatalogItem> {
-        val snapshot = catalogSnapshot
-        val sourceItems = when (screen) {
-            AppScreen.CATALOG -> when {
-                selectedTab == CatalogTab.SERIES && selectedSeriesTitle != null ->
-                    snapshot?.episodes(selectedSeriesTitle.orEmpty(), selectedSeasonNumber).orEmpty()
-                showCatalogCategoryLanding -> snapshot?.items(selectedTab).orEmpty()
-                else -> snapshot?.visibleItems(selectedTab, selectedCategory).orEmpty()
-            }
-            AppScreen.SEARCH -> snapshot
-                ?.let { catalogRepository.search(it, submittedSearch, performanceMode.searchResultLimit) }
-                .orEmpty()
-            AppScreen.LATEST -> latestItemsForPlayer(snapshot)
-            AppScreen.FAVORITES -> favoriteItems
-            AppScreen.RECENT -> recentItems
-            AppScreen.HOME -> when {
-                recentItems.any { it.id == item.id } -> recentItems
-                favoriteItems.any { it.id == item.id } -> favoriteItems
-                else -> snapshot?.items(item.tabForPlayerContext()).orEmpty()
-            }
-            else -> emptyList()
-        }
+        val sourceItems = catalogSnapshot?.playbackContextItemsFor(item).orEmpty()
         return contextWindowForPlayer(sourceItems, item)
     }
 

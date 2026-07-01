@@ -26,6 +26,21 @@ internal fun latestItemsForPlayer(snapshot: CatalogSnapshot?): List<CatalogItem>
         .sortedByDescending { it.addedAtEpochMillis }
 }
 
+internal fun CatalogSnapshot.playbackContextItemsFor(item: CatalogItem): List<CatalogItem> {
+    val tab = item.tabForPlayerContext()
+    return when (item.kind) {
+        ContentKind.EPISODE -> {
+            val seriesTitle = item.seriesTitle?.takeIf { it.isNotBlank() }
+            if (seriesTitle != null) {
+                episodes(seriesTitle, item.seasonNumber)
+            } else {
+                visibleItems(tab, item.category.takeIf { !it.isNullOrBlank() })
+            }
+        }
+        else -> visibleItems(tab, item.category.takeIf { !it.isNullOrBlank() })
+    }.ifEmpty { items(tab) }
+}
+
 internal fun CatalogItem.tabForPlayerContext(): CatalogTab {
     return when (kind) {
         ContentKind.LIVE_CHANNEL,

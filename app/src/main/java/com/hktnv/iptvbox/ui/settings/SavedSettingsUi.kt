@@ -3,6 +3,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
@@ -23,18 +25,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.model.CatalogItem
 import kotlinx.coroutines.launch
 import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.model.LoadedPlaylist
+import com.hktnv.iptvbox.model.PlaylistImportProgress
 import com.hktnv.iptvbox.model.ScreenBottomPadding
 import com.hktnv.iptvbox.player.PlayerUiMode
+import com.hktnv.iptvbox.state.contentProgressLabel
 import com.hktnv.iptvbox.telemetry.PerformanceDiagnostics
 import com.hktnv.iptvbox.ui.common.EmptyCatalog
 import com.hktnv.iptvbox.ui.common.EmptyState
@@ -72,11 +78,11 @@ internal fun SavedItemsScreen(
             .padding(horizontal = contentPadding),
     ) {
         if (snapshot == null || catalogIndexLoading) {
-            LoadingPanel("Katalog hazırlanıyor", Modifier.padding(top = 18.dp))
+            LoadingPanel(stringResource(R.string.catalog_preparing), Modifier.padding(top = 18.dp))
         } else if (items.isEmpty()) {
             EmptyState(
                 title = emptyText,
-                body = "Katalogdaki içerikleri seçtikçe bu ekran otomatik dolar.",
+                body = stringResource(R.string.empty_saved_body),
                 actionLabel = null,
                 onAction = null,
                 modifier = Modifier.padding(top = 18.dp),
@@ -126,11 +132,11 @@ internal fun LatestItemsScreen(
             .padding(horizontal = contentPadding),
     ) {
         if (snapshot == null || catalogIndexLoading) {
-            LoadingPanel("Katalog hazırlanıyor", Modifier.padding(top = 18.dp))
+            LoadingPanel(stringResource(R.string.catalog_preparing), Modifier.padding(top = 18.dp))
         } else if (items.isEmpty()) {
             EmptyState(
-                title = "Son eklenen içerik yok",
-                body = "Oynatma listesi hazır olduğunda yeni içerikler burada görünür.",
+                title = stringResource(R.string.empty_latest_title),
+                body = stringResource(R.string.empty_latest_body),
                 actionLabel = null,
                 onAction = null,
                 modifier = Modifier.padding(top = 18.dp),
@@ -159,6 +165,7 @@ internal fun SettingsScreen(
     onReload: () -> Unit,
     onAddPlaylist: () -> Unit,
     onOpenPlaylistEntry: () -> Unit,
+    refreshProgress: PlaylistImportProgress?,
     contentPadding: Dp,
     initialFocusRequester: FocusRequester? = null,
     onRequestSideMenu: (() -> Unit)? = null,
@@ -170,6 +177,9 @@ internal fun SettingsScreen(
     val playerUiFocusRequester = remember { FocusRequester() }
     val diagnosticsFocusRequester = remember { FocusRequester() }
     val playlistFocusRequester = remember { FocusRequester() }
+    val playlistRefreshProgress = playlist?.let { current ->
+        refreshProgress?.takeIf { it.playlistId == current.id }
+    }
     fun scrollTo(index: Int) {
         scope.launch { listState.animateScrollToItem(index) }
     }
@@ -196,9 +206,9 @@ internal fun SettingsScreen(
                 onRequestSideMenu = onRequestSideMenu,
             ) {
                 InfoPanelContent(
-                    title = "Başlangıç",
-                    body = "Son oynatma listesi, favoriler ve son izlenenler bu cihazda hatırlanır.",
-                    actionLabel = "Liste seçimine dön",
+                    title = stringResource(R.string.settings_start_title),
+                    body = stringResource(R.string.settings_start_body),
+                    actionLabel = stringResource(R.string.action_return_playlist_entry),
                     onAction = onOpenPlaylistEntry,
                 )
             }
@@ -212,8 +222,8 @@ internal fun SettingsScreen(
                 onRequestSideMenu = onRequestSideMenu,
             ) {
                 InfoPanelContent(
-                    title = "Gizlilik",
-                    body = "Oynatma listesi bilgileri yalnızca bu cihazda saklanır.",
+                    title = stringResource(R.string.settings_privacy_title),
+                    body = stringResource(R.string.settings_privacy_body),
                 )
             }
         }
@@ -253,18 +263,25 @@ internal fun SettingsScreen(
             ) {
                 if (playlist == null) {
                     InfoPanelContent(
-                        title = "Oynatma listesi yok",
-                        body = "Liste eklediğinizde yenileme ve katalog bilgileri burada görünür.",
-                        actionLabel = "Liste Ekle",
+                        title = stringResource(R.string.playlist_settings_title),
+                        body = stringResource(R.string.playlist_settings_body),
+                        actionLabel = stringResource(R.string.action_add_playlist),
                         onAction = onAddPlaylist,
                     )
                 } else {
                     InfoPanelContent(
                         title = playlist.name,
                         body = playlist.catalogSummary(),
-                        actionLabel = "Yenile",
+                        actionLabel = if (playlistRefreshProgress?.active == true) {
+                            stringResource(R.string.action_refreshing)
+                        } else {
+                            stringResource(R.string.action_refresh)
+                        },
                         onAction = onReload,
-                    )
+                        actionEnabled = playlistRefreshProgress?.active != true,
+                    ) {
+                        playlistRefreshProgress?.let { SettingsPlaylistProgress(it) }
+                    }
                 }
             }
         }
@@ -277,14 +294,48 @@ private fun InfoPanelContent(
     body: String,
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null,
+    actionEnabled: Boolean = true,
+    extraContent: @Composable ColumnScope.() -> Unit = {},
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(title, color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, lineHeight = 19.sp)
+        extraContent()
         if (actionLabel != null && onAction != null) {
-            OutlinedButton(onClick = onAction, shape = RoundedCornerShape(8.dp)) {
+            OutlinedButton(onClick = onAction, enabled = actionEnabled, shape = RoundedCornerShape(8.dp)) {
                 Text(actionLabel)
             }
         }
+    }
+}
+
+@Composable
+private fun SettingsPlaylistProgress(progress: PlaylistImportProgress) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            text = progress.error ?: progress.message,
+            color = if (progress.error == null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        if (progress.error == null) {
+            LinearProgressIndicator(
+                progress = {
+                    val total = progress.totalItems ?: 0
+                    if (total > 0) {
+                        (progress.processedItems.toFloat() / total.toFloat()).coerceIn(0f, 1f)
+                    } else {
+                        0f
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        Text(
+            text = progress.error ?: contentProgressLabel(progress.processedItems, progress.totalItems),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 13.sp,
+            lineHeight = 17.sp,
+        )
     }
 }

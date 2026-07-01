@@ -10,6 +10,7 @@ import androidx.media3.common.Player
 @Composable
 internal fun PlayerSurfaceView(
     player: Player,
+    surfaceKey: String,
     controlsVisible: Boolean,
     contentListVisible: Boolean,
     exitConfirmVisible: Boolean,
@@ -22,7 +23,7 @@ internal fun PlayerSurfaceView(
     AndroidView(
         factory = { context ->
             TvRemotePlayerView(context).apply {
-                this.player = player
+                bindPlayer(player, surfaceKey)
                 this.onOverlayKeyEvent = onOverlayKeyEvent
                 this.shouldHandleKeyCode = shouldHandleKeyCode
                 this.onRemoteCommand = onRemoteCommand
@@ -33,7 +34,7 @@ internal fun PlayerSurfaceView(
             }
         },
         update = { view ->
-            view.player = player
+            view.bindPlayer(player, surfaceKey)
             view.onOverlayKeyEvent = onOverlayKeyEvent
             view.shouldHandleKeyCode = shouldHandleKeyCode
             view.onRemoteCommand = onRemoteCommand
