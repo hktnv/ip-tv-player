@@ -61,6 +61,7 @@ internal fun PlayerScreen(
         queue.toPlayerMediaQueue(playerMediaItems)
     }
     var manuallyPaused by remember(player) { mutableStateOf(false) }
+    var connectionRetryRevision by remember(item.id) { mutableIntStateOf(0) }
     val diagnostics = remember(player, diagnosticsContext) {
         diagnosticsContext?.let { context ->
             PlayerDiagnosticLogger(
@@ -127,6 +128,21 @@ internal fun PlayerScreen(
     }
     PlayerDiagnosticsLifecycle(player = player, diagnostics = diagnostics)
 
+    var connectionTimeoutDismissed by remember(player, item.id, connectionRetryRevision) {
+        mutableStateOf(false)
+    }
+    val connectionAttempt = rememberPlayerConnectionAttemptSnapshot(
+        player = player,
+        itemId = item.id,
+        retryRevision = connectionRetryRevision,
+        manuallyPaused = manuallyPaused,
+    )
+    val connectionTimeoutUi = playerConnectionTimeoutUiState(
+        awaitingConnection = connectionAttempt.awaitingConnection,
+        elapsedMs = connectionAttempt.elapsedMs,
+        timeoutDismissed = connectionTimeoutDismissed,
+    )
+
     var inputState by remember { mutableStateOf(PlayerInputState.Watching) }
     var exitChoice by remember { mutableStateOf(PlayerExitChoice.Exit) }
     var controlsRevision by remember { mutableIntStateOf(0) }
@@ -135,8 +151,9 @@ internal fun PlayerScreen(
     val controlsVisible = inputState == PlayerInputState.ControlsVisible
     val contentListVisible = inputState == PlayerInputState.ContentListVisible
     val exitConfirmVisible = inputState == PlayerInputState.ExitConfirmVisible
-    val osdVisible = controlsVisible && !contentListVisible && !exitConfirmVisible
-    val zappingInfoActive = zappingInfoVisible && inputState == PlayerInputState.Watching
+    val connectionTimeoutVisible = connectionTimeoutUi.showTimeoutDialog
+    val osdVisible = controlsVisible && !contentListVisible && !exitConfirmVisible && !connectionTimeoutVisible
+    val zappingInfoActive = zappingInfoVisible && inputState == PlayerInputState.Watching && !connectionTimeoutVisible
     val playerFocusRequester = remember { FocusRequester() }
     LaunchedEffect(item.id, inputState) {
         if (inputState == PlayerInputState.Watching) runCatching { playerFocusRequester.requestFocus() }
@@ -182,6 +199,21 @@ internal fun PlayerScreen(
         player.seekTo(target)
         updatePlaybackSnapshot()
     }
+
+    fun retryCurrentContent() {
+        connectionTimeoutDismissed = false
+        connectionRetryRevision++
+        manuallyPaused = false
+        inputState = PlayerInputState.Watching
+        zappingInfoVisible = false
+        if (player.mediaItemCount > 0) {
+            player.seekToDefaultPosition(player.currentMediaItemIndex.coerceAtLeast(0))
+        }
+        player.prepare()
+        player.play()
+        updatePlaybackSnapshot()
+    }
+
     fun applyInputResult(result: PlayerInputResult): Boolean {
         val previousState = inputState
         inputState = result.state
@@ -273,16 +305,19 @@ internal fun PlayerScreen(
         },
     )
 
-    BackHandler { handleBackPressed() }
+    BackHandler(enabled = !connectionTimeoutVisible) { handleBackPressed() }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .focusRequester(playerFocusRequester)
-            .focusable(enabled = !controlsVisible && !contentListVisible && !exitConfirmVisible)
+            .focusable(
+                enabled = !controlsVisible && !contentListVisible &&
+                    !exitConfirmVisible && !connectionTimeoutVisible,
+            )
             .onPreviewKeyEvent { event ->
-                if (inputState != PlayerInputState.Watching) {
+                if (inputState != PlayerInputState.Watching || connectionTimeoutVisible) {
                     return@onPreviewKeyEvent false
                 }
                 val command = playerRemoteCommandForComposeKey(event.key)
@@ -304,14 +339,14 @@ internal fun PlayerScreen(
             player = player,
             controlsVisible = controlsVisible,
             contentListVisible = contentListVisible,
-            exitConfirmVisible = exitConfirmVisible,
+            exitConfirmVisible = exitConfirmVisible || connectionTimeoutVisible,
             playerFocusRequester = playerFocusRequester,
             onOverlayKeyEvent = ::handleExitDialogKeyEvent,
             shouldHandleKeyCode = ::shouldHandleRemoteKey,
             onRemoteCommand = ::handleRemoteCommand,
             modifier = Modifier.fillMaxSize(),
         )
-        if (!contentListVisible && !exitConfirmVisible) {
+        if (!contentListVisible && !exitConfirmVisible && !connectionTimeoutVisible) {
             PlayerVideoTouchLayer(
                 inputState = inputState,
                 onInputStateChange = { nextState -> inputState = nextState },
@@ -329,12 +364,13 @@ internal fun PlayerScreen(
             PlayerOsdScrims()
         }
         AnimatedVisibility(
-            visible = shouldShowBufferingIndicator(playbackState, manuallyPaused),
+            visible = (shouldShowBufferingIndicator(playbackState, manuallyPaused) ||
+                connectionTimeoutUi.showLoading) && !connectionTimeoutVisible,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.align(Alignment.Center),
         ) {
-            PlayerBufferingIndicator()
+            PlayerConnectionLoadingOverlay(message = connectionTimeoutUi.message)
         }
         AnimatedVisibility(
             visible = shouldShowPlayerContentInfo(controlsVisible, PlayerExitDialogState.Hidden) &&
@@ -391,6 +427,12 @@ internal fun PlayerScreen(
                     applyInputResult(reducePlayerInput(inputState, PlayerInputAction.BackPressed))
                 },
                 modifier = Modifier.align(Alignment.CenterStart),
+            )
+        }
+        if (connectionTimeoutVisible) {
+            PlayerConnectionTimeoutDialog(
+                onRetry = ::retryCurrentContent,
+                onDismiss = { connectionTimeoutDismissed = true },
             )
         }
         if (exitConfirmVisible) {
