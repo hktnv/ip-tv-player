@@ -2,14 +2,6 @@ package com.hktnv.iptvbox.data.playlist
 
 import com.hktnv.iptvbox.core.model.CatalogItem
 
-internal data class ParsedM3uEntry(
-    val item: CatalogItem,
-    val cleaningNs: Long,
-    val seriesNs: Long,
-    val kindNs: Long,
-    val categoryNs: Long,
-)
-
 data class ParsedM3uPlaylist(
     val epgUrls: List<String>,
     val items: List<CatalogItem>,
@@ -49,8 +41,6 @@ internal object M3uPlaylistPatterns {
         Regex("""\bsezon\s*(\d{1,2})\s*(?:bölüm|bolum|episode|ep\.?)\s*(\d{1,3})\b""", RegexOption.IGNORE_CASE),
         Regex("""\b(\d{1,2})\.\s*sezon\s*(\d{1,3})\.\s*(?:bölüm|bolum)\b""", RegexOption.IGNORE_CASE),
     )
-    val movieExtensionRegex = Regex("""\.(mp4|avi|mov|m4v)(\?|$)""", RegexOption.IGNORE_CASE)
-    val liveExtensionRegex = Regex("""\.(ts|m3u8)(\?|$)""", RegexOption.IGNORE_CASE)
     val extInfRegex = Regex("""#EXTINF[^,]*,?""", RegexOption.IGNORE_CASE)
     val urlRegex = Regex("""https?://\S+""", RegexOption.IGNORE_CASE)
     val secretParamRegex = Regex("""\b(output|type|username|password|token)=\S+""", RegexOption.IGNORE_CASE)

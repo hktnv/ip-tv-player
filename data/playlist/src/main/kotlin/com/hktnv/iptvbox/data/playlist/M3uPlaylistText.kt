@@ -1,5 +1,7 @@
 package com.hktnv.iptvbox.data.playlist
 
+import java.util.Locale
+
 internal fun cleanM3uTitle(value: String): String {
     return repairM3uEncoding(value)
         .replace(M3uPlaylistPatterns.extInfRegex, " ")
@@ -7,10 +9,30 @@ internal fun cleanM3uTitle(value: String): String {
         .replace(M3uPlaylistPatterns.urlRegex, " ")
         .replace(M3uPlaylistPatterns.secretParamRegex, " ")
         .replace(M3uPlaylistPatterns.whitespaceRegex, " ")
-        .trim(' ', ',', '-', '|', '»', '•')
+        .trim(' ', ',', '-', '|', '\u00BB', '\u2022')
         .stripLanguagePrefix()
         .replace(M3uPlaylistPatterns.whitespaceRegex, " ")
         .trim()
+}
+
+internal fun normalizeM3uMarkers(value: String): String {
+    val lower = repairM3uEncoding(value).lowercase(Locale.ROOT)
+    val builder = StringBuilder(lower.length)
+    lower.forEach { char ->
+        builder.append(
+            when (char) {
+                '\u00E7' -> 'c'
+                '\u011F' -> 'g'
+                '\u0131', '\u00EE', '\u00EF' -> 'i'
+                '\u00F6' -> 'o'
+                '\u015F' -> 's'
+                '\u00FC' -> 'u'
+                '\u00E2' -> 'a'
+                else -> char
+            },
+        )
+    }
+    return builder.toString()
 }
 
 internal fun cleanM3uCategory(value: String?): String? {
@@ -38,7 +60,7 @@ internal fun m3uUrlFileName(url: String): String {
 }
 
 internal fun repairM3uEncoding(value: String): String {
-    if (!value.any { it == 'Ã' || it == 'Ä' || it == 'Å' }) return value
+    if (!value.any { it == '\u00C3' || it == '\u00C4' || it == '\u00C5' }) return value
     return runCatching {
         String(value.toByteArray(Charsets.ISO_8859_1), Charsets.UTF_8)
     }.getOrDefault(value)

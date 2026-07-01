@@ -10,10 +10,18 @@ import com.hktnv.iptvbox.model.PlaylistStats
 import com.hktnv.iptvbox.model.SeasonGroup
 import com.hktnv.iptvbox.model.SeriesGroup
 import com.hktnv.iptvbox.ui.catalog.label
+import java.util.Locale
 
 private val episodeTitleRegex = Regex(
     """(?i)\bS(?:eason)?\s*(\d{1,2})\s*[ ._-]*E(?:pisode)?\s*(\d{1,3})\b|\b(\d{1,2})x(\d{1,3})\b""",
 )
+private val extInfRegex = Regex("""#EXTINF[^,]*,?""", RegexOption.IGNORE_CASE)
+private val attributeLikeRegex = Regex("[\\w-]+=\"[^\"]*\"", RegexOption.IGNORE_CASE)
+private val httpUrlRegex = Regex("""https?://\S+""", RegexOption.IGNORE_CASE)
+private val secretParamRegex = Regex("""\b(output|type|username|password|token)=\S+""", RegexOption.IGNORE_CASE)
+private val languagePrefixRegex = Regex("""^[A-Z]{2,3}\s*[:|\-]\s*""")
+private val whitespaceRegex = Regex("""\s+""")
+private val seriesMarkerRegex = Regex("""(?i)\bS\d{1,2}\s*E\d{1,3}\b""")
 
 internal fun LoadedPlaylist.stats(): PlaylistStats {
     if (cachedLiveCount != null && cachedMovieCount != null && cachedSeriesCount != null) {
@@ -101,6 +109,8 @@ internal fun catalogSignature(playlists: List<LoadedPlaylist>): String {
 }
 
 internal fun simpleUserMessage(value: String): String {
+    val clean = value.trim()
+    if (clean.isUserFacingPlaylistError()) return clean
     val normalized = SearchNormalizer.normalize(value)
     return when {
         normalized.isBlank() -> ""
@@ -110,6 +120,14 @@ internal fun simpleUserMessage(value: String): String {
         "yuklen" in normalized || "http" in normalized || "https" in normalized -> ""
         else -> ""
     }
+}
+
+private fun String.isUserFacingPlaylistError(): Boolean {
+    return startsWith("Adres ") ||
+        startsWith("Sunucu ") ||
+        startsWith("Bağlantı ") ||
+        startsWith("Liste ") ||
+        startsWith("İçerik ")
 }
 
 internal fun LoadedPlaylist.seriesGroups(): List<SeriesGroup> = items
@@ -146,7 +164,7 @@ internal fun LoadedPlaylist.seriesPreview(limit: Int): List<SeriesGroup> {
 internal fun CatalogItem.seriesDisplayTitle(): String {
     val explicit = seriesTitle?.cleanUiTitle().orEmpty()
     if (explicit.isNotBlank()) return explicit.readableContentTitle()
-    val marker = Regex("""(?i)\bS\d{1,2}\s*E\d{1,3}\b""").find(title)
+    val marker = seriesMarkerRegex.find(title)
     val inferred = if (marker == null) title else title.substring(0, marker.range.first)
     return inferred.cleanUiTitle().ifBlank { displayTitle() }.readableContentTitle()
 }
@@ -183,12 +201,12 @@ internal fun CatalogItem.posterRatio(): Float {
 }
 
 internal fun String.cleanUiTitle(): String {
-    return replace(Regex("""#EXTINF[^,]*,?""", RegexOption.IGNORE_CASE), " ")
-        .replace(Regex("[\\w-]+=\"[^\"]*\"", RegexOption.IGNORE_CASE), " ")
-        .replace(Regex("""https?://\S+""", RegexOption.IGNORE_CASE), " ")
-        .replace(Regex("""\b(output|type|username|password|token)=\S+""", RegexOption.IGNORE_CASE), " ")
-        .replace(Regex("""^[A-Z]{2,3}\s*[:|\-]\s*"""), "")
-        .replace(Regex("""\s+"""), " ")
+    return replace(extInfRegex, " ")
+        .replace(attributeLikeRegex, " ")
+        .replace(httpUrlRegex, " ")
+        .replace(secretParamRegex, " ")
+        .replace(languagePrefixRegex, "")
+        .replace(whitespaceRegex, " ")
         .trim { it == ' ' || it == ',' || it == '-' || it == '|' || it.code == 0x00BB || it.code == 0x2022 }
 }
 
@@ -252,14 +270,45 @@ private fun CatalogItem.normalizedForUi(): CatalogItem {
 
 private fun CatalogItem.refinedKind(): ContentKind {
     val url = streamUrl.lowercase()
-    val text = SearchNormalizer.normalize(listOf(title, category.orEmpty(), tvgName.orEmpty()).joinToString(" "))
+    val text = normalizeKindMarkerForUi(title, category.orEmpty(), tvgName.orEmpty())
     return when {
-        "/live/" in url || Regex("\\.(ts|m3u8)(\\?|$)").containsMatchIn(url) -> ContentKind.LIVE_CHANNEL
+        "/live/" in url || url.hasUiPathExtension("ts", "m3u8") -> ContentKind.LIVE_CHANNEL
         "/series/" in url || episodeHint() != null -> ContentKind.EPISODE
-        "/movie/" in url || Regex("\\.(mp4|mkv|avi|mov|m4v)(\\?|$)").containsMatchIn(url) -> ContentKind.MOVIE
-        Regex("\\b(film|filmler|movie|movies|vod|sinema)\\b").containsMatchIn(text) -> ContentKind.MOVIE
+        "/movie/" in url || url.hasUiPathExtension("mp4", "mkv", "avi", "mov", "m4v") -> ContentKind.MOVIE
+        text.hasMovieMarkerForUi() -> ContentKind.MOVIE
         else -> kind
     }
+}
+
+private fun normalizeKindMarkerForUi(vararg values: String): String {
+    return values.joinToString(" ")
+        .lowercase(Locale.ROOT)
+        .replace('ğ', 'g')
+        .replace('ü', 'u')
+        .replace('ş', 's')
+        .replace('ı', 'i')
+        .replace('ö', 'o')
+        .replace('ç', 'c')
+}
+
+private fun String.hasMovieMarkerForUi(): Boolean {
+    return "film" in this ||
+        "filmler" in this ||
+        "movie" in this ||
+        "movies" in this ||
+        "vod" in this ||
+        "sinema" in this
+}
+
+private fun String.hasUiPathExtension(vararg extensions: String): Boolean {
+    val pathEnd = indexOf('?').takeIf { it >= 0 } ?: length
+    for (extension in extensions) {
+        val suffix = ".$extension"
+        if (pathEnd >= suffix.length && regionMatches(pathEnd - suffix.length, suffix, 0, suffix.length)) {
+            return true
+        }
+    }
+    return false
 }
 
 private data class EpisodeHint(

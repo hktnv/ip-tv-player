@@ -15,7 +15,6 @@ class RemotePlaylistLoader(
     private val client: OkHttpClient = HttpClientFactory.create(),
     private val directoryParser: PlaylistDirectoryParser = PlaylistDirectoryParser(),
     private val m3uParser: M3uPlaylistParser = M3uPlaylistParser(),
-    private val m3uSpooler: StreamingM3uSpooler = StreamingM3uSpooler(),
 ) {
     suspend fun load(
         playlistId: String,
@@ -100,7 +99,7 @@ class RemotePlaylistLoader(
         }
 
         if (allItems.isEmpty()) {
-            error("İçerik bulunamadı.")
+            error("İçerik bulunamadı. Liste indirildi ama içinde oynatılabilir kanal, film veya dizi yok.")
         }
 
         return PlaylistLoadResult(
@@ -123,7 +122,7 @@ class RemotePlaylistLoader(
         val fetch = fetchM3uWithFallback(playlistId, url, headers, expectedItemCount, onProgress)
         val parsed = fetch.parsed
         if (parsed.items.isEmpty()) {
-            error("İçerik bulunamadı.")
+            error("İçerik bulunamadı. Liste indirildi ama içinde oynatılabilir kanal, film veya dizi yok.")
         }
         onProgress(
             PlaylistLoadProgress(
@@ -176,7 +175,7 @@ class RemotePlaylistLoader(
             val canRetryHttp = normalizedUrl.startsWith("https://", ignoreCase = true) &&
                 firstError.isLikelyTlsForPlainHttp()
             if (!canRetryHttp) {
-                throw userFacingError(rawUrl, firstError)
+                throw playlistLoadError(rawUrl, firstError)
             }
 
             val httpUrl = "http://" + normalizedUrl.substringAfter("://")
@@ -189,7 +188,7 @@ class RemotePlaylistLoader(
                     downloadMs = fetch.downloadMs,
                 )
             }.getOrElse { secondError ->
-                throw userFacingError(httpUrl, secondError)
+                throw playlistLoadError(httpUrl, secondError)
             }
         }
     }
@@ -212,7 +211,7 @@ class RemotePlaylistLoader(
             val canRetryHttp = normalizedUrl.startsWith("https://", ignoreCase = true) &&
                 firstError.isLikelyTlsForPlainHttp()
             if (!canRetryHttp) {
-                throw userFacingError(rawUrl, firstError)
+                throw playlistLoadError(rawUrl, firstError)
             }
 
             val httpUrl = "http://" + normalizedUrl.substringAfter("://")
@@ -227,7 +226,7 @@ class RemotePlaylistLoader(
                     downloadMs = fetch.downloadMs,
                 )
             }.getOrElse { secondError ->
-                throw userFacingError(httpUrl, secondError)
+                throw playlistLoadError(httpUrl, secondError)
             }
         }
     }
@@ -283,38 +282,24 @@ class RemotePlaylistLoader(
                 if (!response.isSuccessful) {
                     throw TimedFetchException(IOException("HTTP ${response.code}"), connectionMs)
                 }
-                val downloadStartedNs = System.nanoTime()
-                val spooled = m3uSpooler.spool(response.body.byteStream()) { count ->
-                    onProgress(
-                        PlaylistLoadProgress(
-                            stage = PlaylistLoadStage.DOWNLOADING,
-                            processedItems = count,
-                            totalItems = expectedItemCount,
-                        ),
-                    )
-                }
-                val downloadMs = elapsedMs(downloadStartedNs)
-                val totalItems = expectedItemCount ?: spooled.itemCount.takeIf { it > 0 }
-                onProgress(PlaylistLoadProgress(PlaylistLoadStage.READING, totalItems = totalItems))
-                val parsed = try {
-                    spooled.file.bufferedReader(Charsets.UTF_8).useLines { lines ->
+                onProgress(PlaylistLoadProgress(PlaylistLoadStage.READING, totalItems = expectedItemCount))
+                val parsed = response.body.byteStream()
+                    .bufferedReader(Charsets.UTF_8)
+                    .useLines { lines ->
                         m3uParser.parse(playlistId, lines) { count ->
                             onProgress(
                                 PlaylistLoadProgress(
                                     stage = PlaylistLoadStage.READING,
                                     processedItems = count,
-                                    totalItems = totalItems,
+                                    totalItems = expectedItemCount,
                                 ),
                             )
                         }
                     }
-                } finally {
-                    spooled.file.delete()
-                }
                 M3uFetchPayload(
                     parsed = parsed,
                     connectionOpenMs = connectionMs,
-                    downloadMs = downloadMs,
+                    downloadMs = 0L,
                 )
             }
         } catch (throwable: Throwable) {
