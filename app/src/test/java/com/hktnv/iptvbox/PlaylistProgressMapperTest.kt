@@ -17,6 +17,11 @@ class PlaylistProgressMapperTest {
     }
 
     @Test
+    fun capsProcessedItemProgressAtTotalCount() {
+        assertEquals("8822 / 8822 içerik", contentProgressLabel(9_000, 8_822))
+    }
+
+    @Test
     fun mapsCompletedLoaderProgressToInactiveUiState() {
         val progress = PlaylistLoadProgress(
             stage = PlaylistLoadStage.COMPLETED,

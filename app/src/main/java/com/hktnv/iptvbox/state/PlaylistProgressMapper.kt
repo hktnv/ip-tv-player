@@ -26,7 +26,7 @@ internal fun PlaylistLoadProgress.toPlaylistImportProgress(playlistId: String): 
 
 internal fun contentProgressLabel(processedItems: Int, totalItems: Int?): String {
     return if (totalItems != null && totalItems > 0) {
-        "$processedItems / $totalItems içerik"
+        "${processedItems.coerceIn(0, totalItems)} / $totalItems içerik"
     } else {
         "$processedItems içerik"
     }
