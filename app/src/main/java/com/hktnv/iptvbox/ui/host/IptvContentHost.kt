@@ -27,6 +27,7 @@ import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.model.AppPerformanceMode
 import com.hktnv.iptvbox.model.AppScreen
 import com.hktnv.iptvbox.model.CatalogTab
+import com.hktnv.iptvbox.model.CatalogSyncStatus
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.LocalPerformanceMode
 import com.hktnv.iptvbox.model.PlaylistImportProgress
@@ -72,6 +73,7 @@ internal fun IptvContentHost(
     diagnostics: PerformanceDiagnostics,
     banner: String?,
     playlistImportProgress: PlaylistImportProgress?,
+    catalogSyncStatuses: Map<String, CatalogSyncStatus>,
     sideMenuExpanded: Boolean,
     drawerFocusExpansion: NavigationDrawerFocusExpansion,
     contentFocusRequest: Int,
@@ -219,6 +221,7 @@ internal fun IptvContentHost(
                     onAutoUpdateHoursChange = onAutoUpdateHoursChange,
                     onOpenSettings = onOpenSettingsFromEntry,
                     progress = playlistImportProgress,
+                    syncStatuses = catalogSyncStatuses,
                 )
                 else -> PlaylistContentScaffold(
                     wide = wide,
@@ -242,6 +245,7 @@ internal fun IptvContentHost(
                     playerUiMode = playerUiMode,
                     banner = banner,
                     playlistImportProgress = playlistImportProgress,
+                    catalogSyncStatuses = catalogSyncStatuses,
                     sideMenuExpanded = sideMenuExpanded,
                     drawerFocusExpansion = drawerFocusExpansion,
                     contentInitialFocusRequester = contentInitialFocusRequester,

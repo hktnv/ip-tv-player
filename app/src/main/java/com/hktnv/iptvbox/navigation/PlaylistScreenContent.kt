@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.Dp
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.model.AppScreen
 import com.hktnv.iptvbox.model.CatalogTab
+import com.hktnv.iptvbox.model.CatalogSyncStatus
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.PlaylistImportProgress
 import com.hktnv.iptvbox.player.PlayerUiMode
@@ -41,6 +42,7 @@ internal fun PlaylistScreenContent(
     diagnostics: PerformanceDiagnostics,
     playerUiMode: PlayerUiMode,
     playlistImportProgress: PlaylistImportProgress?,
+    catalogSyncStatuses: Map<String, CatalogSyncStatus>,
     contentInitialFocusRequester: FocusRequester,
     catalogRepository: AppCatalogRepository,
     telemetry: AppPerformanceTelemetry,
@@ -111,6 +113,7 @@ internal fun PlaylistScreenContent(
             onDelete = onDeletePlaylist,
             onAutoUpdateHoursChange = onAutoUpdateHoursChange,
             progress = playlistImportProgress,
+            syncStatuses = catalogSyncStatuses,
             contentPadding = contentPadding,
         )
         AppScreen.CATALOG -> CatalogScreen(

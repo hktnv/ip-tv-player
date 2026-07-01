@@ -21,6 +21,15 @@
     <string name="playlist_auto_refresh">Otomatik güncelleme</string>
     <string name="playlist_auto_refresh_interval">Otomatik güncelleme aralığı</string>
     <string name="playlist_xtream_supported">Xtream API Destekli</string>
+    <string name="playlist_sync_running_title">Katalog bilgileri güncelleniyor</string>
+    <string name="playlist_sync_waiting_body">Gelişmiş katalog bilgileri hazırlanıyor.</string>
+    <string name="playlist_sync_active_series">Dizi arşivi zenginleştiriliyor: %1$s</string>
+    <string name="playlist_sync_active_movie">Katalog güncelleniyor: %1$s</string>
+    <string name="playlist_sync_active_catalog">Katalog güncelleniyor: %1$s</string>
+    <string name="playlist_sync_current_title">Katalog Güncel</string>
+    <string name="playlist_sync_current_body">Gelişmiş bilgiler entegre edildi.</string>
+    <string name="playlist_sync_failed_title">Katalog bilgileri tamamlanamadı</string>
+    <string name="playlist_sync_failed_body">Daha sonra otomatik olarak tekrar denenecek.</string>
     <string name="player_ui_mode_title">Oynatıcı arayüzü</string>
     <string name="player_ui_mode_description">Standart Media3 arayüzü ile modern IPTV kontrol arayüzü arasında geçiş yapın.</string>
     <string name="player_ui_mode_touch_hint">Kumandada OK ile değiştirin veya dokunarak seçin.</string>

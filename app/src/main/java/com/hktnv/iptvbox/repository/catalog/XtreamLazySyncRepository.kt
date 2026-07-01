@@ -32,6 +32,7 @@ internal class XtreamLazySyncRepository(
     suspend fun syncQueuedCategories(
         playlist: LoadedPlaylist,
         delayBetweenRequestsMs: Long = 1_000L,
+        onCategory: (QueuedXtreamCategory) -> Unit = {},
     ): Int {
         val credentials = XtreamM3uUrlDetector.detect(playlist.endpoint) ?: return 0
         val categories = withContext(Dispatchers.IO) {
@@ -40,6 +41,7 @@ internal class XtreamLazySyncRepository(
         var updated = 0
         categories.forEachIndexed { index, category ->
             val tab = category.catalogTab() ?: return@forEachIndexed
+            onCategory(category)
             val remote = withContext(Dispatchers.IO) {
                 runCatching {
                     when (category.kind) {

@@ -28,6 +28,7 @@ import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.model.AppScreen
 import com.hktnv.iptvbox.model.CatalogTab
+import com.hktnv.iptvbox.model.CatalogSyncStatus
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.PlaylistImportProgress
 import com.hktnv.iptvbox.player.PlayerUiMode
@@ -66,6 +67,7 @@ internal fun PlaylistContentScaffold(
     playerUiMode: PlayerUiMode,
     banner: String?,
     playlistImportProgress: PlaylistImportProgress?,
+    catalogSyncStatuses: Map<String, CatalogSyncStatus>,
     sideMenuExpanded: Boolean,
     drawerFocusExpansion: NavigationDrawerFocusExpansion,
     contentInitialFocusRequester: FocusRequester,
@@ -156,6 +158,7 @@ internal fun PlaylistContentScaffold(
                     diagnostics = diagnostics,
                     playerUiMode = playerUiMode,
                     playlistImportProgress = playlistImportProgress,
+                    catalogSyncStatuses = catalogSyncStatuses,
                     contentInitialFocusRequester = contentInitialFocusRequester,
                     catalogRepository = catalogRepository,
                     telemetry = telemetry,

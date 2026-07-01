@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.hktnv.iptvbox.data.catalog.column
+import com.hktnv.iptvbox.model.CatalogSyncStatus
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.PlaylistImportProgress
 import com.hktnv.iptvbox.model.ScreenBottomPadding
@@ -77,6 +78,7 @@ internal fun PlaylistEntryScreen(
     onAutoUpdateHoursChange: (LoadedPlaylist, Int) -> Unit,
     onOpenSettings: () -> Unit,
     progress: PlaylistImportProgress? = null,
+    syncStatuses: Map<String, CatalogSyncStatus> = emptyMap(),
 ) {
     if (playlists.isEmpty()) {
         EmptyPlaylistEntryScene(
@@ -99,6 +101,7 @@ internal fun PlaylistEntryScreen(
             onDelete = { onDeletePlaylist(detailPlaylist) },
             onAutoUpdateHoursChange = { onAutoUpdateHoursChange(detailPlaylist, it) },
             progress = progress?.takeIf { it.playlistId == detailPlaylist.id },
+            syncStatus = syncStatuses[detailPlaylist.id],
         )
         return
     }

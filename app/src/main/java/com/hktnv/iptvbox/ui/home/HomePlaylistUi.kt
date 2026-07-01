@@ -114,6 +114,7 @@ import java.util.UUID
 import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.model.CatalogTab
+import com.hktnv.iptvbox.model.CatalogSyncStatus
 import com.hktnv.iptvbox.model.HomePreviewLimit
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.PlaylistImportProgress
@@ -319,6 +320,7 @@ internal fun PlaylistScreen(
     onAutoUpdateHoursChange: (LoadedPlaylist, Int) -> Unit,
     contentPadding: Dp,
     progress: PlaylistImportProgress? = null,
+    syncStatuses: Map<String, CatalogSyncStatus> = emptyMap(),
 ) {
     val detailPlaylist = playlists.firstOrNull { it.id == detailPlaylistId }
     if (detailPlaylist != null) {
@@ -333,6 +335,7 @@ internal fun PlaylistScreen(
             onDelete = { onDelete(detailPlaylist) },
             onAutoUpdateHoursChange = { onAutoUpdateHoursChange(detailPlaylist, it) },
             progress = progress?.takeIf { it.playlistId == detailPlaylist.id },
+            syncStatus = syncStatuses[detailPlaylist.id],
         )
         return
     }

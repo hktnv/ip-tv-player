@@ -32,8 +32,6 @@ import com.hktnv.iptvbox.navigation.reduce
 import com.hktnv.iptvbox.player.PlayerUiModeStore
 import com.hktnv.iptvbox.repository.catalog.AppCatalogRepository
 import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
-import com.hktnv.iptvbox.repository.catalog.XtreamCategoryEnrichmentQueue
-import com.hktnv.iptvbox.repository.catalog.XtreamLazySyncRepository
 import com.hktnv.iptvbox.state.AppStateStore
 import com.hktnv.iptvbox.state.AutoDismissBannerEffect
 import com.hktnv.iptvbox.state.CatalogSnapshotEffect
@@ -65,7 +63,7 @@ import com.hktnv.iptvbox.update.AppUpdateInstaller
 import com.hktnv.iptvbox.update.AppUpdateService
 import com.hktnv.iptvbox.update.AppUpdateUiState
 import com.hktnv.iptvbox.update.pendingUpdate
-import kotlinx.coroutines.delay
+
 @Composable
 internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val localContext = LocalContext.current; val context = localContext.applicationContext; val activity = localContext as? android.app.Activity
@@ -73,14 +71,14 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val catalogStore = remember(context) { CatalogStore(context) }
     val metadataCleanupScheduler = remember(context, catalogStore) { MetadataCleanupScheduler(context, catalogStore) }
     val catalogRepository = remember(catalogStore) { AppCatalogRepository(catalogStore) }
-    val xtreamLazySyncRepository = remember(catalogStore) { XtreamLazySyncRepository(catalogStore) }
-    val categoryEnrichmentQueue = remember(xtreamLazySyncRepository) {
-        XtreamCategoryEnrichmentQueue(xtreamLazySyncRepository::syncQueuedCategories)
-    }
+    val catalogSyncController = rememberCatalogSyncController(context, catalogStore)
+    val xtreamLazySyncRepository = catalogSyncController.lazySyncRepository
+    val categoryEnrichmentQueue = catalogSyncController.enrichmentQueue
     val scope = rememberCoroutineScope()
     val stateStore = remember(context, catalogStore) { AppStateStore(context, catalogStore) }
     val playerUiModeStore = remember(context) { PlayerUiModeStore(context) }
     val playerUiMode by playerUiModeStore.mode.collectAsState()
+    val catalogSyncStatuses = catalogSyncController.statuses
     val updateService = remember { AppUpdateService() }
     val updateInstaller = remember(context) { AppUpdateInstaller(context) }
     val performanceMode = remember(context) { AppPerformanceMode.from(context) }
@@ -105,7 +103,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var updateState by remember { mutableStateOf<AppUpdateUiState>(AppUpdateUiState.Hidden) }; var pendingNavigationStartedAt by remember { mutableStateOf<Long?>(null) }
     var contentFocusRequest by remember { mutableStateOf(0) }; var initialContentFocusApplied by rememberSaveable { mutableStateOf(false) }
     val favoriteIds = remember { mutableStateListOf<String>() }; val recentIds = remember { mutableStateListOf<String>() }
-    val syncedSeries = remember { mutableSetOf<String>() }
     val contentInitialFocusRequester = remember { FocusRequester() }
     val drawerModel = NavigationDrawerModel(drawerState, drawerFocusExpansion)
     RestoreAppStateEffect(
@@ -172,31 +169,22 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     fun startCategoryEnrichmentQueue(playlist: LoadedPlaylist) {
         categoryEnrichmentQueue.start(scope, playlist) { catalogRefreshToken += 1 }
     }
-    LaunchedEffect(restoredApplied, selectedPlaylist?.id) {
-        val playlist = selectedPlaylist ?: return@LaunchedEffect
-        if (!restoredApplied) return@LaunchedEffect
-        delay(5_000L)
-        categoryEnrichmentQueue.run(playlist) { catalogRefreshToken += 1 }
-    }
-    LaunchedEffect(selectedPlaylist?.id, selectedSeriesTitle, catalogSnapshot, catalogRefreshToken) {
-        val playlist = selectedPlaylist ?: return@LaunchedEffect
-        val seriesTitle = selectedSeriesTitle ?: return@LaunchedEffect
-        val representative = catalogSnapshot
-            ?.episodes(seriesTitle, null)
-            ?.firstOrNull { it.xtreamId != null }
-            ?: return@LaunchedEffect
-        val syncKey = "${playlist.id}|$seriesTitle"
-        if (!syncedSeries.add(syncKey)) return@LaunchedEffect
-        val changed = xtreamLazySyncRepository.syncSeries(playlist, seriesTitle, representative)
-        if (changed) catalogRefreshToken += 1
-    }
-    LaunchedEffect(contentOptionsItem?.id, selectedPlaylist?.id) {
-        val item = contentOptionsItem ?: run {
-            contentOptionsMetadata = null
-            return@LaunchedEffect
-        }
-        contentOptionsMetadata = xtreamLazySyncRepository.syncVodMetadata(selectedPlaylist, item)
-    }
+    StartupCategoryEnrichmentEffect(
+        restoredApplied = restoredApplied,
+        selectedPlaylist = selectedPlaylist,
+        enrichmentQueue = categoryEnrichmentQueue,
+        onCatalogChanged = { catalogRefreshToken += 1 },
+    )
+    CatalogMetadataEffects(
+        selectedPlaylist = selectedPlaylist,
+        selectedSeriesTitle = selectedSeriesTitle,
+        catalogSnapshot = catalogSnapshot,
+        catalogRefreshToken = catalogRefreshToken,
+        contentOptionsItem = contentOptionsItem,
+        lazySyncRepository = xtreamLazySyncRepository,
+        onSeriesChanged = { catalogRefreshToken += 1 },
+        onContentOptionsMetadata = { contentOptionsMetadata = it },
+    )
     PersistAppStateEffect(
         restoredApplied = restoredApplied, showRecovery = showRecovery, playlistSignature = playlistSignature,
         selectedPlaylist = selectedPlaylist, playlists = playlists.toList(), screen = screen, showPlaylistEntry = showPlaylistEntry,
@@ -362,6 +350,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         selectedSeasonNumber = selectedSeasonNumber, favoriteIds = favoriteIds, recentIds = recentIds, favoriteItems = favoriteItems,
         recentItems = recentItems, playlistDetailId = playlistDetailId, diagnostics = diagnostics, banner = banner, sideMenuExpanded = drawerModel.state.expanded, drawerFocusExpansion = drawerModel.focusExpansion,
         playlistImportProgress = playlistImportProgress,
+        catalogSyncStatuses = catalogSyncStatuses,
         contentFocusRequest = contentFocusRequest, contentInitialFocusRequester = contentInitialFocusRequester,
         catalogRepository = catalogRepository, telemetry = telemetry, searchDraft = searchDraft, submittedSearch = submittedSearch,
         onPlayerBack = { screen = returnScreen; currentItem = null; playerContextItems = emptyList() },

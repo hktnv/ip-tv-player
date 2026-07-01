@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
+import com.hktnv.iptvbox.model.CatalogSyncStatus
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.PlaylistAutoUpdateHourOptions
 import com.hktnv.iptvbox.model.PlaylistImportProgress
@@ -53,6 +54,7 @@ internal fun PlaylistDetailScreen(
     onDelete: () -> Unit,
     onAutoUpdateHoursChange: (Int) -> Unit,
     progress: PlaylistImportProgress? = null,
+    syncStatus: CatalogSyncStatus? = null,
 ) {
     BackHandler(onBack = onBack)
     val stats = remember(playlist.id, playlist.items) { playlist.stats() }
@@ -90,6 +92,11 @@ internal fun PlaylistDetailScreen(
                     "${stats.total} içerik · ${stats.live} canlı · ${stats.movies} film · ${stats.series} dizi",
                 )
                 DetailLine(stringResource(R.string.playlist_auto_refresh), playlistAutoUpdateLabel(playlist.autoUpdateHours))
+            }
+        }
+        if (playlist.xtreamApiSupported || syncStatus != null) {
+            item {
+                PlaylistSyncStatusPanel(syncStatus)
             }
         }
         item {
