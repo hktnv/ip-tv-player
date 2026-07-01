@@ -128,6 +128,7 @@ private fun PlaylistDetailSplitLayout(
             )
             AutoUpdateSelector(
                 selectedHours = playlist.autoUpdateHours,
+                updatedAtEpochMillis = playlist.updatedAtEpochMillis,
                 onSelect = onAutoUpdateHoursChange,
             )
         }
@@ -159,6 +160,7 @@ private fun PlaylistDetailSingleColumn(
         )
         AutoUpdateSelector(
             selectedHours = playlist.autoUpdateHours,
+            updatedAtEpochMillis = playlist.updatedAtEpochMillis,
             onSelect = onAutoUpdateHoursChange,
         )
     }

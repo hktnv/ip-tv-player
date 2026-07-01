@@ -26,6 +26,10 @@
     <string name="playlist_auto_refresh_12_hours">12 Saat</string>
     <string name="playlist_auto_refresh_daily">Günlük</string>
     <string name="playlist_auto_refresh_banner">Otomatik güncelleme: %1$s</string>
+    <string name="playlist_last_update_never">Henüz güncellenmedi</string>
+    <string name="playlist_last_update_recent">Son güncelleme: az önce</string>
+    <string name="playlist_last_update_today">Son güncelleme: bugün %1$s</string>
+    <string name="playlist_last_update_date">Son güncelleme: %1$s</string>
     <string name="playlist_rename_success">Oynatma listesi adı güncellendi</string>
     <string name="playlist_delete_success">%1$s silindi</string>
     <string name="playlist_detail_info_section">Liste bilgileri</string>
@@ -76,15 +80,8 @@
     <string name="playlist_empty_title">İlk listenizi ekleyin</string>
     <string name="playlist_empty_body">M3U, JSON veya Xtream listenizi bağlayın; uygulama içerikleri düzenli bir kataloğa dönüştürsün.</string>
     <string name="playlist_empty_action">İlk Listeyi Ekle</string>
-    <string name="playlist_hub_status_waiting">Durum bekliyor</string>
-    <string name="playlist_hub_status_now">Güncel</string>
-    <string name="playlist_hub_status_minutes">%1$d dk</string>
-    <string name="playlist_hub_status_hours">%1$d sa</string>
-    <string name="playlist_hub_status_days">%1$d gün</string>
-    <string name="playlist_row_overflow_description">Liste işlemleri</string>
-    <string name="playlist_row_open_details">Detayları aç</string>
     <string name="playlist_row_active">Aktif</string>
-    <string name="playlist_row_meta">%1$d içerik · C %2$d · F %3$d · D %4$d</string>
+    <string name="playlist_row_meta">%1$d İçerik · %2$d Canlı TV · %3$d Film · %4$d Dizi</string>
     <string name="playlist_summary_meta">%1$s · %2$d favori · %3$d son izlenen</string>
     <string name="action_catalog">Katalog</string>
     <string name="catalog_live_tv">Canlı TV</string>

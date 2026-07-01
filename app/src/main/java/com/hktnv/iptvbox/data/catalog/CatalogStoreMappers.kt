@@ -55,6 +55,7 @@ internal fun Cursor.toPlaylist(): LoadedPlaylist {
         cachedSeriesCount = getInt(column("series_count")),
         autoUpdateHours = nullableInt("auto_update_hours") ?: 0,
         xtreamApiSupported = nullableInt("xtream_api_supported") == 1,
+        updatedAtEpochMillis = nullableLong("updated_at") ?: 0L,
     )
 }
 

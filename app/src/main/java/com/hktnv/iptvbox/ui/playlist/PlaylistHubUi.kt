@@ -47,7 +47,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
-import com.hktnv.iptvbox.model.CatalogSyncStatus
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
@@ -252,18 +251,6 @@ internal fun EmptyPlaylistEntryScene(
                 )
             }
         }
-    }
-}
-
-@Composable
-internal fun playlistSyncRelativeLabel(status: CatalogSyncStatus?): String {
-    val updatedAt = status?.updatedAtEpochMillis ?: return stringResource(R.string.playlist_hub_status_waiting)
-    val diffMinutes = ((System.currentTimeMillis() - updatedAt).coerceAtLeast(0L) / 60_000L).toInt()
-    return when {
-        diffMinutes < 1 -> stringResource(R.string.playlist_hub_status_now)
-        diffMinutes < 60 -> stringResource(R.string.playlist_hub_status_minutes, diffMinutes)
-        diffMinutes < 1_440 -> stringResource(R.string.playlist_hub_status_hours, diffMinutes / 60)
-        else -> stringResource(R.string.playlist_hub_status_days, diffMinutes / 1_440)
     }
 }
 

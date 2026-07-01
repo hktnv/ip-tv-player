@@ -11,14 +11,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,7 +36,6 @@ import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
-import com.hktnv.iptvbox.ui.common.TvRestingBorder
 import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.tvFocusElevation
 import com.hktnv.iptvbox.ui.common.tvFocusLift
@@ -54,145 +47,59 @@ internal fun PlaylistRow(
     playlist: LoadedPlaylist,
     selected: Boolean,
     onClick: () -> Unit,
-    onReload: (() -> Unit)?,
-    onRename: (() -> Unit)? = null,
-    onDelete: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    statusText: String? = null,
 ) {
     val stats = remember(playlist.id, playlist.items) { playlist.stats() }
     val totalCount = remember(stats, playlist.items.size) {
         (stats.live + stats.movies + stats.series).takeIf { it > 0 } ?: playlist.items.size
     }
     var focused by remember { mutableStateOf(false) }
-    var menuExpanded by remember { mutableStateOf(false) }
-    Row(
+    Surface(
         modifier = modifier
-            .height(72.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .height(72.dp)
+            .zIndex(if (focused) 1f else 0f)
+            .tvFocusLift(focused = focused, scale = 1.01f, liftPx = 0f)
+            .onFocusChanged { focused = it.isFocused }
+            .tvClickable(onClick = onClick),
+        color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(
+            width = if (focused) 2.dp else 1.dp,
+            color = if (focused) TvFocusBorder else MaterialTheme.colorScheme.surfaceBorder,
+        ),
+        shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 0.dp),
     ) {
-        Surface(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .zIndex(if (focused) 1f else 0f)
-                .tvFocusLift(focused = focused, scale = 1.01f, liftPx = 0f)
-                .onFocusChanged { focused = it.isFocused }
-                .tvClickable(onClick = onClick),
-            color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(10.dp),
-            border = BorderStroke(
-                width = if (focused) 2.dp else 1.dp,
-                color = if (focused) TvFocusBorder else MaterialTheme.colorScheme.surfaceBorder,
-            ),
-            shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 0.dp),
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(3.dp)
+                    .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent),
+            )
             Row(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(3.dp)
-                        .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent),
-                )
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    PlaylistTypeChip(label = playlist.type.label())
-                    PlaylistRowText(
-                        name = playlist.name,
-                        selected = selected,
-                        meta = stringResource(
-                            R.string.playlist_row_meta,
-                            totalCount,
-                            stats.live,
-                            stats.movies,
-                            stats.series,
-                        ),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-        PlaylistOverflowMenu(
-            expanded = menuExpanded,
-            onExpandedChange = { menuExpanded = it },
-            onOpen = onClick,
-            onReload = onReload,
-            onRename = onRename,
-            onDelete = onDelete,
-            statusText = statusText,
-        )
-    }
-}
-
-@Composable
-private fun PlaylistOverflowMenu(
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    onOpen: () -> Unit,
-    onReload: (() -> Unit)?,
-    onRename: (() -> Unit)?,
-    onDelete: (() -> Unit)?,
-    statusText: String?,
-) {
-    var focused by remember { mutableStateOf(false) }
-    Column(
-        modifier = Modifier.width(48.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        Box {
-            Surface(
-                modifier = Modifier
-                    .size(40.dp)
-                    .zIndex(if (focused) 1f else 0f)
-                    .tvFocusLift(focused = focused, scale = 1.04f, liftPx = 0f)
-                    .onFocusChanged { focused = it.isFocused }
-                    .tvClickable(onClick = { onExpandedChange(true) }),
-                color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
-                shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 0.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.MoreVert,
-                    contentDescription = stringResource(R.string.playlist_row_overflow_description),
-                    modifier = Modifier.padding(8.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                PlaylistTypeChip(label = playlist.type.label())
+                PlaylistRowText(
+                    name = playlist.name,
+                    selected = selected,
+                    meta = stringResource(
+                        R.string.playlist_row_meta,
+                        totalCount,
+                        stats.live,
+                        stats.movies,
+                        stats.series,
+                    ),
+                    modifier = Modifier.weight(1f),
                 )
             }
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { onExpandedChange(false) },
-            ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.playlist_row_open_details)) },
-                    onClick = {
-                        onExpandedChange(false)
-                        onOpen()
-                    },
-                )
-                PlaylistMenuAction(text = stringResource(R.string.action_refresh), action = onReload, onDone = onExpandedChange)
-                PlaylistMenuAction(text = stringResource(R.string.action_edit), action = onRename, onDone = onExpandedChange)
-                PlaylistMenuAction(text = stringResource(R.string.action_delete), action = onDelete, onDone = onExpandedChange)
-            }
-        }
-        statusText?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 10.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Clip,
-            )
         }
     }
 }
@@ -250,7 +157,7 @@ private fun PlaylistRowText(
         Text(
             text = meta,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -270,23 +177,6 @@ private fun ActiveChip() {
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
-        )
-    }
-}
-
-@Composable
-private fun PlaylistMenuAction(
-    text: String,
-    action: (() -> Unit)?,
-    onDone: (Boolean) -> Unit,
-) {
-    action?.let {
-        DropdownMenuItem(
-            text = { Text(text) },
-            onClick = {
-                onDone(false)
-                it()
-            },
         )
     }
 }

@@ -39,10 +39,15 @@ import com.hktnv.iptvbox.ui.common.TvRestingBorder
 import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.tvFocusElevation
 import com.hktnv.iptvbox.ui.common.tvFocusLift
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @Composable
 internal fun AutoUpdateSelector(
     selectedHours: Int,
+    updatedAtEpochMillis: Long,
     onSelect: (Int) -> Unit,
 ) {
     var showInfo by remember { mutableStateOf(false) }
@@ -58,6 +63,12 @@ internal fun AutoUpdateSelector(
                 onClick = { showInfo = !showInfo },
             )
         }
+        Text(
+            text = playlistLastUpdateText(updatedAtEpochMillis),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp,
+            lineHeight = 15.sp,
+        )
         AnimatedVisibility(visible = showInfo) {
             Text(
                 text = stringResource(R.string.playlist_auto_refresh_description),
@@ -162,3 +173,37 @@ private fun autoUpdateOptionLabel(hours: Int): String {
         else -> stringResource(R.string.playlist_auto_refresh_off)
     }
 }
+
+@Composable
+private fun playlistLastUpdateText(updatedAtEpochMillis: Long): String {
+    if (updatedAtEpochMillis <= 0L) {
+        return stringResource(R.string.playlist_last_update_never)
+    }
+    val now = System.currentTimeMillis()
+    val diffMillis = (now - updatedAtEpochMillis).coerceAtLeast(0L)
+    if (diffMillis < RecentUpdateThresholdMillis) {
+        return stringResource(R.string.playlist_last_update_recent)
+    }
+    val trLocale = remember { Locale.forLanguageTag("tr-TR") }
+    val timeText = remember(updatedAtEpochMillis, trLocale) {
+        SimpleDateFormat("HH:mm", trLocale).format(Date(updatedAtEpochMillis))
+    }
+    if (isSameDay(updatedAtEpochMillis, now, trLocale)) {
+        return stringResource(R.string.playlist_last_update_today, timeText)
+    }
+    val dateText = remember(updatedAtEpochMillis, trLocale) {
+        SimpleDateFormat("dd.MM.yyyy HH:mm", trLocale).format(Date(updatedAtEpochMillis))
+    }
+    return stringResource(R.string.playlist_last_update_date, dateText)
+}
+
+private fun isSameDay(firstEpochMillis: Long, secondEpochMillis: Long, locale: Locale): Boolean {
+    val calendar = Calendar.getInstance(locale)
+    calendar.timeInMillis = firstEpochMillis
+    val firstYear = calendar.get(Calendar.YEAR)
+    val firstDay = calendar.get(Calendar.DAY_OF_YEAR)
+    calendar.timeInMillis = secondEpochMillis
+    return firstYear == calendar.get(Calendar.YEAR) && firstDay == calendar.get(Calendar.DAY_OF_YEAR)
+}
+
+private const val RecentUpdateThresholdMillis = 10 * 60 * 1_000L

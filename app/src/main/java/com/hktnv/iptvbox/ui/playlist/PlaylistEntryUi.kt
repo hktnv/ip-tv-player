@@ -111,7 +111,6 @@ internal fun PlaylistEntryScreen(
         playlists = playlists,
         selectedPlaylistId = selectedPlaylistId,
         contentPadding = contentPadding,
-        syncStatuses = syncStatuses,
         onOpenLastPlaylist = onOpenLastPlaylist,
         onAddPlaylist = onAddPlaylist,
         onOpenSettings = onOpenSettings,
@@ -124,7 +123,6 @@ private fun PlaylistHubContent(
     playlists: List<LoadedPlaylist>,
     selectedPlaylistId: String?,
     contentPadding: Dp,
-    syncStatuses: Map<String, CatalogSyncStatus>,
     onOpenLastPlaylist: () -> Unit,
     onAddPlaylist: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -180,9 +178,7 @@ private fun PlaylistHubContent(
                         PlaylistRow(
                             playlist = playlist,
                             selected = playlist.id == selectedPlaylistId,
-                            statusText = playlistSyncRelativeLabel(syncStatuses[playlist.id]),
                             onClick = { onOpenPlaylistDetails(playlist.id) },
-                            onReload = null,
                             modifier = Modifier.weight(1f),
                         )
                     }

@@ -369,7 +369,6 @@ internal fun PlaylistScreen(
                     playlist = playlist,
                     selected = playlist.id == selectedPlaylistId,
                     onClick = { onOpenPlaylistDetails(playlist.id) },
-                    onReload = null,
                 )
             }
         }
