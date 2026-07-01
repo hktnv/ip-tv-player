@@ -32,6 +32,7 @@ import com.hktnv.iptvbox.navigation.reduce
 import com.hktnv.iptvbox.player.PlayerUiModeStore
 import com.hktnv.iptvbox.repository.catalog.AppCatalogRepository
 import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
+import com.hktnv.iptvbox.repository.catalog.XtreamCategoryEnrichmentQueue
 import com.hktnv.iptvbox.repository.catalog.XtreamLazySyncRepository
 import com.hktnv.iptvbox.state.AppStateStore
 import com.hktnv.iptvbox.state.AutoDismissBannerEffect
@@ -65,7 +66,6 @@ import com.hktnv.iptvbox.update.AppUpdateService
 import com.hktnv.iptvbox.update.AppUpdateUiState
 import com.hktnv.iptvbox.update.pendingUpdate
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 @Composable
 internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val localContext = LocalContext.current; val context = localContext.applicationContext; val activity = localContext as? android.app.Activity
@@ -74,6 +74,9 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val metadataCleanupScheduler = remember(context, catalogStore) { MetadataCleanupScheduler(context, catalogStore) }
     val catalogRepository = remember(catalogStore) { AppCatalogRepository(catalogStore) }
     val xtreamLazySyncRepository = remember(catalogStore) { XtreamLazySyncRepository(catalogStore) }
+    val categoryEnrichmentQueue = remember(xtreamLazySyncRepository) {
+        XtreamCategoryEnrichmentQueue(xtreamLazySyncRepository::syncQueuedCategories)
+    }
     val scope = rememberCoroutineScope()
     val stateStore = remember(context, catalogStore) { AppStateStore(context, catalogStore) }
     val playerUiModeStore = remember(context) { PlayerUiModeStore(context) }
@@ -102,7 +105,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var updateState by remember { mutableStateOf<AppUpdateUiState>(AppUpdateUiState.Hidden) }; var pendingNavigationStartedAt by remember { mutableStateOf<Long?>(null) }
     var contentFocusRequest by remember { mutableStateOf(0) }; var initialContentFocusApplied by rememberSaveable { mutableStateOf(false) }
     val favoriteIds = remember { mutableStateListOf<String>() }; val recentIds = remember { mutableStateListOf<String>() }
-    val queuedCategorySyncs = remember { mutableSetOf<String>() }
     val syncedSeries = remember { mutableSetOf<String>() }
     val contentInitialFocusRequester = remember { FocusRequester() }
     val drawerModel = NavigationDrawerModel(drawerState, drawerFocusExpansion)
@@ -167,13 +169,14 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     )
     val favoriteItems = remember(catalogSnapshot, favoriteSignature) { catalogSnapshot?.itemsByIds(favoriteIds).orEmpty() }
     val recentItems = remember(catalogSnapshot, recentSignature) { catalogSnapshot?.itemsByIds(recentIds).orEmpty() }
+    fun startCategoryEnrichmentQueue(playlist: LoadedPlaylist) {
+        categoryEnrichmentQueue.start(scope, playlist) { catalogRefreshToken += 1 }
+    }
     LaunchedEffect(restoredApplied, selectedPlaylist?.id) {
         val playlist = selectedPlaylist ?: return@LaunchedEffect
-        if (!restoredApplied || playlist.id in queuedCategorySyncs) return@LaunchedEffect
+        if (!restoredApplied) return@LaunchedEffect
         delay(5_000L)
-        if (!queuedCategorySyncs.add(playlist.id)) return@LaunchedEffect
-        val changed = xtreamLazySyncRepository.syncQueuedCategories(playlist)
-        if (changed > 0) catalogRefreshToken += 1
+        categoryEnrichmentQueue.run(playlist) { catalogRefreshToken += 1 }
     }
     LaunchedEffect(selectedPlaylist?.id, selectedSeriesTitle, catalogSnapshot, catalogRefreshToken) {
         val playlist = selectedPlaylist ?: return@LaunchedEffect
@@ -285,6 +288,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             onProgress = { playlistImportProgress = it },
             onStored = { stored ->
                 val index = playlists.indexOfFirst { it.id == stored.id }; if (index >= 0) playlists[index] = stored
+                startCategoryEnrichmentQueue(stored)
             },
         )
     }
@@ -395,6 +399,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                     playlistImportProgress = null
                     selectedTab = firstAvailableTab(stored); selectedCategory = null; showCatalogCategoryLanding = true; selectedSeriesTitle = null; selectedSeasonNumber = null
                     submittedSearch = ""; screen = AppScreen.HOME; showPlaylistEntry = false; requestContentFocus()
+                    startCategoryEnrichmentQueue(stored)
                     banner = "$playlistName yüklendi: $itemCount içerik"; showAddDialog = false
                 }, onFailure = { message -> banner = message; showAddDialog = false })
         },
