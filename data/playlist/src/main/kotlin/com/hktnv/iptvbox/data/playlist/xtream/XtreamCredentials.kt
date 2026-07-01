@@ -12,6 +12,18 @@ data class XtreamBulkEntry(
     val posterUrl: String?,
     val rating: String?,
     val tmdbId: Int?,
+    val addedAtEpochSeconds: Long?,
+)
+
+data class XtreamCategoryEntry(
+    val categoryId: String,
+    val title: String,
+)
+
+data class XtreamCategoryMapping(
+    val kind: String,
+    val localName: String,
+    val xtreamCategoryId: String,
 )
 
 data class XtreamMetadataPayload(
@@ -21,4 +33,17 @@ data class XtreamMetadataPayload(
     val youtubeTrailer: String?,
     val duration: String?,
     val backdropUrl: String?,
+)
+
+data class XtreamSeriesInfoPayload(
+    val metadata: XtreamMetadataPayload,
+    val episodes: List<XtreamSeriesEpisodeEntry>,
+)
+
+data class XtreamSeriesEpisodeEntry(
+    val seasonNumber: Int,
+    val episodeNumber: Int,
+    val title: String?,
+    val plot: String?,
+    val imageUrl: String?,
 )

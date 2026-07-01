@@ -125,6 +125,7 @@ internal fun CatalogSnapshotEffect(
     recentIds: List<String>,
     favoriteSignature: String,
     recentSignature: String,
+    refreshToken: Int,
     performanceMode: AppPerformanceMode,
     catalogStore: CatalogStore,
     catalogRepository: AppCatalogRepository,
@@ -147,6 +148,7 @@ internal fun CatalogSnapshotEffect(
         showPlaylistEntry,
         favoriteSignature,
         recentSignature,
+        refreshToken,
     ) {
         val playlist = selectedPlaylist
         if (playlist == null || showPlaylistEntry) {

@@ -83,7 +83,7 @@ internal fun CoroutineScope.reloadPlaylistAction(
                 }
                 val normalizeMs = SystemClock.elapsedRealtime() - normalizeStartedAt
                 val writeResult = withContext(Dispatchers.IO) {
-                    catalogStore.replacePlaylistMeasured(loaded)
+                    catalogStore.replacePlaylistMeasured(loaded, result.xtreamCategoryMappings)
                 }
                 recordCatalogWriteTimings(telemetry, writeResult.timings)
                 val uiStartedAt = SystemClock.elapsedRealtime()
@@ -156,7 +156,7 @@ internal fun CoroutineScope.saveLoadedPlaylistAction(
             }
             val normalizeMs = SystemClock.elapsedRealtime() - normalizeStartedAt
             val writeResult = withContext(Dispatchers.IO) {
-                catalogStore.replacePlaylistMeasured(playlist)
+                catalogStore.replacePlaylistMeasured(playlist, result.xtreamCategoryMappings)
             }
             val uiStartedAt = SystemClock.elapsedRealtime()
             onStored(writeResult.playlist, result.items.size, playlist.name)

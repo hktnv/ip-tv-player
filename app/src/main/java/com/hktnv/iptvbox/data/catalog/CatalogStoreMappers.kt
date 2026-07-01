@@ -79,6 +79,7 @@ internal fun Cursor.toItems(): List<CatalogItem> = buildList {
                 rating = nullableString("rating"),
                 tmdbId = nullableInt("tmdb_id"),
                 providerOrder = getInt(column("provider_order")),
+                addedAtEpochMillis = nullableLong("added")?.times(1_000L) ?: 0L,
             ),
         )
     }
@@ -94,4 +95,9 @@ internal fun Cursor.nullableString(name: String): String? {
 internal fun Cursor.nullableInt(name: String): Int? {
     val index = column(name)
     return if (isNull(index)) null else getInt(index)
+}
+
+internal fun Cursor.nullableLong(name: String): Long? {
+    val index = column(name)
+    return if (isNull(index)) null else getLong(index)
 }

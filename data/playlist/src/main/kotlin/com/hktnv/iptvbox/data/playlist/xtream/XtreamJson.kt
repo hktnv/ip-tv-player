@@ -23,6 +23,11 @@ internal fun JsonObject.intField(name: String): Int? {
     return primitive.intOrNull ?: primitive.contentOrNull?.toIntOrNull()
 }
 
+internal fun JsonObject.longField(name: String): Long? {
+    val primitive = primitive(name) ?: return null
+    return primitive.contentOrNull?.toLongOrNull()
+}
+
 internal fun JsonObject.firstString(vararg names: String): String? {
     names.forEach { name ->
         stringField(name)?.let { return it }
@@ -54,7 +59,14 @@ internal fun JsonObject.toXtreamBulkEntry(
         posterUrl = firstString(*posterFields.toTypedArray()),
         rating = firstString("rating", "rating_5based", "rating_count_kinopoisk"),
         tmdbId = firstInt("tmdb_id", "tmdb"),
+        addedAtEpochSeconds = longField("added"),
     )
+}
+
+internal fun JsonObject.toXtreamCategoryEntry(): XtreamCategoryEntry? {
+    val id = firstString("category_id", "id") ?: firstInt("category_id", "id")?.toString() ?: return null
+    val title = firstString("category_name", "name", "title") ?: return null
+    return XtreamCategoryEntry(categoryId = id, title = title)
 }
 
 internal fun JsonObject.toMetadataPayload(): XtreamMetadataPayload {
@@ -66,6 +78,45 @@ internal fun JsonObject.toMetadataPayload(): XtreamMetadataPayload {
         youtubeTrailer = info.firstString("youtube_trailer", "youtube"),
         duration = info.firstString("duration", "duration_secs"),
         backdropUrl = info.backdropUrl(),
+    )
+}
+
+internal fun JsonObject.toSeriesInfoPayload(): XtreamSeriesInfoPayload {
+    return XtreamSeriesInfoPayload(
+        metadata = toMetadataPayload(),
+        episodes = seriesEpisodes(),
+    )
+}
+
+private fun JsonObject.seriesEpisodes(): List<XtreamSeriesEpisodeEntry> {
+    val episodes = this["episodes"] ?: return emptyList()
+    if (episodes is JsonArray) return episodes.mapIndexedNotNull { index, element ->
+        element.asObjectOrNull()?.toSeriesEpisodeEntry(defaultSeason = 1, fallbackEpisode = index + 1)
+    }
+    val groups = episodes.asObjectOrNull() ?: return emptyList()
+    return buildList {
+        groups.forEach { (seasonKey, element) ->
+            val season = seasonKey.toIntOrNull() ?: 1
+            element.asArrayOrEmpty().forEachIndexed { index, episode ->
+                episode.asObjectOrNull()
+                    ?.toSeriesEpisodeEntry(defaultSeason = season, fallbackEpisode = index + 1)
+                    ?.let(::add)
+            }
+        }
+    }
+}
+
+private fun JsonObject.toSeriesEpisodeEntry(
+    defaultSeason: Int,
+    fallbackEpisode: Int,
+): XtreamSeriesEpisodeEntry {
+    val info = this["info"]?.asObjectOrNull()
+    return XtreamSeriesEpisodeEntry(
+        seasonNumber = firstInt("season", "season_number") ?: defaultSeason,
+        episodeNumber = firstInt("episode_num", "episode", "episode_number") ?: fallbackEpisode,
+        title = firstString("title", "name"),
+        plot = info?.firstString("plot", "description") ?: firstString("plot", "description"),
+        imageUrl = info?.firstString("movie_image", "cover", "image") ?: firstString("movie_image", "cover", "image"),
     )
 }
 

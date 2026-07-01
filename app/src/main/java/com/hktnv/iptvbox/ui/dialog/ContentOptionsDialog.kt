@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.hktnv.iptvbox.core.model.CatalogItem
+import com.hktnv.iptvbox.core.model.ContentMetadata
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
 import com.hktnv.iptvbox.ui.common.tvClickable
@@ -42,6 +43,7 @@ import com.hktnv.iptvbox.ui.media.displayTitle
 @Composable
 internal fun ContentOptionsDialog(
     item: CatalogItem,
+    metadata: ContentMetadata?,
     favorite: Boolean,
     onDismiss: () -> Unit,
     onOpen: () -> Unit,
@@ -80,6 +82,7 @@ internal fun ContentOptionsDialog(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+                metadata?.let { ContentMetadataSummary(it) }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -105,6 +108,29 @@ internal fun ContentOptionsDialog(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ContentMetadataSummary(metadata: ContentMetadata) {
+    val details = listOfNotNull(
+        metadata.duration?.takeIf { it.isNotBlank() }?.let { "Süre: $it" },
+        metadata.director?.takeIf { it.isNotBlank() }?.let { "Yönetmen: $it" },
+        metadata.cast?.takeIf { it.isNotBlank() }?.let { "Oyuncular: $it" },
+        metadata.plot?.takeIf { it.isNotBlank() },
+    )
+    if (details.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        details.take(4).forEach { line ->
+            Text(
+                text = line,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 13.sp,
+                lineHeight = 17.sp,
+                maxLines = if (line == metadata.plot) 3 else 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

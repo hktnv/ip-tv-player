@@ -74,6 +74,7 @@ class RemotePlaylistLoader(
         val warnings = directoryFetch.warnings.toMutableList()
         val allItems = mutableListOf<CatalogItem>()
         val epgUrls = linkedSetOf<String>()
+        val xtreamCategoryMappings = mutableListOf<com.hktnv.iptvbox.data.playlist.xtream.XtreamCategoryMapping>()
         var xtreamSupported = false
         var metrics = PlaylistLoadMetrics(
             urlNormalizeMs = directoryFetch.urlNormalizeMs,
@@ -94,6 +95,7 @@ class RemotePlaylistLoader(
             }.onSuccess { loaded ->
                 epgUrls += loaded.epgUrls
                 allItems += loaded.items.map { it.copy(sourceId = playlistId) }
+                xtreamCategoryMappings += loaded.xtreamCategoryMappings
                 xtreamSupported = xtreamSupported || loaded.xtreamApiSupported
                 warnings += loaded.warnings
                 metrics += loaded.metrics
@@ -113,6 +115,7 @@ class RemotePlaylistLoader(
             warnings = warnings,
             metrics = metrics.copy(directoryMs = elapsedMs(directoryStartedNs)),
             xtreamApiSupported = xtreamSupported,
+            xtreamCategoryMappings = xtreamCategoryMappings,
         )
     }
 
@@ -156,6 +159,7 @@ class RemotePlaylistLoader(
                 classificationMs = parsed.classificationMs,
             ),
             xtreamApiSupported = enriched.supported,
+            xtreamCategoryMappings = enriched.categoryMappings,
         )
     }
 

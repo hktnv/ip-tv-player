@@ -29,13 +29,46 @@ internal fun CatalogStore.loadMetadata(item: CatalogItem): ContentMetadata? {
 
 internal fun CatalogStore.saveMetadata(item: CatalogItem, metadata: ContentMetadata) {
     val key = item.metadataCacheKey() ?: return
+    saveMetadataByKey(
+        cacheKey = key.cacheKey,
+        tmdbId = key.tmdbId,
+        normalizedTitle = key.normalizedTitle,
+        metadata = metadata,
+    )
+}
+
+internal fun CatalogStore.saveEpisodePlot(
+    seriesTitle: String,
+    episode: SeriesEpisodeRemoteDetails,
+) {
+    val normalizedSeries = SearchNormalizer.normalize(seriesTitle)
+    if (normalizedSeries.isBlank() || episode.plot.isNullOrBlank()) return
+    saveMetadataByKey(
+        cacheKey = "title:$normalizedSeries:s${episode.seasonNumber}:e${episode.episodeNumber}",
+        tmdbId = null,
+        normalizedTitle = normalizedSeries,
+        metadata = ContentMetadata(
+            cacheKey = "",
+            normalizedTitle = normalizedSeries,
+            plot = episode.plot,
+            backdropUrl = episode.imageUrl,
+        ),
+    )
+}
+
+private fun CatalogStore.saveMetadataByKey(
+    cacheKey: String,
+    tmdbId: Int?,
+    normalizedTitle: String,
+    metadata: ContentMetadata,
+) {
     writableDatabase.insertWithOnConflict(
         "metadata_cache",
         null,
         ContentValues().apply {
-            put("cache_key", key.cacheKey)
-            put("tmdb_id", key.tmdbId)
-            put("normalized_title", key.normalizedTitle)
+            put("cache_key", cacheKey)
+            put("tmdb_id", tmdbId)
+            put("normalized_title", normalizedTitle)
             put("plot", metadata.plot)
             put("cast", metadata.cast)
             put("director", metadata.director)
@@ -81,7 +114,8 @@ internal fun SQLiteDatabase.pruneOrphanMetadataRows(limit: Int): Int {
         """
         cache_key IN (
             SELECT cache_key FROM metadata_cache
-            WHERE NOT EXISTS (
+            WHERE cache_key NOT LIKE 'title:%:s%:e%'
+            AND NOT EXISTS (
                 SELECT 1 FROM items
                 WHERE (
                     metadata_cache.tmdb_id IS NOT NULL

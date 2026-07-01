@@ -11,45 +11,71 @@ class XtreamPlaylistEnricher(
         val credentials = XtreamM3uUrlDetector.detect(rawM3uUrl) ?: return XtreamEnrichmentResult(items)
         return runCatching {
             if (!client.authenticate(credentials)) return XtreamEnrichmentResult(items)
-            val movies = client.fetchVodStreams(credentials).byNormalizedTitle()
-            val series = client.fetchSeries(credentials).byNormalizedTitle()
             XtreamEnrichmentResult(
-                items = items.map { item -> item.enrichedBy(movies, series) },
+                items = items,
                 supported = true,
+                categoryMappings = categoryMappings(credentials, items),
             )
         }.getOrDefault(XtreamEnrichmentResult(items))
     }
 
-    private fun CatalogItem.enrichedBy(
-        movies: Map<String, XtreamBulkEntry>,
-        series: Map<String, XtreamBulkEntry>,
-    ): CatalogItem {
-        val entry = when {
-            kind == ContentKind.MOVIE -> movies[SearchNormalizer.normalize(title)]
-            kind == ContentKind.EPISODE || !seriesTitle.isNullOrBlank() -> {
-                series[SearchNormalizer.normalize(seriesTitle ?: title)]
-            }
-            else -> null
-        } ?: return this
-        return copy(
-            logoUrl = entry.posterUrl ?: logoUrl,
-            xtreamId = entry.xtreamId,
-            rating = entry.rating,
-            tmdbId = entry.tmdbId,
-        )
+    private fun categoryMappings(
+        credentials: XtreamCredentials,
+        items: List<CatalogItem>,
+    ): List<XtreamCategoryMapping> {
+        val localCategories = items.asSequence()
+            .mapNotNull { item -> item.localCategoryKey() }
+            .distinctBy { "${it.kind}|${it.normalizedName}" }
+            .groupBy { it.kind }
+        return buildList {
+            addMatches(CategoryKindLive, localCategories, client.fetchLiveCategories(credentials))
+            addMatches(CategoryKindMovie, localCategories, client.fetchVodCategories(credentials))
+            addMatches(CategoryKindSeries, localCategories, client.fetchSeriesCategories(credentials))
+        }
     }
 
-    private fun List<XtreamBulkEntry>.byNormalizedTitle(): Map<String, XtreamBulkEntry> {
-        return buildMap(size) {
-            this@byNormalizedTitle.forEach { entry ->
-                val key = SearchNormalizer.normalize(entry.title)
-                if (key.isNotBlank()) putIfAbsent(key, entry)
-            }
+    private fun MutableList<XtreamCategoryMapping>.addMatches(
+        kind: String,
+        localCategories: Map<String, List<LocalCategoryKey>>,
+        remoteCategories: List<XtreamCategoryEntry>,
+    ) {
+        val localByName = localCategories[kind].orEmpty().associateBy { it.normalizedName }
+        remoteCategories.forEach { remote ->
+            val local = localByName[SearchNormalizer.normalize(remote.title)] ?: return@forEach
+            add(XtreamCategoryMapping(kind, local.name, remote.categoryId))
         }
+    }
+
+    private fun CatalogItem.localCategoryKey(): LocalCategoryKey? {
+        val name = category?.takeIf { it.isNotBlank() } ?: "Genel"
+        val kindKey = when (kind) {
+            ContentKind.LIVE_CHANNEL,
+            ContentKind.RADIO -> CategoryKindLive
+            ContentKind.MOVIE -> CategoryKindMovie
+            ContentKind.SERIES,
+            ContentKind.SEASON,
+            ContentKind.EPISODE -> CategoryKindSeries
+        }
+        val normalized = SearchNormalizer.normalize(name)
+        if (normalized.isBlank()) return null
+        return LocalCategoryKey(kind = kindKey, name = name, normalizedName = normalized)
+    }
+
+    private data class LocalCategoryKey(
+        val kind: String,
+        val name: String,
+        val normalizedName: String,
+    )
+
+    private companion object {
+        const val CategoryKindLive = "LIVE"
+        const val CategoryKindMovie = "MOVIE"
+        const val CategoryKindSeries = "SERIES"
     }
 }
 
 data class XtreamEnrichmentResult(
     val items: List<CatalogItem>,
     val supported: Boolean = false,
+    val categoryMappings: List<XtreamCategoryMapping> = emptyList(),
 )

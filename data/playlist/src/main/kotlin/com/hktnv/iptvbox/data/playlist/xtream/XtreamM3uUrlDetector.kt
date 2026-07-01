@@ -2,7 +2,7 @@ package com.hktnv.iptvbox.data.playlist.xtream
 
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
-internal object XtreamM3uUrlDetector {
+object XtreamM3uUrlDetector {
     fun detect(rawUrl: String): XtreamCredentials? {
         val url = normalize(rawUrl).toHttpUrlOrNull() ?: return null
         if (!url.encodedPath.endsWith("/get.php", ignoreCase = true)) return null

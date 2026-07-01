@@ -1,6 +1,7 @@
 package com.hktnv.iptvbox.ui.dialog
 import androidx.compose.runtime.Composable
 import com.hktnv.iptvbox.core.model.CatalogItem
+import com.hktnv.iptvbox.core.model.ContentMetadata
 import com.hktnv.iptvbox.data.playlist.PlaylistLoadResult
 import com.hktnv.iptvbox.data.playlist.RemotePlaylistLoader
 import com.hktnv.iptvbox.model.AppScreen
@@ -22,6 +23,7 @@ internal fun IptvDialogHost(
     renamingPlaylist: LoadedPlaylist?,
     deletingPlaylist: LoadedPlaylist?,
     contentOptionsItem: CatalogItem?,
+    contentOptionsMetadata: ContentMetadata?,
     contentOptionsFavorite: Boolean,
     updateState: AppUpdateUiState,
     screen: AppScreen,
@@ -78,6 +80,7 @@ internal fun IptvDialogHost(
     contentOptionsItem?.let { item ->
         ContentOptionsDialog(
             item = item,
+            metadata = contentOptionsMetadata,
             favorite = contentOptionsFavorite,
             onDismiss = onDismissContentOptions,
             onOpen = onOpenContentOptionsItem,

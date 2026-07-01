@@ -7,13 +7,13 @@ internal fun CatalogStore.seasons(playlistId: String, seriesTitle: String): List
     return readableDatabase.rawQuery(
         """
         SELECT
-            COALESCE(season_number, 1) AS season_number,
+            COALESCE(items.season_number, 1) AS season_number,
             COUNT(*) AS episode_count,
-            MIN(logo_url) AS logo_url,
-            MIN(provider_order) AS first_order
+            MIN(items.logo_url) AS logo_url,
+            MIN(items.provider_order) AS first_order
         FROM items
-        WHERE playlist_id=? AND series_title=?
-        GROUP BY COALESCE(season_number, 1)
+        WHERE items.playlist_id=? AND items.series_title=?
+        GROUP BY COALESCE(items.season_number, 1)
         ORDER BY season_number ASC, first_order ASC
         """.trimIndent(),
         arrayOf(playlistId, seriesTitle),
@@ -48,13 +48,16 @@ internal fun CatalogStore.episodes(
         add(limit.toString())
     }
     return readableDatabase.rawQuery(
-        """
-        SELECT * FROM items
-        WHERE playlist_id=? AND series_title=?
-            $seasonClause
-        ORDER BY COALESCE(season_number, 1) ASC, COALESCE(episode_number, provider_order) ASC, provider_order ASC
-        LIMIT ?
-        """.trimIndent(),
+        itemSelect(
+            """
+            WHERE items.playlist_id=? AND items.series_title=?
+                $seasonClause
+            ORDER BY COALESCE(items.season_number, 1) ASC,
+                COALESCE(items.episode_number, items.provider_order) ASC,
+                items.provider_order ASC
+            LIMIT ?
+            """.trimIndent(),
+        ),
         args.toTypedArray(),
     ).use { cursor -> cursor.toItems() }
 }
@@ -63,19 +66,18 @@ internal fun seasonFilterClause(seasonNumber: Int?): String {
     return if (seasonNumber == null) {
         ""
     } else {
-        " AND COALESCE(season_number, 1)=CAST(? AS INTEGER)"
+        " AND COALESCE(items.season_number, 1)=CAST(? AS INTEGER)"
     }
 }
 
 internal fun CatalogStore.categories(playlistId: String, tab: CatalogTab): List<String> {
-    val kindPlaceholders = tab.kinds.joinToString(",") { "?" }
     return readableDatabase.rawQuery(
         """
-        SELECT DISTINCT category FROM items
-        WHERE playlist_id=? AND kind IN ($kindPlaceholders) AND category IS NOT NULL AND category != ''
-        ORDER BY category COLLATE NOCASE ASC
+        SELECT categories.name FROM categories
+        WHERE categories.playlist_id=? AND categories.kind=?
+        ORDER BY categories.name COLLATE NOCASE ASC
         """.trimIndent(),
-        (listOf(playlistId) + tab.kinds.map { it.name }).toTypedArray(),
+        arrayOf(playlistId, tab.categoryKindForStore()),
     ).use { cursor ->
         buildList {
             while (cursor.moveToNext()) add(cursor.getString(0))

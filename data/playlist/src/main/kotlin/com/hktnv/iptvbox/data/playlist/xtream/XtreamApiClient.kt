@@ -21,10 +21,46 @@ class XtreamApiClient(
             .mapNotNull { it.asObjectOrNull()?.toXtreamBulkEntry("stream_id", listOf("stream_icon", "cover")) }
     }
 
+    fun fetchVodStreams(credentials: XtreamCredentials, categoryId: String): List<XtreamBulkEntry> {
+        return fetchElement(credentials, action = "get_vod_streams", idName = "category_id", id = categoryId)
+            .asArrayOrEmpty()
+            .mapNotNull { it.asObjectOrNull()?.toXtreamBulkEntry("stream_id", listOf("stream_icon", "cover")) }
+    }
+
+    fun fetchLiveStreams(credentials: XtreamCredentials, categoryId: String): List<XtreamBulkEntry> {
+        return fetchElement(credentials, action = "get_live_streams", idName = "category_id", id = categoryId)
+            .asArrayOrEmpty()
+            .mapNotNull { it.asObjectOrNull()?.toXtreamBulkEntry("stream_id", listOf("stream_icon", "stream_icon")) }
+    }
+
     fun fetchSeries(credentials: XtreamCredentials): List<XtreamBulkEntry> {
         return fetchElement(credentials, action = "get_series")
             .asArrayOrEmpty()
             .mapNotNull { it.asObjectOrNull()?.toXtreamBulkEntry("series_id", listOf("cover", "stream_icon")) }
+    }
+
+    fun fetchSeries(credentials: XtreamCredentials, categoryId: String): List<XtreamBulkEntry> {
+        return fetchElement(credentials, action = "get_series", idName = "category_id", id = categoryId)
+            .asArrayOrEmpty()
+            .mapNotNull { it.asObjectOrNull()?.toXtreamBulkEntry("series_id", listOf("cover", "stream_icon")) }
+    }
+
+    fun fetchLiveCategories(credentials: XtreamCredentials): List<XtreamCategoryEntry> {
+        return fetchElement(credentials, action = "get_live_categories")
+            .asArrayOrEmpty()
+            .mapNotNull { it.asObjectOrNull()?.toXtreamCategoryEntry() }
+    }
+
+    fun fetchVodCategories(credentials: XtreamCredentials): List<XtreamCategoryEntry> {
+        return fetchElement(credentials, action = "get_vod_categories")
+            .asArrayOrEmpty()
+            .mapNotNull { it.asObjectOrNull()?.toXtreamCategoryEntry() }
+    }
+
+    fun fetchSeriesCategories(credentials: XtreamCredentials): List<XtreamCategoryEntry> {
+        return fetchElement(credentials, action = "get_series_categories")
+            .asArrayOrEmpty()
+            .mapNotNull { it.asObjectOrNull()?.toXtreamCategoryEntry() }
     }
 
     fun fetchVodInfo(credentials: XtreamCredentials, streamId: Int): XtreamMetadataPayload? {
@@ -33,17 +69,17 @@ class XtreamApiClient(
             ?.toMetadataPayload()
     }
 
-    fun fetchSeriesInfo(credentials: XtreamCredentials, seriesId: Int): XtreamMetadataPayload? {
+    fun fetchSeriesInfo(credentials: XtreamCredentials, seriesId: Int): XtreamSeriesInfoPayload? {
         return fetchElement(credentials, action = "get_series_info", idName = "series_id", id = seriesId)
             .asObjectOrNull()
-            ?.toMetadataPayload()
+            ?.toSeriesInfoPayload()
     }
 
     private fun fetchElement(
         credentials: XtreamCredentials,
         action: String? = null,
         idName: String? = null,
-        id: Int? = null,
+        id: Any? = null,
     ): JsonElement {
         val request = Request.Builder()
             .url(credentials.apiUrl(action, idName, id))
@@ -54,13 +90,13 @@ class XtreamApiClient(
         }
     }
 
-    private fun XtreamCredentials.apiUrl(action: String?, idName: String?, id: Int?): String {
+    private fun XtreamCredentials.apiUrl(action: String?, idName: String?, id: Any?): String {
         val params = mutableListOf(
             "username=${username.urlEncode()}",
             "password=${password.urlEncode()}",
         )
         if (!action.isNullOrBlank()) params += "action=${action.urlEncode()}"
-        if (!idName.isNullOrBlank() && id != null) params += "$idName=$id"
+        if (!idName.isNullOrBlank() && id != null) params += "$idName=${id.toString().urlEncode()}"
         return "${serverUrl.trimEnd('/')}/player_api.php?${params.joinToString("&")}"
     }
 

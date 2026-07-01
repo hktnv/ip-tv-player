@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteStatement
 import com.hktnv.iptvbox.core.common.SearchNormalizer
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentKind
+import com.hktnv.iptvbox.data.playlist.xtream.XtreamCategoryMapping
 import com.hktnv.iptvbox.core.model.PlaylistSourceType
 import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.model.LoadedPlaylist
@@ -24,6 +25,7 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
 
     override fun onConfigure(db: SQLiteDatabase) {
         super.onConfigure(db)
+        db.setForeignKeyConstraintsEnabled(true)
         db.execSQL("PRAGMA synchronous=NORMAL")
         db.execSQL("PRAGMA temp_store=MEMORY")
     }
@@ -64,20 +66,26 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
 
     fun replacePlaylist(playlist: LoadedPlaylist): LoadedPlaylist = replacePlaylistMeasured(playlist).playlist
 
-    fun replacePlaylistMeasured(playlist: LoadedPlaylist): CatalogWriteResult {
+    fun replacePlaylistMeasured(
+        playlist: LoadedPlaylist,
+        xtreamCategoryMappings: List<XtreamCategoryMapping> = emptyList(),
+    ): CatalogWriteResult {
         val timings = linkedMapOf<String, Long>()
         val totalStartedNs = System.nanoTime()
         val stored = measureDb("counter_calc_ms", timings) { playlist.withCachedStoreStats() }
+        val categories = buildCategoryRows(stored.id, stored.items, xtreamCategoryMappings)
         val db = writableDatabase
         measureDb("transaction_begin_ms", timings) { db.beginTransaction() }
         try {
             measureDb("drop_indexes_ms", timings) { db.dropCatalogIndexes() }
             measureDb("delete_ms", timings) {
                 db.delete("items", "playlist_id=?", arrayOf(stored.id))
+                db.delete("categories", "playlist_id=?", arrayOf(stored.id))
                 db.delete("playlists", "id=?", arrayOf(stored.id))
             }
             measureDb("metadata_save_ms", timings) {
                 db.insertWithOnConflict("playlists", null, stored.toPlaylistValues(), SQLiteDatabase.CONFLICT_REPLACE)
+                db.insertCategoryRows(categories.values, stored.id)
             }
             measureDb("write_ms", timings) {
                 db.compileStatement(
@@ -88,7 +96,7 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
                         kind,
                         title,
                         stream_url,
-                        category,
+                        category_id,
                         logo_url,
                         tvg_id,
                         tvg_name,
@@ -99,10 +107,11 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
                         xtream_id,
                         rating,
                         tmdb_id,
+                        added,
                         provider_order,
                         normalized_title,
                         search_text
-                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     """.trimIndent(),
                 ).use { statement ->
                     stored.items.forEach { item ->
@@ -112,7 +121,10 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
                         statement.bindString(3, item.kind.name)
                         statement.bindString(4, item.title)
                         statement.bindString(5, item.streamUrl)
-                        statement.bindNullableString(6, item.category)
+                        statement.bindNullableString(
+                            6,
+                            categories[catalogCategoryId(stored.id, item.categoryKindForStore(), item.categoryNameForStore())]?.id,
+                        )
                         statement.bindNullableString(7, item.logoUrl)
                         statement.bindNullableString(8, item.tvgId)
                         statement.bindNullableString(9, item.tvgName)
@@ -123,9 +135,10 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
                         statement.bindNullableLong(14, item.xtreamId?.toLong())
                         statement.bindNullableString(15, item.rating)
                         statement.bindNullableLong(16, item.tmdbId?.toLong())
-                        statement.bindLong(17, item.providerOrder.toLong())
-                        statement.bindString(18, item.normalizedTitleForStore())
-                        statement.bindString(19, item.searchTextForStore())
+                        statement.bindNullableLong(17, item.addedSecondsForStore())
+                        statement.bindLong(18, item.providerOrder.toLong())
+                        statement.bindString(19, item.normalizedTitleForStore())
+                        statement.bindString(20, item.searchTextForStore())
                         statement.executeInsert()
                     }
                 }
@@ -189,6 +202,7 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
     fun deletePlaylist(playlistId: String) {
         writableDatabase.transaction {
             delete("items", "playlist_id=?", arrayOf(playlistId))
+            delete("categories", "playlist_id=?", arrayOf(playlistId))
             delete("playlists", "id=?", arrayOf(playlistId))
         }
     }
@@ -197,6 +211,7 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
         writableDatabase.transaction {
             delete("metadata_cache", null, null)
             delete("items", null, null)
+            delete("categories", null, null)
             delete("playlists", null, null)
         }
     }
@@ -213,26 +228,27 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
 
     fun loadItems(playlistId: String): List<CatalogItem> {
         return readableDatabase.rawQuery(
-            "SELECT * FROM items WHERE playlist_id=? ORDER BY provider_order ASC",
+            itemSelect("WHERE items.playlist_id=? ORDER BY items.provider_order ASC"),
             arrayOf(playlistId),
         ).use { cursor -> cursor.toItems() }
     }
 
     fun loadItems(playlistId: String, tab: CatalogTab, category: String? = null, limit: Int = 500): List<CatalogItem> {
-        val kindPlaceholders = tab.kinds.joinToString(",") { "?" }
+        val kindPlaceholders = itemKindPlaceholders(tab.kinds.size)
         val args = mutableListOf(playlistId).apply {
             addAll(tab.kinds.map { it.name })
             if (category != null) add(category)
             add(limit.toString())
         }
-        val categoryClause = if (category == null) "" else " AND category=?"
+        val categoryClause = if (category == null) "" else " AND categories.name=?"
         return readableDatabase.rawQuery(
-            """
-            SELECT * FROM items
-            WHERE playlist_id=? AND kind IN ($kindPlaceholders)$categoryClause
-            ORDER BY provider_order ASC
-            LIMIT ?
-            """.trimIndent(),
+            itemSelect(
+                """
+                WHERE items.playlist_id=? AND items.kind IN ($kindPlaceholders)$categoryClause
+                ORDER BY items.provider_order ASC
+                LIMIT ?
+                """.trimIndent(),
+            ),
             args.toTypedArray(),
         ).use { cursor -> cursor.toItems() }
     }
@@ -241,7 +257,7 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
         if (ids.isEmpty()) return emptyList()
         val placeholders = ids.joinToString(",") { "?" }
         val byId = readableDatabase.rawQuery(
-            "SELECT * FROM items WHERE playlist_id=? AND item_id IN ($placeholders)",
+            itemSelect("WHERE items.playlist_id=? AND items.item_id IN ($placeholders)"),
             (listOf(playlistId) + ids).toTypedArray(),
         ).use { cursor -> cursor.toItems().associateBy { it.id } }
         return ids.mapNotNull(byId::get)
@@ -251,18 +267,19 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
         val normalized = SearchNormalizer.normalize(query)
         if (normalized.isBlank()) return emptyList()
         return readableDatabase.rawQuery(
-            """
-            SELECT * FROM items
-            WHERE playlist_id=? AND search_text LIKE ?
-            ORDER BY provider_order ASC
-            LIMIT ?
-            """.trimIndent(),
+            itemSelect(
+                """
+                WHERE items.playlist_id=? AND items.search_text LIKE ?
+                ORDER BY items.provider_order ASC
+                LIMIT ?
+                """.trimIndent(),
+            ),
             arrayOf(playlistId, "%$normalized%", limit.toString()),
         ).use { cursor -> cursor.toItems() }
     }
 
     fun seriesGroups(playlistId: String, category: String?, limit: Int): List<SeriesGroup> {
-        val categoryClause = if (category == null) "" else " AND category=?"
+        val categoryClause = if (category == null) "" else " AND categories.name=?"
         val args = mutableListOf(
             playlistId,
             ContentKind.SERIES.name,
@@ -275,19 +292,20 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
         return readableDatabase.rawQuery(
             """
             SELECT
-                series_title,
-                MIN(category) AS category,
-                MIN(logo_url) AS logo_url,
-                COUNT(DISTINCT COALESCE(season_number, 1)) AS season_count,
+                items.series_title,
+                MIN(categories.name) AS category,
+                MIN(items.logo_url) AS logo_url,
+                COUNT(DISTINCT COALESCE(items.season_number, 1)) AS season_count,
                 COUNT(*) AS episode_count,
-                MIN(provider_order) AS first_order
+                MIN(items.provider_order) AS first_order
             FROM items
-            WHERE playlist_id=?
-                AND kind IN (?,?,?)
-                AND series_title IS NOT NULL
-                AND series_title != ''
+            LEFT JOIN categories ON categories.id = items.category_id
+            WHERE items.playlist_id=?
+                AND items.kind IN (?,?,?)
+                AND items.series_title IS NOT NULL
+                AND items.series_title != ''
                 $categoryClause
-            GROUP BY series_title
+            GROUP BY items.series_title
             ORDER BY first_order ASC, series_title COLLATE NOCASE ASC
             LIMIT ?
             """.trimIndent(),

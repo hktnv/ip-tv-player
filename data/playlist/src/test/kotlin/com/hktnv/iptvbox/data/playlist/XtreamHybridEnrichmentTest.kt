@@ -16,7 +16,7 @@ import org.junit.Test
 
 class XtreamHybridEnrichmentTest {
     @Test
-    fun enrichesM3uItemsFromXtreamBulkApisWithoutChangingStreamUrls() = runBlocking {
+    fun matchesXtreamCategoriesWithoutHeavyBulkStreamsOnImport() = runBlocking {
         val calls = mutableListOf<String>()
         val loader = RemotePlaylistLoader(client = xtreamClient(calls))
 
@@ -33,18 +33,18 @@ class XtreamHybridEnrichmentTest {
         assertEquals(2, result.items.size)
         val movie = result.items.first { it.kind == ContentKind.MOVIE }
         assertEquals("http://media.example/movie/user/pass/100.mp4", movie.streamUrl)
-        assertEquals(100, movie.xtreamId)
-        assertEquals(8123, movie.tmdbId)
-        assertEquals("8.4", movie.rating)
-        assertEquals("http://image.example/movie.jpg", movie.logoUrl)
+        assertEquals(null, movie.xtreamId)
 
         val episode = result.items.first { it.kind == ContentKind.EPISODE }
         assertEquals("http://media.example/series/user/pass/201.mkv", episode.streamUrl)
-        assertEquals(200, episode.xtreamId)
-        assertEquals("7.9", episode.rating)
-        assertEquals("http://image.example/series.jpg", episode.logoUrl)
-        assertTrue(calls.any { it.contains("action=get_vod_streams") })
-        assertTrue(calls.any { it.contains("action=get_series") })
+        assertEquals(null, episode.xtreamId)
+        assertEquals(2, result.xtreamCategoryMappings.size)
+        assertTrue(result.xtreamCategoryMappings.any { it.kind == "MOVIE" && it.localName == "Filmler" })
+        assertTrue(result.xtreamCategoryMappings.any { it.kind == "SERIES" && it.localName == "Diziler" })
+        assertTrue(calls.any { it.contains("action=get_live_categories") })
+        assertTrue(calls.any { it.contains("action=get_vod_categories") })
+        assertTrue(calls.any { it.contains("action=get_series_categories") })
+        assertFalse(calls.any { it.contains("action=get_vod_streams") || it.matches(Regex(""".*[?&]action=get_series(&.*)?$""")) })
         assertFalse(calls.any { it.contains("get_vod_info") || it.contains("get_series_info") })
     }
 
@@ -79,8 +79,9 @@ class XtreamHybridEnrichmentTest {
                     request.url.queryParameter("action") == null -> {
                         if (authenticated) """{"user_info":{"auth":1}}""" else """{"user_info":{"auth":0}}"""
                     }
-                    request.url.queryParameter("action") == "get_vod_streams" -> vodBody()
-                    request.url.queryParameter("action") == "get_series" -> seriesBody()
+                    request.url.queryParameter("action") == "get_live_categories" -> "[]"
+                    request.url.queryParameter("action") == "get_vod_categories" -> vodCategoriesBody()
+                    request.url.queryParameter("action") == "get_series_categories" -> seriesCategoriesBody()
                     else -> throw IOException("Unexpected Xtream detail call: ${request.url}")
                 }
                 Response.Builder()
@@ -102,15 +103,15 @@ class XtreamHybridEnrichmentTest {
         http://media.example/series/user/pass/201.mkv
     """.trimIndent()
 
-    private fun vodBody(): String = """
+    private fun vodCategoriesBody(): String = """
         [
-          {"stream_id":100,"name":"THE MOVIE","stream_icon":"http://image.example/movie.jpg","rating":"8.4","tmdb_id":"8123"}
+          {"category_id":"10","category_name":"Filmler"}
         ]
     """.trimIndent()
 
-    private fun seriesBody(): String = """
+    private fun seriesCategoriesBody(): String = """
         [
-          {"series_id":200,"name":"DUNE PROPHECY","cover":"http://image.example/series.jpg","rating":"7.9","tmdb":"9001"}
+          {"category_id":"20","category_name":"Diziler"}
         ]
     """.trimIndent()
 }

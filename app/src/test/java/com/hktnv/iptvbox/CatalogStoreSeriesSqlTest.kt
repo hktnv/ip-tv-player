@@ -8,7 +8,7 @@ class CatalogStoreSeriesSqlTest {
     @Test
     fun seasonFilterCastsBoundSeasonNumberToInteger() {
         assertEquals(
-            " AND COALESCE(season_number, 1)=CAST(? AS INTEGER)",
+            " AND COALESCE(items.season_number, 1)=CAST(? AS INTEGER)",
             seasonFilterClause(1),
         )
     }

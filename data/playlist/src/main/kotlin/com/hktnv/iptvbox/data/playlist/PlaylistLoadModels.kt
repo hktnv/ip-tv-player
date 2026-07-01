@@ -1,6 +1,7 @@
 package com.hktnv.iptvbox.data.playlist
 
 import com.hktnv.iptvbox.core.model.CatalogItem
+import com.hktnv.iptvbox.data.playlist.xtream.XtreamCategoryMapping
 
 data class PlaylistLoadResult(
     val playlistName: String,
@@ -9,6 +10,7 @@ data class PlaylistLoadResult(
     val warnings: List<String>,
     val metrics: PlaylistLoadMetrics = PlaylistLoadMetrics(),
     val xtreamApiSupported: Boolean = false,
+    val xtreamCategoryMappings: List<XtreamCategoryMapping> = emptyList(),
 )
 
 data class PlaylistLoadMetrics(
