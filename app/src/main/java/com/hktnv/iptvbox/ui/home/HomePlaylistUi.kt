@@ -126,7 +126,7 @@ import com.hktnv.iptvbox.ui.common.ScreenHeader
 import com.hktnv.iptvbox.ui.media.FocusedContentInfo
 import com.hktnv.iptvbox.ui.media.FocusedContentInfoPanel
 import com.hktnv.iptvbox.ui.media.seriesPreview
-import com.hktnv.iptvbox.ui.playlist.PlaylistDetailScreen
+import com.hktnv.iptvbox.ui.playlist.detail.PlaylistDetailScreen
 import com.hktnv.iptvbox.ui.playlist.PlaylistRow
 
 @Composable

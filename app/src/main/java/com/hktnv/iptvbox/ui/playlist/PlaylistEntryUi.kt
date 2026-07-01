@@ -1,4 +1,5 @@
 package com.hktnv.iptvbox.ui.playlist
+
 import androidx.compose.material3.MaterialTheme
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import androidx.compose.animation.core.animateDpAsState
@@ -60,6 +61,7 @@ import com.hktnv.iptvbox.model.ScreenBottomPadding
 import com.hktnv.iptvbox.ui.common.ScreenHeader
 import com.hktnv.iptvbox.ui.common.SectionTitle
 import com.hktnv.iptvbox.ui.media.catalogSummary
+import com.hktnv.iptvbox.ui.playlist.detail.PlaylistDetailScreen
 
 @Composable
 internal fun PlaylistEntryScreen(

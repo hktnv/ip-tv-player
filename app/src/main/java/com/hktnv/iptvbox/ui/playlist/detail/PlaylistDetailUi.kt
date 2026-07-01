@@ -1,4 +1,4 @@
-package com.hktnv.iptvbox.ui.playlist
+package com.hktnv.iptvbox.ui.playlist.detail
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -109,7 +109,6 @@ private fun PlaylistDetailSplitLayout(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             PlaylistOverviewPanel(playlist = playlist, syncStatus = syncStatus)
-            progress?.let { PlaylistProgressPanel(it) }
         }
         Column(
             modifier = Modifier.weight(1f),
@@ -121,7 +120,7 @@ private fun PlaylistDetailSplitLayout(
             )
             PlaylistDetailActions(
                 active = active,
-                refreshing = progress?.active == true,
+                progress = progress,
                 onUse = onUse,
                 onReload = onReload,
                 onRename = onRename,
@@ -149,10 +148,9 @@ private fun PlaylistDetailSingleColumn(
             selectedHours = playlist.autoUpdateHours,
             onSelect = onAutoUpdateHoursChange,
         )
-        progress?.let { PlaylistProgressPanel(it) }
         PlaylistDetailActions(
             active = active,
-            refreshing = progress?.active == true,
+            progress = progress,
             onUse = onUse,
             onReload = onReload,
             onRename = onRename,

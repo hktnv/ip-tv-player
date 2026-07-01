@@ -1,4 +1,4 @@
-package com.hktnv.iptvbox.ui.playlist
+package com.hktnv.iptvbox.ui.playlist.detail
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement

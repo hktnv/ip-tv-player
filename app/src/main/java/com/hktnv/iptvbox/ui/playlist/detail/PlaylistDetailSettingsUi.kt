@@ -1,4 +1,4 @@
-package com.hktnv.iptvbox.ui.playlist
+package com.hktnv.iptvbox.ui.playlist.detail
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,9 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.accentSubtle
 import com.hktnv.iptvbox.model.PlaylistAutoUpdateHourOptions
-import com.hktnv.iptvbox.model.PlaylistImportProgress
 import com.hktnv.iptvbox.model.playlistAutoUpdateLabel
-import com.hktnv.iptvbox.state.contentProgressLabel
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
 import com.hktnv.iptvbox.ui.common.TvRestingBorder
@@ -116,38 +113,6 @@ private fun AutoUpdateOption(
             fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
-internal fun PlaylistProgressPanel(progress: PlaylistImportProgress) {
-    DetailPanel {
-        DetailSectionTitle(stringResource(R.string.playlist_refresh_status))
-        Text(
-            progress.message,
-            color = if (progress.error == null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-        )
-        if (progress.error == null) {
-            LinearProgressIndicator(
-                progress = {
-                    val total = progress.totalItems ?: 0
-                    if (total > 0) {
-                        (progress.processedItems.toFloat() / total.toFloat()).coerceIn(0f, 1f)
-                    } else {
-                        0f
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        Text(
-            text = progress.error ?: contentProgressLabel(progress.processedItems, progress.totalItems),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 13.sp,
-            lineHeight = 17.sp,
         )
     }
 }

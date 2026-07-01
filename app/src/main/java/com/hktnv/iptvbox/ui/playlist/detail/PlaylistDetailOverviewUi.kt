@@ -1,4 +1,4 @@
-package com.hktnv.iptvbox.ui.playlist
+package com.hktnv.iptvbox.ui.playlist.detail
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -24,7 +24,6 @@ import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import com.hktnv.iptvbox.model.CatalogSyncStatus
 import com.hktnv.iptvbox.model.LoadedPlaylist
-import com.hktnv.iptvbox.model.playlistAutoUpdateLabel
 import com.hktnv.iptvbox.ui.media.label
 import com.hktnv.iptvbox.ui.media.stats
 
@@ -41,7 +40,6 @@ internal fun PlaylistOverviewPanel(
                 listOf(
                     listOf(playlist.sourceSummaryCard()),
                     listOf(playlist.contentSummaryCard(stats.total, stats.live, stats.movies, stats.series)),
-                    listOf(playlist.autoRefreshSummaryCard()),
                 )
             } else {
                 listOf(
@@ -49,7 +47,6 @@ internal fun PlaylistOverviewPanel(
                         playlist.sourceSummaryCard(),
                         playlist.contentSummaryCard(stats.total, stats.live, stats.movies, stats.series),
                     ),
-                    listOf(playlist.autoRefreshSummaryCard()),
                 )
             }
             SummaryInfoRows(rows)
@@ -84,15 +81,6 @@ private fun LoadedPlaylist.contentSummaryCard(
         label = stringResource(R.string.playlist_content_summary),
         value = stringResource(R.string.playlist_content_count, total),
         detail = stringResource(R.string.playlist_content_breakdown, live, movies, series),
-    )
-}
-
-@Composable
-private fun LoadedPlaylist.autoRefreshSummaryCard(): SummaryInfoCard {
-    return SummaryInfoCard(
-        label = stringResource(R.string.playlist_auto_refresh),
-        value = playlistAutoUpdateLabel(autoUpdateHours),
-        detail = stringResource(R.string.playlist_auto_refresh_hint),
     )
 }
 

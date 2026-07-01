@@ -18,9 +18,7 @@
     <string name="playlist_management_subtitle">Oynatma listesi yönetimi</string>
     <string name="playlist_source_type">Kaynak tipi</string>
     <string name="playlist_content_summary">İçerik özeti</string>
-    <string name="playlist_auto_refresh">Otomatik güncelleme</string>
     <string name="playlist_auto_refresh_interval">Otomatik güncelleme aralığı</string>
-    <string name="playlist_auto_refresh_hint">Arka planda kontrol edilir</string>
     <string name="playlist_auto_refresh_description">Liste belirlenen aralıkta sessizce kontrol edilir; manuel yenileme bu ayardan bağımsız çalışır.</string>
     <string name="playlist_detail_info_section">Liste bilgileri</string>
     <string name="playlist_detail_actions_section">İşlemler</string>
@@ -60,5 +58,4 @@
     <string name="playlist_content_count">%1$d içerik</string>
     <string name="playlist_content_breakdown">%1$d canlı · %2$d film · %3$d dizi</string>
     <string name="playlist_content_progress">%1$d / %2$d içerik</string>
-    <string name="playlist_refresh_status">Yenileme durumu</string>
 </resources>

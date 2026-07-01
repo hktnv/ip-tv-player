@@ -27,7 +27,6 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.media3.common.C
 import androidx.media3.common.Player
 import com.hktnv.iptvbox.core.model.CatalogItem
 import kotlinx.coroutines.delay
@@ -93,35 +92,18 @@ internal fun PlayerScreen(
             nextItem = queue.next,
         )
     }
-    var isPlaying by remember(player) { mutableStateOf(player.isPlaying) }
-    var playbackSpeed by remember(player) { mutableStateOf(player.playbackParameters.speed) }
-    var currentPositionMs by remember(player) { mutableStateOf(0L) }
-    var durationMs by remember(player) { mutableStateOf(0L) }
-    var canSeek by remember(player) { mutableStateOf(false) }
-    var playbackState by remember(player) { mutableStateOf(player.playbackState) }
-    fun updatePlaybackSnapshot() {
-        isPlaying = player.isPlaying
-        playbackSpeed = player.playbackParameters.speed
-        currentPositionMs = player.currentPosition.coerceAtLeast(0L)
-        durationMs = player.duration.takeIf { it != C.TIME_UNSET }?.coerceAtLeast(0L) ?: 0L
-        canSeek = player.isCurrentMediaItemSeekable && durationMs > 0L
-        playbackState = player.playbackState
-    }
+    val playbackSnapshot = rememberPlayerPlaybackSnapshot(player)
     LaunchedEffect(player, item.id) {
-        currentPositionMs = 0L
-        durationMs = 0L
-        canSeek = false
-        playbackState = player.playbackState
-        updatePlaybackSnapshot()
+        playbackSnapshot.reset(player)
     }
     DisposableEffect(player) {
         val listener = object : Player.Listener {
             override fun onEvents(player: Player, events: Player.Events) {
-                updatePlaybackSnapshot()
+                playbackSnapshot.update(player)
             }
         }
         player.addListener(listener)
-        updatePlaybackSnapshot()
+        playbackSnapshot.update(player)
         onDispose {
             player.removeListener(listener)
         }
@@ -160,7 +142,7 @@ internal fun PlayerScreen(
     }
     LaunchedEffect(player, controlsVisible) {
         while (controlsVisible) {
-            updatePlaybackSnapshot()
+            playbackSnapshot.update(player)
             delay(500L)
         }
     }
@@ -186,18 +168,18 @@ internal fun PlayerScreen(
         onSelectItem(itemToPlay)
     }
     fun seekBy(deltaMs: Long) {
-        val target = calculateSeekTarget(player.currentPosition, durationMs, deltaMs)
-        diagnostics?.logSeekRequest(targetMs = target, canSeek = canSeek, source = "remote")
-        if (!canSeek) return
+        val target = calculateSeekTarget(player.currentPosition, playbackSnapshot.durationMs, deltaMs)
+        diagnostics?.logSeekRequest(targetMs = target, canSeek = playbackSnapshot.canSeek, source = "remote")
+        if (!playbackSnapshot.canSeek) return
         player.seekTo(target)
-        updatePlaybackSnapshot()
+        playbackSnapshot.update(player)
     }
     fun seekTo(targetMs: Long) {
-        val target = targetMs.coerceIn(0L, durationMs)
-        diagnostics?.logSeekRequest(targetMs = target, canSeek = canSeek, source = "timeline")
-        if (!canSeek) return
+        val target = targetMs.coerceIn(0L, playbackSnapshot.durationMs)
+        diagnostics?.logSeekRequest(targetMs = target, canSeek = playbackSnapshot.canSeek, source = "timeline")
+        if (!playbackSnapshot.canSeek) return
         player.seekTo(target)
-        updatePlaybackSnapshot()
+        playbackSnapshot.update(player)
     }
 
     fun retryCurrentContent() {
@@ -211,7 +193,7 @@ internal fun PlayerScreen(
         }
         player.prepare()
         player.play()
-        updatePlaybackSnapshot()
+        playbackSnapshot.update(player)
     }
 
     fun applyInputResult(result: PlayerInputResult): Boolean {
@@ -235,7 +217,7 @@ internal fun PlayerScreen(
                 manuallyPaused = true
                 player.pause()
             }
-            updatePlaybackSnapshot()
+            playbackSnapshot.update(player)
         }
         if (result.seekBack) seekBy(-10_000L)
         if (result.seekForward) seekBy(10_000L)
@@ -256,11 +238,11 @@ internal fun PlayerScreen(
     }
     fun cycleSpeed() {
         val speeds = listOf(0.5f, 1f, 1.25f, 1.5f, 2f)
-        val currentIndex = speeds.indexOfFirst { kotlin.math.abs(it - playbackSpeed) < 0.01f }
+        val currentIndex = speeds.indexOfFirst { kotlin.math.abs(it - playbackSnapshot.playbackSpeed) < 0.01f }
         val nextIndex = ((currentIndex.takeIf { it >= 0 } ?: 0) + 1) % speeds.size
         val nextSpeed = speeds[nextIndex]
         player.setPlaybackSpeed(nextSpeed)
-        updatePlaybackSnapshot()
+        playbackSnapshot.update(player)
     }
 
     fun handleRemoteCommand(command: PlayerRemoteCommand): Boolean {
@@ -365,7 +347,7 @@ internal fun PlayerScreen(
             PlayerOsdScrims()
         }
         AnimatedVisibility(
-            visible = (shouldShowBufferingIndicator(playbackState, manuallyPaused) ||
+            visible = (shouldShowBufferingIndicator(playbackSnapshot.playbackState, manuallyPaused) ||
                 connectionTimeoutUi.showLoading) && !connectionTimeoutVisible,
             enter = fadeIn(),
             exit = fadeOut(),
@@ -398,10 +380,10 @@ internal fun PlayerScreen(
         ) {
             PlayerControlsOverlay(
                 isPlaying = shouldPresentAsPlaying(player.playWhenReady, manuallyPaused),
-                positionMs = currentPositionMs,
-                durationMs = durationMs,
-                speed = playbackSpeed,
-                canSeek = canSeek,
+                positionMs = playbackSnapshot.currentPositionMs,
+                durationMs = playbackSnapshot.durationMs,
+                speed = playbackSnapshot.playbackSpeed,
+                canSeek = playbackSnapshot.canSeek,
                 onSeekBack = { seekBy(-10_000L) },
                 onSeekTo = ::seekTo,
                 onTogglePlayback = {
@@ -412,7 +394,7 @@ internal fun PlayerScreen(
                         manuallyPaused = true
                         player.pause()
                     }
-                    updatePlaybackSnapshot()
+                    playbackSnapshot.update(player)
                 },
                 onSeekForward = { seekBy(10_000L) },
                 onCycleSpeed = ::cycleSpeed,

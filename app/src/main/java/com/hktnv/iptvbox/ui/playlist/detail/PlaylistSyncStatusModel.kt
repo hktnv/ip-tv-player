@@ -1,4 +1,4 @@
-package com.hktnv.iptvbox.ui.playlist
+package com.hktnv.iptvbox.ui.playlist.detail
 
 import androidx.annotation.StringRes
 import com.hktnv.iptvbox.R
