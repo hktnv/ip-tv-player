@@ -39,7 +39,7 @@ internal fun ContentGrid(
             },
             onFocusChanged = { focused ->
                 onFocusChanged(focused)
-                if (focused) onFocusedInfoChanged(item.focusedContentInfo())
+                onFocusedInfoChanged(if (focused) item.focusedContentInfo() else null)
             },
             modifier = itemModifier,
         )

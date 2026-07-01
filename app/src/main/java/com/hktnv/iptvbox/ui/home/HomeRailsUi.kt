@@ -105,7 +105,7 @@ internal fun HomeContentRow(
                                 onFocusedInfoChanged(item.focusedContentInfo())
                             },
                             onFocusChanged = { focused ->
-                                if (focused) onFocusedInfoChanged(item.focusedContentInfo())
+                                onFocusedInfoChanged(if (focused) item.focusedContentInfo() else null)
                             },
                         )
                     }
@@ -163,7 +163,7 @@ internal fun HomeSeriesRow(
                                 onFocusedInfoChanged(group.focusedContentInfo())
                             },
                             onFocusChanged = { focused ->
-                                if (focused) onFocusedInfoChanged(group.focusedContentInfo())
+                                onFocusedInfoChanged(if (focused) group.focusedContentInfo() else null)
                             },
                         )
                     }

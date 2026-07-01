@@ -62,6 +62,31 @@ class AppCatalogRepositoryPerformanceTest {
         assertTrue("Search should use the precomputed index", searchMs < 1_000)
     }
 
+    @Test
+    fun categoriesAreSortedByContentCount() {
+        val playlist = LoadedPlaylist(
+            id = "category-order",
+            name = "Category order",
+            type = PlaylistSourceType.M3U_URL,
+            endpoint = "https://example.com/list.m3u",
+            headers = emptyMap(),
+            items = listOf(
+                categoryItem("news-1", "News", 0),
+                categoryItem("sports-1", "Sports", 1),
+                categoryItem("sports-2", "Sports", 2),
+                categoryItem("kids-1", "Kids", 3),
+                categoryItem("kids-2", "Kids", 4),
+                categoryItem("kids-3", "Kids", 5),
+            ),
+            epgUrls = emptyList(),
+            warnings = emptyList(),
+        )
+
+        val snapshot = AppCatalogRepository().buildSnapshot(playlist)
+
+        assertEquals(listOf("Kids", "Sports", "News"), snapshot.categories(CatalogTab.LIVE))
+    }
+
     private fun generateLargeCatalog(): List<CatalogItem> {
         val items = ArrayList<CatalogItem>(8_399)
         repeat(269) { index ->
@@ -121,5 +146,17 @@ class AppCatalogRepositoryPerformanceTest {
             }
         }
         return items
+    }
+
+    private fun categoryItem(id: String, category: String, order: Int): CatalogItem {
+        return CatalogItem(
+            id = id,
+            sourceId = "category-order",
+            kind = ContentKind.LIVE_CHANNEL,
+            title = id,
+            streamUrl = "http://example.com/live/$id.ts",
+            category = category,
+            providerOrder = order,
+        )
     }
 }

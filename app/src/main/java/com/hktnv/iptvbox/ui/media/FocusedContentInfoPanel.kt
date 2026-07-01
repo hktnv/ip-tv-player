@@ -16,6 +16,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -30,13 +35,27 @@ internal fun FocusedContentInfoPanel(
     info: FocusedContentInfo?,
     modifier: Modifier = Modifier,
 ) {
+    var shownInfo by remember { mutableStateOf<FocusedContentInfo?>(null) }
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(info) {
+        if (info == null) {
+            visible = false
+            return@LaunchedEffect
+        }
+        shownInfo = info
+        visible = true
+        kotlinx.coroutines.delay(FocusedContentInfoTimeoutMs)
+        if (shownInfo == info) visible = false
+    }
+
     AnimatedVisibility(
-        visible = info != null,
+        visible = visible && shownInfo != null,
         enter = fadeIn() + slideInVertically { it / 2 },
         exit = fadeOut() + slideOutVertically { it / 2 },
         modifier = modifier.fillMaxWidth(),
     ) {
-        val current = info ?: return@AnimatedVisibility
+        val current = shownInfo ?: return@AnimatedVisibility
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -87,3 +106,5 @@ internal fun FocusedContentInfoPanel(
         }
     }
 }
+
+private const val FocusedContentInfoTimeoutMs = 3_200L

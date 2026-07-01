@@ -70,10 +70,12 @@ internal fun CompactContentCard(
             .width(cardWidth)
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -5f)
-            .onFocusChanged {
-                focused = it.isFocused
-                onFocusChanged(it.isFocused)
-                if (it.isFocused) onFocused()
+            .onFocusChanged { state ->
+                val wasFocused = focused
+                val isFocused = state.isFocused
+                focused = isFocused
+                if (isFocused || wasFocused) onFocusChanged(isFocused)
+                if (isFocused) onFocused()
             }
             .tvClickable(onLongClick = onLongClick, onClick = onClick),
         color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
@@ -139,10 +141,12 @@ internal fun SeriesGroupCard(
             .fillMaxWidth()
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.03f, liftPx = -5f)
-            .onFocusChanged {
-                focused = it.isFocused
-                onFocusChanged(it.isFocused)
-                if (it.isFocused) onFocused()
+            .onFocusChanged { state ->
+                val wasFocused = focused
+                val isFocused = state.isFocused
+                focused = isFocused
+                if (isFocused || wasFocused) onFocusChanged(isFocused)
+                if (isFocused) onFocused()
             }
             .tvClickable(onLongClick = onLongClick, onClick = onClick),
         color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
@@ -202,10 +206,12 @@ internal fun SeasonCard(
             .fillMaxWidth()
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.02f, liftPx = -4f)
-            .onFocusChanged {
-                focused = it.isFocused
-                onFocusChanged(it.isFocused)
-                if (it.isFocused) onFocused()
+            .onFocusChanged { state ->
+                val wasFocused = focused
+                val isFocused = state.isFocused
+                focused = isFocused
+                if (isFocused || wasFocused) onFocusChanged(isFocused)
+                if (isFocused) onFocused()
             }
             .tvClickable(onLongClick = onLongClick, onClick = onClick),
         color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
@@ -248,10 +254,12 @@ internal fun ContentCard(
             .fillMaxWidth()
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.025f, liftPx = -5f)
-            .onFocusChanged {
-                focused = it.isFocused
-                onFocusChanged(it.isFocused)
-                if (it.isFocused) onFocused()
+            .onFocusChanged { state ->
+                val wasFocused = focused
+                val isFocused = state.isFocused
+                focused = isFocused
+                if (isFocused || wasFocused) onFocusChanged(isFocused)
+                if (isFocused) onFocused()
             }
             .tvClickable(onLongClick = onLongClick, onClick = onOpen),
         color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,

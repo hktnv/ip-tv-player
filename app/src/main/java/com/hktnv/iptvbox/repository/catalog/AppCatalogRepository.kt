@@ -4,7 +4,6 @@ import com.hktnv.iptvbox.core.common.SearchNormalizer
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentKind
 import com.hktnv.iptvbox.data.catalog.CatalogStore
-import com.hktnv.iptvbox.data.catalog.categories
 import com.hktnv.iptvbox.data.catalog.categoryCounts
 import com.hktnv.iptvbox.data.catalog.episodes
 import com.hktnv.iptvbox.data.catalog.seasons
@@ -35,11 +34,7 @@ internal class AppCatalogRepository(
             if (tab == CatalogTab.SERIES) store.seriesCategoryCounts(playlist.id) else store.categoryCounts(playlist.id, tab)
         }
         val categories = CatalogTab.entries.associateWith { tab ->
-            if (tab == CatalogTab.SERIES) {
-                categoryCounts.getValue(tab).keys.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it })
-            } else {
-                store.categories(playlist.id, tab)
-            }
+            sortCategoriesByCount(categoryCounts.getValue(tab).keys, categoryCounts.getValue(tab))
         }
         val currentItems = if (selectedTab == CatalogTab.SERIES) {
             emptyList()
@@ -158,6 +153,7 @@ internal class AppCatalogRepository(
 
         fun toSnapshot(playlistId: String): CatalogSnapshot {
             val seriesGroups = buildSeriesGroups(seriesBuckets)
+            val categoryCounts = categoryCounts(seriesGroups)
             val episodesBySeries = seriesBuckets.mapValues { (_, episodes) ->
                 episodes.sortedWith(compareBy<CatalogItem> { it.seasonNumber ?: 1 }.thenBy { it.episodeNumber ?: it.providerOrder })
             }
@@ -166,8 +162,10 @@ internal class AppCatalogRepository(
                 itemsById = byId,
                 stats = com.hktnv.iptvbox.model.PlaylistStats(live = liveCount, movies = movieCount, series = seriesGroups.size),
                 tabItems = tabItems.mapValues { it.value.toList() },
-                categoriesByTab = categories.mapValues { it.value.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { value -> value }) },
-                categoryCountsByTab = categoryCounts(seriesGroups),
+                categoriesByTab = categories.mapValues { (tab, values) ->
+                    sortCategoriesByCount(values, categoryCounts.getValue(tab))
+                },
+                categoryCountsByTab = categoryCounts,
                 itemsByCategory = byCategory.mapValues { (_, map) -> map.mapValues { it.value.toList() } },
                 seriesGroupsAll = seriesGroups,
                 episodesBySeries = episodesBySeries,
@@ -208,6 +206,15 @@ internal class AppCatalogRepository(
     private companion object {
         const val SAVED_LOOKUP_LIMIT = 120
     }
+}
+
+private fun sortCategoriesByCount(categories: Iterable<String>, counts: Map<String, Int>): List<String> {
+    return categories
+        .filter { it.isNotBlank() && (counts[it] ?: 0) > 0 }
+        .sortedWith(
+            compareByDescending<String> { counts[it] ?: 0 }
+                .thenBy(String.CASE_INSENSITIVE_ORDER) { it },
+        )
 }
 
 private fun buildSeriesGroups(seriesBuckets: Map<String, List<CatalogItem>>): List<SeriesGroup> {

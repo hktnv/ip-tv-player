@@ -49,7 +49,7 @@ internal fun SeriesGroupGrid(
             },
             onFocusChanged = { focused ->
                 onFocusChanged(focused)
-                if (focused) onFocusedInfoChanged(group.focusedContentInfo())
+                onFocusedInfoChanged(if (focused) group.focusedContentInfo() else null)
             },
             modifier = itemModifier,
         )
@@ -96,7 +96,7 @@ internal fun SeasonGroupGrid(
                 },
                 onFocusChanged = { focused ->
                     onFocusChanged(focused)
-                    if (focused) onFocusedInfoChanged(season.focusedContentInfo())
+                    onFocusedInfoChanged(if (focused) season.focusedContentInfo() else null)
                 },
                 modifier = itemModifier,
             )

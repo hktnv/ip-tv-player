@@ -122,9 +122,15 @@ private fun SearchResultRow(
             .height(if (compact) CompactSearchResultRowHeight else SearchResultRowHeight)
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.015f, liftPx = -3f)
-            .onFocusChanged {
-                focused = it.isFocused
-                if (it.isFocused) onFocusedInfoChanged(item.searchFocusedContentInfo(title, displayKind))
+            .onFocusChanged { state ->
+                val wasFocused = focused
+                val isFocused = state.isFocused
+                focused = isFocused
+                if (isFocused) {
+                    onFocusedInfoChanged(item.searchFocusedContentInfo(title, displayKind))
+                } else if (wasFocused) {
+                    onFocusedInfoChanged(null)
+                }
             }
             .onPreviewKeyEvent { event ->
                 if (
