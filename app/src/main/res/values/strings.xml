@@ -60,4 +60,27 @@
     <string name="playlist_content_count">%1$d içerik</string>
     <string name="playlist_content_breakdown">%1$d canlı · %2$d film · %3$d dizi</string>
     <string name="playlist_content_progress">%1$d / %2$d içerik</string>
+    <string name="playlist_hub_title">Oynatma Listeleri</string>
+    <string name="playlist_hub_subtitle">%1$d liste hazır</string>
+    <string name="playlist_hub_add_action">Yeni Liste</string>
+    <string name="playlist_hub_settings_action">Ayarlar</string>
+    <string name="playlist_hub_continue_action">Devam Et</string>
+    <string name="playlist_hub_section_title">Listelerim</string>
+    <string name="playlist_empty_title">İlk listenizi ekleyin</string>
+    <string name="playlist_empty_body">M3U, JSON veya Xtream listenizi bağlayın; uygulama içerikleri düzenli bir kataloğa dönüştürsün.</string>
+    <string name="playlist_empty_action">İlk Listeyi Ekle</string>
+    <string name="playlist_hub_status_waiting">Durum bekliyor</string>
+    <string name="playlist_hub_status_now">Az önce</string>
+    <string name="playlist_hub_status_minutes">%1$d dk önce</string>
+    <string name="playlist_hub_status_hours">%1$d sa önce</string>
+    <string name="playlist_hub_status_days">%1$d gün önce</string>
+    <string name="playlist_row_overflow_description">Liste işlemleri</string>
+    <string name="playlist_row_open_details">Detayları aç</string>
+    <string name="playlist_row_active">Aktif</string>
+    <string name="playlist_row_meta">%1$d içerik · %2$d canlı · %3$d film · %4$d dizi</string>
+    <string name="playlist_summary_meta">%1$s · %2$d favori · %3$d son izlenen</string>
+    <string name="action_catalog">Katalog</string>
+    <string name="catalog_live_tv">Canlı TV</string>
+    <string name="catalog_movies">Filmler</string>
+    <string name="catalog_series">Diziler</string>
 </resources>
