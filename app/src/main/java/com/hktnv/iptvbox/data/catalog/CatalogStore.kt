@@ -32,6 +32,7 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
         super.onOpen(db)
         db.ensureCatalogMeta()
         db.repairStrongUrlKindHintsOnce()
+        runCatching { db.pruneOrphanMetadataRows(limit = 50) }
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -74,7 +75,6 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
             measureDb("drop_indexes_ms", timings) { db.dropCatalogIndexes() }
             measureDb("delete_ms", timings) {
                 db.delete("items", "playlist_id=?", arrayOf(stored.id))
-                db.delete("metadata_cache", "playlist_id=?", arrayOf(stored.id))
                 db.delete("playlists", "id=?", arrayOf(stored.id))
             }
             measureDb("metadata_save_ms", timings) {
@@ -101,8 +101,9 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
                         rating,
                         tmdb_id,
                         provider_order,
+                        normalized_title,
                         search_text
-                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     """.trimIndent(),
                 ).use { statement ->
                     stored.items.forEach { item ->
@@ -124,7 +125,8 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
                         statement.bindNullableString(15, item.rating)
                         statement.bindNullableLong(16, item.tmdbId?.toLong())
                         statement.bindLong(17, item.providerOrder.toLong())
-                        statement.bindString(18, item.searchTextForStore())
+                        statement.bindString(18, item.normalizedTitleForStore())
+                        statement.bindString(19, item.searchTextForStore())
                         statement.executeInsert()
                     }
                 }
@@ -187,7 +189,6 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
 
     fun deletePlaylist(playlistId: String) {
         writableDatabase.transaction {
-            delete("metadata_cache", "playlist_id=?", arrayOf(playlistId))
             delete("items", "playlist_id=?", arrayOf(playlistId))
             delete("playlists", "id=?", arrayOf(playlistId))
         }

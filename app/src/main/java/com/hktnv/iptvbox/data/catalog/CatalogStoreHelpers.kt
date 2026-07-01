@@ -22,12 +22,14 @@ internal fun SQLiteDatabase.createCatalogIndexes() {
     execSQL("CREATE INDEX IF NOT EXISTS idx_items_tab ON items(playlist_id, kind, category, provider_order)")
     execSQL("CREATE INDEX IF NOT EXISTS idx_items_series ON items(playlist_id, series_title, season_number, episode_number)")
     execSQL("CREATE INDEX IF NOT EXISTS idx_items_search ON items(playlist_id, search_text)")
+    execSQL("CREATE INDEX IF NOT EXISTS idx_items_normalized_title ON items(normalized_title)")
 }
 
 internal fun SQLiteDatabase.dropCatalogIndexes() {
     execSQL("DROP INDEX IF EXISTS idx_items_tab")
     execSQL("DROP INDEX IF EXISTS idx_items_series")
     execSQL("DROP INDEX IF EXISTS idx_items_search")
+    execSQL("DROP INDEX IF EXISTS idx_items_normalized_title")
 }
 
 internal inline fun <T> measureDb(
@@ -97,3 +99,5 @@ internal fun CatalogItem.searchTextForStore(): String {
         episodeTitle,
     )
 }
+
+internal fun CatalogItem.normalizedTitleForStore(): String = SearchNormalizer.normalize(title)

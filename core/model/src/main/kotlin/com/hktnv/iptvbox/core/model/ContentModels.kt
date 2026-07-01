@@ -45,7 +45,9 @@ data class CatalogItem(
 
 @Serializable
 data class ContentMetadata(
-    val itemId: String,
+    val cacheKey: String,
+    val tmdbId: Int? = null,
+    val normalizedTitle: String,
     val plot: String? = null,
     val cast: String? = null,
     val director: String? = null,

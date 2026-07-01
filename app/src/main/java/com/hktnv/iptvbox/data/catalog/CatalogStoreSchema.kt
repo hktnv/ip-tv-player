@@ -2,7 +2,7 @@ package com.hktnv.iptvbox.data.catalog
 
 import android.database.sqlite.SQLiteDatabase
 
-internal const val CatalogDatabaseVersion = 3
+internal const val CatalogDatabaseVersion = 4
 
 internal fun SQLiteDatabase.createCatalogTables() {
     execSQL(
@@ -45,6 +45,7 @@ internal fun SQLiteDatabase.createCatalogTables() {
             rating TEXT,
             tmdb_id INTEGER,
             provider_order INTEGER NOT NULL,
+            normalized_title TEXT NOT NULL,
             search_text TEXT NOT NULL,
             PRIMARY KEY(playlist_id, item_id)
         )
@@ -64,23 +65,32 @@ internal fun SQLiteDatabase.upgradeCatalogSchema(oldVersion: Int) {
         execSQL("ALTER TABLE items ADD COLUMN tmdb_id INTEGER")
         createMetadataCacheTable()
     }
+    if (oldVersion < 4) {
+        execSQL("ALTER TABLE items ADD COLUMN normalized_title TEXT NOT NULL DEFAULT ''")
+        execSQL("DROP TABLE IF EXISTS metadata_cache")
+        createMetadataCacheTable()
+    }
 }
 
 internal fun SQLiteDatabase.createMetadataCacheTable() {
     execSQL(
         """
         CREATE TABLE IF NOT EXISTS metadata_cache(
-            playlist_id TEXT NOT NULL,
-            item_id TEXT NOT NULL,
+            cache_key TEXT PRIMARY KEY,
+            tmdb_id INTEGER,
+            normalized_title TEXT NOT NULL,
             plot TEXT,
             cast TEXT,
             director TEXT,
             youtube_trailer TEXT,
             duration TEXT,
             backdrop_url TEXT,
-            updated_at INTEGER NOT NULL,
-            PRIMARY KEY(playlist_id, item_id)
+            updated_at INTEGER NOT NULL
         )
         """.trimIndent(),
     )
+    execSQL(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_metadata_cache_tmdb ON metadata_cache(tmdb_id) WHERE tmdb_id IS NOT NULL",
+    )
+    execSQL("CREATE INDEX IF NOT EXISTS idx_metadata_cache_title ON metadata_cache(normalized_title)")
 }
