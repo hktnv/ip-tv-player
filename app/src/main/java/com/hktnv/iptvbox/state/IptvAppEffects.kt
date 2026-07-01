@@ -9,6 +9,7 @@ import kotlinx.coroutines.withContext
 import com.hktnv.iptvbox.repository.catalog.AppCatalogRepository
 import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
 import com.hktnv.iptvbox.data.catalog.CatalogStore
+import com.hktnv.iptvbox.data.catalog.MetadataCleanupScheduler
 import com.hktnv.iptvbox.model.AppPerformanceMode
 import com.hktnv.iptvbox.model.AppScreen
 import com.hktnv.iptvbox.model.CatalogTab
@@ -38,6 +39,17 @@ internal fun RestoreAppStateEffect(
                 telemetry.recordDuration("cold_start_restore_state_failed_ms", restoreStartedAt)
                 onFailure(it)
             }
+    }
+}
+
+@Composable
+internal fun ScheduledMetadataCleanupEffect(
+    restoredApplied: Boolean,
+    cleanupScheduler: MetadataCleanupScheduler,
+) {
+    LaunchedEffect(restoredApplied, cleanupScheduler) {
+        if (!restoredApplied) return@LaunchedEffect
+        cleanupScheduler.runAfterStartupDelay()
     }
 }
 

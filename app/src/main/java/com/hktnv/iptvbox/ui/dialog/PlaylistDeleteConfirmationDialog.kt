@@ -24,11 +24,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
@@ -64,7 +66,7 @@ internal fun PlaylistDeleteConfirmationDialog(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Text(
-                    text = "Oynatma listesi silinsin mi?",
+                    text = stringResource(R.string.playlist_delete_title),
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
@@ -78,7 +80,7 @@ internal fun PlaylistDeleteConfirmationDialog(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = "Bu liste ve içindeki katalog bu cihazdan kaldırılır. İşlemden önce emin olun.",
+                    text = stringResource(R.string.playlist_delete_message),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 15.sp,
                     lineHeight = 21.sp,
@@ -88,14 +90,14 @@ internal fun PlaylistDeleteConfirmationDialog(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     DeleteDialogButton(
-                        text = "Vazgeç",
+                        text = stringResource(R.string.action_cancel),
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f),
                         focusRequester = cancelFocusRequester,
                         danger = false,
                     )
                     DeleteDialogButton(
-                        text = "Sil",
+                        text = stringResource(R.string.action_delete),
                         onClick = onConfirm,
                         modifier = Modifier.weight(1f),
                         danger = true,

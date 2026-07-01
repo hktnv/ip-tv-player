@@ -13,6 +13,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.data.catalog.CatalogStore
+import com.hktnv.iptvbox.data.catalog.MetadataCleanupScheduler
 import com.hktnv.iptvbox.data.playlist.RemotePlaylistLoader
 import com.hktnv.iptvbox.installedVersionCode
 import com.hktnv.iptvbox.model.AppPerformanceMode
@@ -41,6 +42,7 @@ import com.hktnv.iptvbox.state.playlistStateAfterDeletion
 import com.hktnv.iptvbox.state.reloadPlaylistAction
 import com.hktnv.iptvbox.state.renamePlaylistAction
 import com.hktnv.iptvbox.state.RestoreAppStateEffect
+import com.hktnv.iptvbox.state.ScheduledMetadataCleanupEffect
 import com.hktnv.iptvbox.state.saveLoadedPlaylistAction
 import com.hktnv.iptvbox.state.SelectedPlaylistRepairEffect
 import com.hktnv.iptvbox.state.startUpdateDownloadAction
@@ -64,6 +66,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val localContext = LocalContext.current; val context = localContext.applicationContext; val activity = localContext as? android.app.Activity
     val loader = remember { RemotePlaylistLoader() }
     val catalogStore = remember(context) { CatalogStore(context) }
+    val metadataCleanupScheduler = remember(context, catalogStore) { MetadataCleanupScheduler(context, catalogStore) }
     val catalogRepository = remember(catalogStore) { AppCatalogRepository(catalogStore) }
     val scope = rememberCoroutineScope()
     val stateStore = remember(context, catalogStore) { AppStateStore(context, catalogStore) }
@@ -121,6 +124,10 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onFirstDrawRecorded = { firstDrawRecorded = true },
         onUpdateCheckStarted = { updateCheckStarted = true },
         onUpdateAvailable = { updateState = AppUpdateUiState.Available(it) },
+    )
+    ScheduledMetadataCleanupEffect(
+        restoredApplied = restoredApplied,
+        cleanupScheduler = metadataCleanupScheduler,
     )
     val selectedPlaylist = playlists.firstOrNull { it.id == selectedPlaylistId } ?: playlists.firstOrNull()
     SelectedPlaylistRepairEffect(

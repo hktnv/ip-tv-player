@@ -16,10 +16,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hktnv.iptvbox.R
 
 @Composable
 internal fun StatusBanner(text: String, onDismiss: () -> Unit) {
@@ -40,7 +42,7 @@ internal fun StatusBanner(text: String, onDismiss: () -> Unit) {
             modifier = Modifier.weight(1f),
         )
         TextButton(onClick = onDismiss) {
-            Text("Kapat")
+            Text(stringResource(R.string.action_close))
         }
     }
 }
@@ -73,7 +75,7 @@ internal fun FloatingStatusToast(
                 modifier = Modifier.weight(1f, fill = false),
             )
             TextButton(onClick = onDismiss) {
-                Text("Kapat")
+                Text(stringResource(R.string.action_close))
             }
         }
     }

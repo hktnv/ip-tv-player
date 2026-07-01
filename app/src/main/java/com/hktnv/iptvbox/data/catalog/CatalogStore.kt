@@ -32,7 +32,6 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
         super.onOpen(db)
         db.ensureCatalogMeta()
         db.repairStrongUrlKindHintsOnce()
-        runCatching { db.pruneOrphanMetadataRows(limit = 50) }
     }
 
     override fun onCreate(db: SQLiteDatabase) {

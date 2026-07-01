@@ -12,9 +12,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import com.hktnv.iptvbox.player.PlayerUiMode
 import com.hktnv.iptvbox.ui.common.tvClickable
@@ -26,13 +28,13 @@ internal fun PlayerUiModePanelContent(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            text = "Oynatıcı arayüzü",
+            text = stringResource(R.string.player_ui_mode_title),
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = 23.sp,
             fontWeight = FontWeight.Bold,
         )
         Text(
-            text = "Standart Media3 arayüzü ile modern IPTV kontrol arayüzü arasında geçiş yapın.",
+            text = stringResource(R.string.player_ui_mode_description),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 15.sp,
             lineHeight = 20.sp,
@@ -55,7 +57,7 @@ internal fun PlayerUiModePanelContent(
             )
         }
         Text(
-            text = "Kumandada OK ile değiştirin veya dokunarak seçin.",
+            text = stringResource(R.string.player_ui_mode_touch_hint),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp,
             lineHeight = 18.sp,
@@ -91,17 +93,33 @@ private fun PlayerUiModeChip(
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                text = mode.title,
+                text = mode.localizedTitle(),
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = mode.description,
+                text = mode.localizedDescription(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 lineHeight = 17.sp,
             )
         }
+    }
+}
+
+@Composable
+private fun PlayerUiMode.localizedTitle(): String {
+    return when (this) {
+        PlayerUiMode.CustomOsd -> stringResource(R.string.player_ui_mode_custom_title)
+        PlayerUiMode.StandardMedia3 -> stringResource(R.string.player_ui_mode_standard_title)
+    }
+}
+
+@Composable
+private fun PlayerUiMode.localizedDescription(): String {
+    return when (this) {
+        PlayerUiMode.CustomOsd -> stringResource(R.string.player_ui_mode_custom_description)
+        PlayerUiMode.StandardMedia3 -> stringResource(R.string.player_ui_mode_standard_description)
     }
 }

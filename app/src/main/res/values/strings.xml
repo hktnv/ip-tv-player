@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">IP TV Player</string>
+    <string name="action_close">Kapat</string>
+    <string name="action_cancel">Vazgeç</string>
+    <string name="action_delete">Sil</string>
+    <string name="playlist_delete_title">Oynatma listesi silinsin mi?</string>
+    <string name="playlist_delete_message">Bu liste ve içindeki katalog bu cihazdan kaldırılır. İşlemden önce emin olun.</string>
+    <string name="player_ui_mode_title">Oynatıcı arayüzü</string>
+    <string name="player_ui_mode_description">Standart Media3 arayüzü ile modern IPTV kontrol arayüzü arasında geçiş yapın.</string>
+    <string name="player_ui_mode_touch_hint">Kumandada OK ile değiştirin veya dokunarak seçin.</string>
+    <string name="player_ui_mode_custom_title">Modern OSD</string>
+    <string name="player_ui_mode_custom_description">IPTV Box kumanda kontrolleri ve içerik listesi.</string>
+    <string name="player_ui_mode_standard_title">Standart Media3</string>
+    <string name="player_ui_mode_standard_description">Media3/ExoPlayer’ın yerleşik kontrol arayüzü.</string>
 </resources>
