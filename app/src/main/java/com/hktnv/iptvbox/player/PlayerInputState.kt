@@ -24,6 +24,7 @@ internal data class PlayerInputResult(
     val state: PlayerInputState,
     val consumeInput: Boolean = true,
     val showControls: Boolean = false,
+    val showZappingInfo: Boolean = false,
     val togglePlayback: Boolean = false,
     val selectNextItem: Boolean = false,
     val selectPreviousItem: Boolean = false,
@@ -61,8 +62,8 @@ internal fun reducePlayerInput(
         }
         PlayerInputAction.UpPressed -> when (state) {
             PlayerInputState.Watching -> PlayerInputResult(
-                state = PlayerInputState.ControlsVisible,
-                showControls = true,
+                state = PlayerInputState.Watching,
+                showZappingInfo = true,
                 selectNextItem = true,
             )
             PlayerInputState.ControlsVisible -> PlayerInputResult(
@@ -73,8 +74,8 @@ internal fun reducePlayerInput(
         }
         PlayerInputAction.DownPressed -> when (state) {
             PlayerInputState.Watching -> PlayerInputResult(
-                state = PlayerInputState.ControlsVisible,
-                showControls = true,
+                state = PlayerInputState.Watching,
+                showZappingInfo = true,
                 selectPreviousItem = true,
             )
             PlayerInputState.ControlsVisible -> PlayerInputResult(

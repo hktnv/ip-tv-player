@@ -130,16 +130,16 @@ internal fun PlayerScreen(
     var inputState by remember { mutableStateOf(PlayerInputState.Watching) }
     var exitChoice by remember { mutableStateOf(PlayerExitChoice.Exit) }
     var controlsRevision by remember { mutableIntStateOf(0) }
+    var zappingInfoVisible by remember { mutableStateOf(false) }
     val backPressGuard = remember { PlayerBackPressGuard() }
     val controlsVisible = inputState == PlayerInputState.ControlsVisible
     val contentListVisible = inputState == PlayerInputState.ContentListVisible
     val exitConfirmVisible = inputState == PlayerInputState.ExitConfirmVisible
     val osdVisible = controlsVisible && !contentListVisible && !exitConfirmVisible
+    val zappingInfoActive = zappingInfoVisible && inputState == PlayerInputState.Watching
     val playerFocusRequester = remember { FocusRequester() }
     LaunchedEffect(item.id, inputState) {
-        if (inputState == PlayerInputState.Watching) {
-            runCatching { playerFocusRequester.requestFocus() }
-        }
+        if (inputState == PlayerInputState.Watching) runCatching { playerFocusRequester.requestFocus() }
     }
     LaunchedEffect(player, controlsVisible) {
         while (controlsVisible) {
@@ -155,11 +155,17 @@ internal fun PlayerScreen(
             }
         }
     }
+    LaunchedEffect(zappingInfoVisible, item.id) {
+        if (!zappingInfoVisible) return@LaunchedEffect
+        delay(1_900L)
+        zappingInfoVisible = false
+    }
 
-    fun switchTo(itemToPlay: CatalogItem) {
+    fun switchTo(itemToPlay: CatalogItem, revealControls: Boolean = true) {
         manuallyPaused = false
-        inputState = PlayerInputState.ControlsVisible
-        controlsRevision++
+        zappingInfoVisible = !revealControls
+        inputState = if (revealControls) PlayerInputState.ControlsVisible else PlayerInputState.Watching
+        if (revealControls) controlsRevision++
         onSelectItem(itemToPlay)
     }
     fun seekBy(deltaMs: Long) {
@@ -180,12 +186,13 @@ internal fun PlayerScreen(
         val previousState = inputState
         inputState = result.state
         if (result.state == PlayerInputState.ControlsVisible) {
+            zappingInfoVisible = false
             controlsRevision++
             backPressGuard.markOverlayBackHandled(SystemClock.uptimeMillis())
+        } else if (result.state != PlayerInputState.Watching) {
+            zappingInfoVisible = false
         }
-        if (result.state == PlayerInputState.ExitConfirmVisible &&
-            previousState != PlayerInputState.ExitConfirmVisible
-        ) {
+        if (result.state == PlayerInputState.ExitConfirmVisible && previousState != PlayerInputState.ExitConfirmVisible) {
             exitChoice = PlayerExitChoice.Exit
         }
         if (result.togglePlayback) {
@@ -200,15 +207,13 @@ internal fun PlayerScreen(
         }
         if (result.seekBack) seekBy(-10_000L)
         if (result.seekForward) seekBy(10_000L)
-        if (result.selectNextItem) queue.next?.let(::switchTo)
-        if (result.selectPreviousItem) queue.previous?.let(::switchTo)
+        if (result.selectNextItem) queue.next?.let { switchTo(it, revealControls = !result.showZappingInfo) }
+        if (result.selectPreviousItem) queue.previous?.let { switchTo(it, revealControls = !result.showZappingInfo) }
         if (result.exitRequested) onBack()
         return result.consumeInput
     }
     fun keepControlsAlive() {
-        if (inputState == PlayerInputState.ControlsVisible) {
-            controlsRevision++
-        }
+        if (inputState == PlayerInputState.ControlsVisible) controlsRevision++
     }
     fun performExitChoice() {
         val action = when (exitChoice) {
@@ -339,6 +344,14 @@ internal fun PlayerScreen(
             modifier = Modifier.align(Alignment.TopStart),
         ) {
             PlayerInfoOverlay(info = contentInfo)
+        }
+        AnimatedVisibility(
+            visible = zappingInfoActive && !contentListVisible && !exitConfirmVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.TopStart),
+        ) {
+            PlayerZappingInfoOverlay(info = contentInfo)
         }
         AnimatedVisibility(
             visible = osdVisible,

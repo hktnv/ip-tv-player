@@ -103,7 +103,7 @@ class PlayerInputStateTest {
     }
 
     @Test
-    fun upAndDownMoveQueueOnlyWhileWatching() {
+    fun upAndDownMoveQueueWithoutOpeningControlsWhileWatching() {
         val nextResult = reducePlayerInput(
             state = PlayerInputState.Watching,
             action = PlayerInputAction.UpPressed,
@@ -113,12 +113,14 @@ class PlayerInputStateTest {
             action = PlayerInputAction.DownPressed,
         )
 
-        assertEquals(PlayerInputState.ControlsVisible, nextResult.state)
+        assertEquals(PlayerInputState.Watching, nextResult.state)
         assertEquals(PlayerInputState.ControlsVisible, previousResult.state)
-        assertTrue(nextResult.showControls)
+        assertFalse(nextResult.showControls)
+        assertTrue(nextResult.showZappingInfo)
         assertTrue(nextResult.selectNextItem)
         assertFalse(previousResult.consumeInput)
         assertFalse(previousResult.showControls)
+        assertFalse(previousResult.showZappingInfo)
         assertFalse(previousResult.selectPreviousItem)
     }
 }

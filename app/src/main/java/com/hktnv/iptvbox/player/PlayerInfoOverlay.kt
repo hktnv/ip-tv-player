@@ -1,14 +1,20 @@
 package com.hktnv.iptvbox.player
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.TextStyle
@@ -52,6 +58,55 @@ internal fun PlayerInfoOverlay(
         )
         PlayerNeighborInfo(label = "Önceki", title = info.previousTitle)
         PlayerNeighborInfo(label = "Sonraki", title = info.nextTitle)
+    }
+}
+
+@Composable
+internal fun PlayerZappingInfoOverlay(
+    info: PlayerContentInfo,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(128.dp)
+            .background(
+                Brush.verticalGradient(
+                    0f to MaterialTheme.colorScheme.background.copy(alpha = 0.74f),
+                    1f to MaterialTheme.colorScheme.background.copy(alpha = 0f),
+                ),
+            ),
+    ) {
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 44.dp, top = 30.dp, end = 44.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                PlayerOsdText(
+                    text = info.typeLabel,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                )
+                PlayerOsdText(
+                    text = info.category,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                )
+            }
+            PlayerOsdText(
+                text = info.title,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+            )
+        }
     }
 }
 
