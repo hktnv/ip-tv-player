@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
@@ -20,17 +21,19 @@ import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 @Composable
 internal fun DetailPanel(
     modifier: Modifier = Modifier,
+    contentPadding: Dp = 14.dp,
+    itemSpacing: Dp = 8.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(10.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceBorder),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(contentPadding),
+            verticalArrangement = Arrangement.spacedBy(itemSpacing),
             content = content,
         )
     }
@@ -41,7 +44,7 @@ internal fun DetailSectionTitle(text: String) {
     Text(
         text = text,
         color = MaterialTheme.colorScheme.onSurface,
-        fontSize = 18.sp,
+        fontSize = 16.sp,
         fontWeight = FontWeight.Bold,
     )
 }

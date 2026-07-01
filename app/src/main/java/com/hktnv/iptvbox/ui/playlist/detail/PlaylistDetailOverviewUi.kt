@@ -1,19 +1,21 @@
 package com.hktnv.iptvbox.ui.playlist.detail
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -21,7 +23,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hktnv.iptvbox.R
-import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import com.hktnv.iptvbox.model.CatalogSyncStatus
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.ui.media.label
@@ -35,102 +36,59 @@ internal fun PlaylistOverviewPanel(
     val stats = remember(playlist.id, playlist.items) { playlist.stats() }
     DetailPanel {
         DetailSectionTitle(stringResource(R.string.playlist_detail_info_section))
-        BoxWithConstraints {
-            val rows = if (maxWidth < 520.dp) {
-                listOf(
-                    listOf(playlist.sourceSummaryCard()),
-                    listOf(playlist.contentSummaryCard(stats.total, stats.live, stats.movies, stats.series)),
-                )
+        OverviewLine(
+            label = stringResource(R.string.playlist_source_type),
+            value = playlist.type.label(),
+            meta = if (playlist.xtreamApiSupported) {
+                stringResource(R.string.playlist_xtream_supported)
             } else {
-                listOf(
-                    listOf(
-                        playlist.sourceSummaryCard(),
-                        playlist.contentSummaryCard(stats.total, stats.live, stats.movies, stats.series),
-                    ),
-                )
-            }
-            SummaryInfoRows(rows)
-        }
-        if (playlist.xtreamApiSupported || syncStatus != null) {
-            PlaylistSyncStatusPanel(
-                status = syncStatus,
-                modifier = Modifier.fillMaxWidth(),
-                compact = true,
-            )
-        }
+                null
+            },
+        )
+        OverviewLine(
+            label = stringResource(R.string.playlist_content_summary),
+            value = stringResource(R.string.playlist_content_count, stats.total),
+            meta = stringResource(R.string.playlist_content_breakdown, stats.live, stats.movies, stats.series),
+            primary = true,
+        )
+        CatalogStatusLine(status = syncStatus)
     }
 }
 
 @Composable
-private fun LoadedPlaylist.sourceSummaryCard(): SummaryInfoCard {
-    return SummaryInfoCard(
-        label = stringResource(R.string.playlist_source_type),
-        value = type.label(),
-        detail = if (xtreamApiSupported) stringResource(R.string.playlist_xtream_supported) else null,
-    )
-}
-
-@Composable
-private fun LoadedPlaylist.contentSummaryCard(
-    total: Int,
-    live: Int,
-    movies: Int,
-    series: Int,
-): SummaryInfoCard {
-    return SummaryInfoCard(
-        label = stringResource(R.string.playlist_content_summary),
-        value = stringResource(R.string.playlist_content_count, total),
-        detail = stringResource(R.string.playlist_content_breakdown, live, movies, series),
-    )
-}
-
-@Composable
-private fun SummaryInfoRows(rows: List<List<SummaryInfoCard>>) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        rows.forEach { row ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                row.forEach { card ->
-                    SummaryInfoCardView(card, Modifier.weight(1f))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SummaryInfoCardView(
-    card: SummaryInfoCard,
+private fun OverviewLine(
+    label: String,
+    value: String,
     modifier: Modifier = Modifier,
+    meta: String? = null,
+    primary: Boolean = false,
 ) {
-    Surface(
-        modifier = modifier.defaultMinSize(minHeight = 74.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceBorder),
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
+        Text(
+            text = label,
+            modifier = Modifier.widthIn(min = 86.dp, max = 132.dp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
-                text = card.label,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = card.value,
+                text = value,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = if (primary) 18.sp else 14.sp,
+                fontWeight = if (primary) FontWeight.Bold else FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            card.detail?.let {
+            meta?.let {
                 Text(
                     text = it,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -143,8 +101,36 @@ private fun SummaryInfoCardView(
     }
 }
 
-private data class SummaryInfoCard(
-    val label: String,
-    val value: String,
-    val detail: String? = null,
-)
+@Composable
+private fun CatalogStatusLine(status: CatalogSyncStatus?) {
+    val model = status.toPlaylistSyncStatusUiModel()
+    val body = model.bodyArg?.let { stringResource(model.bodyRes, it) } ?: stringResource(model.bodyRes)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (model.active) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        } else {
+            Icon(
+                imageVector = if (model.error) Icons.Filled.Warning else Icons.Filled.CheckCircle,
+                contentDescription = null,
+                modifier = Modifier.size(17.dp),
+                tint = if (model.error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = stringResource(R.string.playlist_sync_inline_status, stringResource(model.titleRes), body),
+            color = if (model.error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}

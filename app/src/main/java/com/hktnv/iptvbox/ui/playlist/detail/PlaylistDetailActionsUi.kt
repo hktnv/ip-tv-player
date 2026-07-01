@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -118,30 +119,31 @@ private fun PlaylistActionButton(
         modifier = modifier
             .fillMaxWidth()
             .zIndex(if (focused) 1f else 0f)
-            .tvFocusLift(focused = focused, scale = 1.018f, liftPx = -3f)
+            .tvFocusLift(focused = focused, scale = 1.012f, liftPx = 0f)
             .onFocusChanged { focused = it.isFocused }
+            .defaultMinSize(minHeight = 48.dp)
             .tvClickable(enabled = enabled, onClick = onClick),
         color = colors.container,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(10.dp),
         border = BorderStroke(if (focused) 2.dp else 1.dp, colors.border),
-        shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 12.dp),
+        shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 0.dp),
     ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(19.dp),
                     tint = colors.content,
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
                         text = label,
                         color = colors.content,
-                        fontSize = 15.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

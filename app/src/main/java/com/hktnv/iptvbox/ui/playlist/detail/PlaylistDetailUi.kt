@@ -41,10 +41,11 @@ internal fun PlaylistDetailScreen(
             .fillMaxSize()
             .padding(horizontal = contentPadding),
     ) {
-        val splitLayout = maxWidth >= 760.dp
+        val splitLayout = maxWidth >= 900.dp
+        val sectionGap = if (maxWidth < 600.dp) 16.dp else 10.dp
         LazyColumn(
-            contentPadding = PaddingValues(top = 16.dp, bottom = ScreenBottomPadding),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            contentPadding = PaddingValues(top = 10.dp, bottom = ScreenBottomPadding),
+            verticalArrangement = Arrangement.spacedBy(sectionGap),
         ) {
             item {
                 ScreenHeader(
@@ -70,6 +71,7 @@ internal fun PlaylistDetailScreen(
                         onRename = onRename,
                         onDelete = onDelete,
                         onAutoUpdateHoursChange = onAutoUpdateHoursChange,
+                        sectionGap = sectionGap,
                     )
                 }
             } else {
@@ -84,6 +86,7 @@ internal fun PlaylistDetailScreen(
                         onRename = onRename,
                         onDelete = onDelete,
                         onAutoUpdateHoursChange = onAutoUpdateHoursChange,
+                        sectionGap = sectionGap,
                     )
                 }
             }
@@ -102,22 +105,19 @@ private fun PlaylistDetailSplitLayout(
     onRename: () -> Unit,
     onDelete: () -> Unit,
     onAutoUpdateHoursChange: (Int) -> Unit,
+    sectionGap: Dp,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.weight(0.4f),
+            verticalArrangement = Arrangement.spacedBy(sectionGap),
         ) {
             PlaylistOverviewPanel(playlist = playlist, syncStatus = syncStatus)
         }
         Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.weight(0.6f),
+            verticalArrangement = Arrangement.spacedBy(sectionGap),
         ) {
-            AutoUpdateSelector(
-                selectedHours = playlist.autoUpdateHours,
-                onSelect = onAutoUpdateHoursChange,
-            )
             PlaylistDetailActions(
                 active = active,
                 progress = progress,
@@ -125,6 +125,10 @@ private fun PlaylistDetailSplitLayout(
                 onReload = onReload,
                 onRename = onRename,
                 onDelete = onDelete,
+            )
+            AutoUpdateSelector(
+                selectedHours = playlist.autoUpdateHours,
+                onSelect = onAutoUpdateHoursChange,
             )
         }
     }
@@ -141,13 +145,10 @@ private fun PlaylistDetailSingleColumn(
     onRename: () -> Unit,
     onDelete: () -> Unit,
     onAutoUpdateHoursChange: (Int) -> Unit,
+    sectionGap: Dp,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(sectionGap)) {
         PlaylistOverviewPanel(playlist = playlist, syncStatus = syncStatus)
-        AutoUpdateSelector(
-            selectedHours = playlist.autoUpdateHours,
-            onSelect = onAutoUpdateHoursChange,
-        )
         PlaylistDetailActions(
             active = active,
             progress = progress,
@@ -155,6 +156,10 @@ private fun PlaylistDetailSingleColumn(
             onReload = onReload,
             onRename = onRename,
             onDelete = onDelete,
+        )
+        AutoUpdateSelector(
+            selectedHours = playlist.autoUpdateHours,
+            onSelect = onAutoUpdateHoursChange,
         )
     }
 }
