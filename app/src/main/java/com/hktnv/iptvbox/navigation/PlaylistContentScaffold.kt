@@ -31,9 +31,8 @@ import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.model.CatalogSyncStatus
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.PlaylistImportProgress
-import com.hktnv.iptvbox.player.PlayerUiMode
 import com.hktnv.iptvbox.telemetry.AppPerformanceTelemetry
-import com.hktnv.iptvbox.telemetry.PerformanceDiagnostics
+import com.hktnv.iptvbox.state.StartupBehavior
 import com.hktnv.iptvbox.ui.catalog.CatalogScreen
 import com.hktnv.iptvbox.ui.common.FloatingStatusToast
 import com.hktnv.iptvbox.ui.home.HomeScreen
@@ -63,8 +62,7 @@ internal fun PlaylistContentScaffold(
     favoriteItems: List<CatalogItem>,
     recentItems: List<CatalogItem>,
     playlistDetailId: String?,
-    diagnostics: PerformanceDiagnostics,
-    playerUiMode: PlayerUiMode,
+    startupBehavior: StartupBehavior,
     banner: String?,
     playlistImportProgress: PlaylistImportProgress?,
     catalogSyncStatuses: Map<String, CatalogSyncStatus>,
@@ -100,7 +98,7 @@ internal fun PlaylistContentScaffold(
     onOpenPlaylistEntry: () -> Unit,
     onNavigate: (AppScreen) -> Unit,
     onDrawerEvent: (NavigationDrawerEvent) -> Unit,
-    onPlayerUiModeChange: (PlayerUiMode) -> Unit,
+    onStartupBehaviorChange: (StartupBehavior) -> Unit,
     onRequestExitConfirmation: () -> Unit,
     onDismissBanner: () -> Unit,
 ) {
@@ -155,8 +153,7 @@ internal fun PlaylistContentScaffold(
                     favoriteItems = favoriteItems,
                     recentItems = recentItems,
                     playlistDetailId = playlistDetailId,
-                    diagnostics = diagnostics,
-                    playerUiMode = playerUiMode,
+                    startupBehavior = startupBehavior,
                     playlistImportProgress = playlistImportProgress,
                     catalogSyncStatuses = catalogSyncStatuses,
                     contentInitialFocusRequester = contentInitialFocusRequester,
@@ -188,7 +185,7 @@ internal fun PlaylistContentScaffold(
                     onQueryChange = onQueryChange,
                     onSearch = onSearch,
                     onOpenPlaylistEntry = onOpenPlaylistEntry,
-                    onPlayerUiModeChange = onPlayerUiModeChange,
+                    onStartupBehaviorChange = onStartupBehaviorChange,
                     onRequestSideMenu = { handleDrawerEvent(NavigationDrawerEvent.OpenByUserNavigation) },
                 )
             }

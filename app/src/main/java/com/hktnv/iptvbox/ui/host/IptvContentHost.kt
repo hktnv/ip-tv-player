@@ -38,8 +38,8 @@ import com.hktnv.iptvbox.navigation.shouldHandleSeriesBack
 import com.hktnv.iptvbox.navigation.shouldReturnToCatalogCategories
 import com.hktnv.iptvbox.player.PlayerScreen
 import com.hktnv.iptvbox.player.PlayerUiMode
+import com.hktnv.iptvbox.state.StartupBehavior
 import com.hktnv.iptvbox.telemetry.AppPerformanceTelemetry
-import com.hktnv.iptvbox.telemetry.PerformanceDiagnostics
 import com.hktnv.iptvbox.ui.common.BootScreen
 import com.hktnv.iptvbox.ui.common.RecoveryScreen
 import com.hktnv.iptvbox.ui.playlist.PlaylistEntryScreen
@@ -60,6 +60,7 @@ internal fun IptvContentHost(
     catalogSnapshot: CatalogSnapshot?,
     catalogIndexLoading: Boolean,
     playerUiMode: PlayerUiMode,
+    startupBehavior: StartupBehavior,
     selectedTab: CatalogTab,
     selectedCategory: String?,
     showCatalogCategoryLanding: Boolean,
@@ -70,7 +71,6 @@ internal fun IptvContentHost(
     favoriteItems: List<CatalogItem>,
     recentItems: List<CatalogItem>,
     playlistDetailId: String?,
-    diagnostics: PerformanceDiagnostics,
     banner: String?,
     playlistImportProgress: PlaylistImportProgress?,
     catalogSyncStatuses: Map<String, CatalogSyncStatus>,
@@ -116,7 +116,7 @@ internal fun IptvContentHost(
     onOpenPlaylistEntry: () -> Unit,
     onNavigate: (AppScreen) -> Unit,
     onDrawerEvent: (NavigationDrawerEvent) -> Unit,
-    onPlayerUiModeChange: (PlayerUiMode) -> Unit,
+    onStartupBehaviorChange: (StartupBehavior) -> Unit,
     onRequestExitConfirmation: () -> Unit,
     onDismissBanner: () -> Unit,
 ) {
@@ -241,8 +241,7 @@ internal fun IptvContentHost(
                     favoriteItems = favoriteItems,
                     recentItems = recentItems,
                     playlistDetailId = playlistDetailId,
-                    diagnostics = diagnostics,
-                    playerUiMode = playerUiMode,
+                    startupBehavior = startupBehavior,
                     banner = banner,
                     playlistImportProgress = playlistImportProgress,
                     catalogSyncStatuses = catalogSyncStatuses,
@@ -276,11 +275,11 @@ internal fun IptvContentHost(
                     onQueryChange = onQueryChange,
                     onSearch = onSearch,
                     onOpenPlaylistEntry = onOpenPlaylistEntry,
-                        onNavigate = onNavigate,
-                        onDrawerEvent = onDrawerEvent,
-                        onPlayerUiModeChange = onPlayerUiModeChange,
-                        onRequestExitConfirmation = onRequestExitConfirmation,
-                        onDismissBanner = onDismissBanner,
+                    onNavigate = onNavigate,
+                    onDrawerEvent = onDrawerEvent,
+                    onStartupBehaviorChange = onStartupBehaviorChange,
+                    onRequestExitConfirmation = onRequestExitConfirmation,
+                    onDismissBanner = onDismissBanner,
                     )
             }
         }

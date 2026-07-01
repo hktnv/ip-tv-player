@@ -10,9 +10,9 @@ class PlayerUiModeTest {
     }
 
     @Test
-    fun storedStandardPreferenceRestoresStandardMedia3Mode() {
+    fun storedStandardPreferenceFallsBackToCustomOsd() {
         assertEquals(
-            PlayerUiMode.StandardMedia3,
+            PlayerUiMode.CustomOsd,
             PlayerUiMode.fromPreferenceValue("standard_media3"),
         )
     }

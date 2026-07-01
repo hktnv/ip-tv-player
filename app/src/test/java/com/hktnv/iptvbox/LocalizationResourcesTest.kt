@@ -13,8 +13,8 @@ class LocalizationResourcesTest {
 
         assertEquals("Kapat", strings["action_close"])
         assertEquals("Oynatma listesi silinsin mi?", strings["playlist_delete_title"])
-        assertEquals("Oynatıcı arayüzü", strings["player_ui_mode_title"])
-        assertTrue(strings.getValue("player_ui_mode_description").contains("geçiş"))
+        assertEquals("Oynatıcı arayüzü", strings["settings_player_ui_title"])
+        assertEquals("Modern OSD", strings["settings_player_ui_value"])
     }
 
     private fun readDefaultStrings(): Map<String, String> {

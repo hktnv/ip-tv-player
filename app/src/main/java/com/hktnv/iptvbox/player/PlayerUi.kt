@@ -78,14 +78,6 @@ internal fun PlayerScreen(
         onBeforeSwitch = { manuallyPaused = false },
     )
 
-    if (playerUiMode == PlayerUiMode.StandardMedia3) {
-        StandardMedia3PlayerScreen(
-            player = player,
-            diagnosticsContext = diagnosticsContext,
-        )
-        return
-    }
-
     val contentInfo = remember(item.id, queue.previous?.id, queue.next?.id) {
         item.toPlayerContentInfo(
             previousItem = queue.previous,

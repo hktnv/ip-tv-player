@@ -30,7 +30,7 @@ import com.hktnv.iptvbox.navigation.NavigationDrawerFocusExpansion
 import com.hktnv.iptvbox.navigation.NavigationDrawerModel
 import com.hktnv.iptvbox.navigation.NavigationDrawerState
 import com.hktnv.iptvbox.navigation.reduce
-import com.hktnv.iptvbox.player.PlayerUiModeStore
+import com.hktnv.iptvbox.player.PlayerUiMode
 import com.hktnv.iptvbox.repository.catalog.AppCatalogRepository
 import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
 import com.hktnv.iptvbox.state.AppStateStore
@@ -49,6 +49,8 @@ import com.hktnv.iptvbox.state.ScheduledMetadataCleanupEffect
 import com.hktnv.iptvbox.state.saveLoadedPlaylistAction
 import com.hktnv.iptvbox.state.SelectedPlaylistRepairEffect
 import com.hktnv.iptvbox.state.startUpdateDownloadAction
+import com.hktnv.iptvbox.state.StartupBehavior
+import com.hktnv.iptvbox.state.StartupBehaviorStore
 import com.hktnv.iptvbox.state.StartupUpdateEffect
 import com.hktnv.iptvbox.state.updatePlaylistAutoRefreshAction
 import com.hktnv.iptvbox.telemetry.AppPerformanceTelemetry
@@ -77,13 +79,13 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val categoryEnrichmentQueue = catalogSyncController.enrichmentQueue
     val scope = rememberCoroutineScope()
     val stateStore = remember(context, catalogStore) { AppStateStore(context, catalogStore) }
-    val playerUiModeStore = remember(context) { PlayerUiModeStore(context) }
-    val playerUiMode by playerUiModeStore.mode.collectAsState()
+    val startupBehaviorStore = remember(context) { StartupBehaviorStore(context) }
+    val startupBehavior by startupBehaviorStore.behavior.collectAsState()
+    val playerUiMode = PlayerUiMode.CustomOsd
     val catalogSyncStatuses = catalogSyncController.statuses
     val updateService = remember { AppUpdateService() }
     val updateInstaller = remember(context) { AppUpdateInstaller(context) }
     val performanceMode = remember(context) { AppPerformanceMode.from(context) }
-    val diagnostics by telemetry.diagnostics.collectAsState()
     val playlists = remember { mutableStateListOf<LoadedPlaylist>() }
     var restoredApplied by remember { mutableStateOf(false) }; var showRecovery by rememberSaveable { mutableStateOf(false) }
     var bootError by remember { mutableStateOf<String?>(null) }; var selectedPlaylistId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -99,6 +101,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var currentItem by remember { mutableStateOf<CatalogItem?>(null) }; var currentHeaders by remember { mutableStateOf<Map<String, String>>(emptyMap()) }; var playerContextItems by remember { mutableStateOf<List<CatalogItem>>(emptyList()) }; var contentOptionsItem by remember { mutableStateOf<CatalogItem?>(null) }
     var contentOptionsMetadata by remember { mutableStateOf<ContentMetadata?>(null) }
     var catalogSnapshot by remember { mutableStateOf<CatalogSnapshot?>(null) }; var catalogIndexLoading by remember { mutableStateOf(false) }
+    var startupStreamApplied by rememberSaveable { mutableStateOf(false) }
     var catalogRefreshToken by remember { mutableStateOf(0) }
     var firstDrawRecorded by remember { mutableStateOf(false) }; var updateCheckStarted by rememberSaveable { mutableStateOf(false) }
     var updateState by remember { mutableStateOf<AppUpdateUiState>(AppUpdateUiState.Hidden) }; var pendingNavigationStartedAt by remember { mutableStateOf<Long?>(null) }
@@ -112,8 +115,9 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             playlists.clear(); playlists.addAll(restoredState.playlists)
             selectedPlaylistId = restoredState.selectedPlaylistId
             val restoredScreenValue = restoredScreen(restoredState.selectedScreen, restoredState.playlists.isNotEmpty())
-            showPlaylistEntry = restoredState.playlists.isEmpty() || restoredScreenValue == AppScreen.PLAYLISTS
-            screen = if (showPlaylistEntry) AppScreen.PLAYLISTS else restoredScreenValue
+            val startupScreen = startupBehavior.screenForStartup(restoredScreenValue)
+            showPlaylistEntry = restoredState.playlists.isEmpty() || startupScreen == AppScreen.PLAYLISTS
+            screen = if (showPlaylistEntry) AppScreen.PLAYLISTS else startupScreen
             selectedTab = restoredTab(restoredState.selectedTab); selectedCategory = restoredState.selectedCategory
             selectedSeriesTitle = restoredState.selectedSeriesTitle; selectedSeasonNumber = restoredState.selectedSeasonNumber
             searchDraft = restoredState.searchDraft; submittedSearch = restoredState.submittedSearch
@@ -267,6 +271,23 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         playerContextItems = currentContextItemsForPlayer(item); selectPlayerItem(item)
         returnScreen = screen.takeIf { it != AppScreen.PLAYER } ?: AppScreen.CATALOG; screen = AppScreen.PLAYER
     }
+    LaunchedEffect(restoredApplied, startupBehavior, catalogSnapshot, recentSignature, showPlaylistEntry) {
+        if (
+            restoredApplied &&
+            startupBehavior == StartupBehavior.LastStream &&
+            !startupStreamApplied &&
+            !showPlaylistEntry &&
+            currentItem == null
+        ) {
+            val item = recentIds.firstOrNull()?.let { id ->
+                catalogSnapshot?.allItems?.firstOrNull { it.id == id }
+            }
+            if (item != null) {
+                startupStreamApplied = true
+                openItem(item)
+            }
+        }
+    }
     fun reloadPlaylist(playlist: LoadedPlaylist) {
         scope.reloadPlaylistAction(
             playlist = playlist,
@@ -351,9 +372,10 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         selectedPlaylist = selectedPlaylist, screen = screen, showPlaylistEntry = showPlaylistEntry, currentItem = currentItem,
         currentHeaders = currentHeaders, playerContextItems = playerContextItems, playlists = playlists, catalogSnapshot = catalogSnapshot, catalogIndexLoading = catalogIndexLoading,
         playerUiMode = playerUiMode,
+        startupBehavior = startupBehavior,
         selectedTab = selectedTab, selectedCategory = selectedCategory, showCatalogCategoryLanding = showCatalogCategoryLanding, selectedSeriesTitle = selectedSeriesTitle,
         selectedSeasonNumber = selectedSeasonNumber, favoriteIds = favoriteIds, recentIds = recentIds, favoriteItems = favoriteItems,
-        recentItems = recentItems, playlistDetailId = playlistDetailId, diagnostics = diagnostics, banner = banner, sideMenuExpanded = drawerModel.state.expanded, drawerFocusExpansion = drawerModel.focusExpansion,
+        recentItems = recentItems, playlistDetailId = playlistDetailId, banner = banner, sideMenuExpanded = drawerModel.state.expanded, drawerFocusExpansion = drawerModel.focusExpansion,
         playlistImportProgress = playlistImportProgress,
         catalogSyncStatuses = catalogSyncStatuses,
         contentFocusRequest = contentFocusRequest, contentInitialFocusRequester = contentInitialFocusRequester,
@@ -378,7 +400,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onQueryChange = { searchDraft = it }, onSearch = { submittedSearch = searchDraft.trim() },
         onSelectPlayerItem = ::selectPlayerItem,
         onOpenPlaylistEntry = ::openPlaylistEntry, onNavigate = ::navigate, onDrawerEvent = ::applyDrawerEvent,
-        onPlayerUiModeChange = playerUiModeStore::setMode,
+        onStartupBehaviorChange = startupBehaviorStore::setBehavior,
         onRequestExitConfirmation = { showExitDialog = true }, onDismissBanner = { banner = null },
     )
     IptvDialogHost(
@@ -420,5 +442,13 @@ private fun autoUpdateOptionStringRes(hours: Int): Int {
         12 -> R.string.playlist_auto_refresh_12_hours
         24 -> R.string.playlist_auto_refresh_daily
         else -> R.string.playlist_auto_refresh_off
+    }
+}
+
+private fun StartupBehavior.screenForStartup(restoredScreen: AppScreen): AppScreen {
+    return when (this) {
+        StartupBehavior.Home,
+        StartupBehavior.LastStream -> AppScreen.HOME
+        StartupBehavior.LastScreen -> restoredScreen
     }
 }

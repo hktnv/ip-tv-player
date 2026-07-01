@@ -9,11 +9,10 @@ import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.model.CatalogSyncStatus
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.PlaylistImportProgress
-import com.hktnv.iptvbox.player.PlayerUiMode
 import com.hktnv.iptvbox.repository.catalog.AppCatalogRepository
 import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
+import com.hktnv.iptvbox.state.StartupBehavior
 import com.hktnv.iptvbox.telemetry.AppPerformanceTelemetry
-import com.hktnv.iptvbox.telemetry.PerformanceDiagnostics
 import com.hktnv.iptvbox.ui.catalog.CatalogScreen
 import com.hktnv.iptvbox.ui.home.HomeScreen
 import com.hktnv.iptvbox.ui.home.PlaylistScreen
@@ -39,8 +38,7 @@ internal fun PlaylistScreenContent(
     favoriteItems: List<CatalogItem>,
     recentItems: List<CatalogItem>,
     playlistDetailId: String?,
-    diagnostics: PerformanceDiagnostics,
-    playerUiMode: PlayerUiMode,
+    startupBehavior: StartupBehavior,
     playlistImportProgress: PlaylistImportProgress?,
     catalogSyncStatuses: Map<String, CatalogSyncStatus>,
     contentInitialFocusRequester: FocusRequester,
@@ -72,7 +70,7 @@ internal fun PlaylistScreenContent(
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     onOpenPlaylistEntry: () -> Unit,
-    onPlayerUiModeChange: (PlayerUiMode) -> Unit,
+    onStartupBehaviorChange: (StartupBehavior) -> Unit,
     onRequestSideMenu: () -> Unit,
 ) {
     when (screen) {
@@ -199,14 +197,10 @@ internal fun PlaylistScreenContent(
             onRequestSideMenu = onRequestSideMenu,
         )
         AppScreen.SETTINGS -> SettingsScreen(
-            playlist = selectedPlaylist,
-            diagnostics = diagnostics,
-            playerUiMode = playerUiMode,
-            onPlayerUiModeChange = onPlayerUiModeChange,
-            onReload = { selectedPlaylist?.let(onReloadPlaylist) },
-            onAddPlaylist = onAddPlaylist,
+            playlistCount = playlists.size,
+            startupBehavior = startupBehavior,
+            onStartupBehaviorChange = onStartupBehaviorChange,
             onOpenPlaylistEntry = onOpenPlaylistEntry,
-            refreshProgress = playlistImportProgress,
             contentPadding = contentPadding,
             initialFocusRequester = contentInitialFocusRequester,
             onRequestSideMenu = onRequestSideMenu,
