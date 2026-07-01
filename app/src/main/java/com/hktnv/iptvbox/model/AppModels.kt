@@ -44,6 +44,7 @@ internal data class LoadedPlaylist(
     val cachedMovieCount: Int? = null,
     val cachedSeriesCount: Int? = null,
     val autoUpdateHours: Int = 0,
+    val xtreamApiSupported: Boolean = false,
 )
 
 internal data class PlaylistStats(

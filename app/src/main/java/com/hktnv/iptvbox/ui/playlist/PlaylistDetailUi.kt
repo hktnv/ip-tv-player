@@ -71,7 +71,14 @@ internal fun PlaylistDetailScreen(
         }
         item {
             DetailPanel {
-                DetailLine("Kaynak tipi", playlist.type.label())
+                DetailLine(
+                    "Kaynak tipi",
+                    if (playlist.xtreamApiSupported) {
+                        "${playlist.type.label()} · Xtream API Destekli"
+                    } else {
+                        playlist.type.label()
+                    },
+                )
                 DetailLine("İçerik özeti", "${stats.total} içerik · ${stats.live} canlı · ${stats.movies} film · ${stats.series} dizi")
                 DetailLine("Otomatik güncelleme", playlistAutoUpdateLabel(playlist.autoUpdateHours))
             }

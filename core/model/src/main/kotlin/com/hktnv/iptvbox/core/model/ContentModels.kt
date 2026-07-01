@@ -36,8 +36,22 @@ data class CatalogItem(
     val seasonNumber: Int? = null,
     val episodeNumber: Int? = null,
     val episodeTitle: String? = null,
+    val xtreamId: Int? = null,
+    val rating: String? = null,
+    val tmdbId: Int? = null,
     val providerOrder: Int = 0,
     val addedAtEpochMillis: Long = 0L,
+)
+
+@Serializable
+data class ContentMetadata(
+    val itemId: String,
+    val plot: String? = null,
+    val cast: String? = null,
+    val director: String? = null,
+    val youtubeTrailer: String? = null,
+    val duration: String? = null,
+    val backdropUrl: String? = null,
 )
 
 @Serializable

@@ -16,7 +16,7 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
     context.applicationContext,
     "iptvbox_catalog.db",
     null,
-    2,
+    CatalogDatabaseVersion,
 ) {
     init {
         setWriteAheadLoggingEnabled(true)
@@ -35,55 +35,13 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
     }
 
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL(
-            """
-            CREATE TABLE playlists(
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                type TEXT NOT NULL,
-                endpoint TEXT NOT NULL,
-                headers_json TEXT NOT NULL,
-                epg_json TEXT NOT NULL,
-                warnings_json TEXT NOT NULL,
-                item_count INTEGER NOT NULL,
-                live_count INTEGER NOT NULL,
-                movie_count INTEGER NOT NULL,
-                series_count INTEGER NOT NULL,
-                auto_update_hours INTEGER NOT NULL DEFAULT 0,
-                updated_at INTEGER NOT NULL
-            )
-            """.trimIndent(),
-        )
-        db.execSQL(
-            """
-            CREATE TABLE items(
-                playlist_id TEXT NOT NULL,
-                item_id TEXT NOT NULL,
-                kind TEXT NOT NULL,
-                title TEXT NOT NULL,
-                stream_url TEXT NOT NULL,
-                category TEXT,
-                logo_url TEXT,
-                tvg_id TEXT,
-                tvg_name TEXT,
-                series_title TEXT,
-                season_number INTEGER,
-                episode_number INTEGER,
-                episode_title TEXT,
-                provider_order INTEGER NOT NULL,
-                search_text TEXT NOT NULL,
-                PRIMARY KEY(playlist_id, item_id)
-            )
-            """.trimIndent(),
-        )
+        db.createCatalogTables()
         db.createCatalogIndexes()
         db.ensureCatalogMeta()
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        if (oldVersion < 2) {
-            db.execSQL("ALTER TABLE playlists ADD COLUMN auto_update_hours INTEGER NOT NULL DEFAULT 0")
-        }
+        db.upgradeCatalogSchema(oldVersion)
     }
 
     fun loadPlaylists(): List<LoadedPlaylist> {
@@ -116,6 +74,7 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
             measureDb("drop_indexes_ms", timings) { db.dropCatalogIndexes() }
             measureDb("delete_ms", timings) {
                 db.delete("items", "playlist_id=?", arrayOf(stored.id))
+                db.delete("metadata_cache", "playlist_id=?", arrayOf(stored.id))
                 db.delete("playlists", "id=?", arrayOf(stored.id))
             }
             measureDb("metadata_save_ms", timings) {
@@ -138,9 +97,12 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
                         season_number,
                         episode_number,
                         episode_title,
+                        xtream_id,
+                        rating,
+                        tmdb_id,
                         provider_order,
                         search_text
-                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                     """.trimIndent(),
                 ).use { statement ->
                     stored.items.forEach { item ->
@@ -158,8 +120,11 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
                         statement.bindNullableLong(11, item.seasonNumber?.toLong())
                         statement.bindNullableLong(12, item.episodeNumber?.toLong())
                         statement.bindNullableString(13, item.episodeTitle)
-                        statement.bindLong(14, item.providerOrder.toLong())
-                        statement.bindString(15, item.searchTextForStore())
+                        statement.bindNullableLong(14, item.xtreamId?.toLong())
+                        statement.bindNullableString(15, item.rating)
+                        statement.bindNullableLong(16, item.tmdbId?.toLong())
+                        statement.bindLong(17, item.providerOrder.toLong())
+                        statement.bindString(18, item.searchTextForStore())
                         statement.executeInsert()
                     }
                 }
@@ -222,6 +187,7 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
 
     fun deletePlaylist(playlistId: String) {
         writableDatabase.transaction {
+            delete("metadata_cache", "playlist_id=?", arrayOf(playlistId))
             delete("items", "playlist_id=?", arrayOf(playlistId))
             delete("playlists", "id=?", arrayOf(playlistId))
         }
@@ -229,6 +195,7 @@ internal class CatalogStore(context: Context) : SQLiteOpenHelper(
 
     fun clearAll() {
         writableDatabase.transaction {
+            delete("metadata_cache", null, null)
             delete("items", null, null)
             delete("playlists", null, null)
         }

@@ -78,6 +78,7 @@ internal fun CoroutineScope.reloadPlaylistAction(
                         items = result.items,
                         epgUrls = result.epgUrls,
                         warnings = result.warnings.map(::simpleUserMessage).filter { it.isNotBlank() }.distinct().take(1),
+                        xtreamApiSupported = result.xtreamApiSupported,
                     )
                 }
                 val normalizeMs = SystemClock.elapsedRealtime() - normalizeStartedAt
@@ -150,6 +151,7 @@ internal fun CoroutineScope.saveLoadedPlaylistAction(
                     items = result.items,
                     epgUrls = result.epgUrls,
                     warnings = result.warnings.map(::simpleUserMessage).filter { it.isNotBlank() }.distinct().take(1),
+                    xtreamApiSupported = result.xtreamApiSupported,
                 )
             }
             val normalizeMs = SystemClock.elapsedRealtime() - normalizeStartedAt

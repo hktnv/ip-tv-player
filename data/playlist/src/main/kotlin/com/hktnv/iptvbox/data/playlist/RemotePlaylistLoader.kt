@@ -4,8 +4,9 @@ import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.PlaylistSourceType
 import com.hktnv.iptvbox.core.network.HttpClientFactory
 import com.hktnv.iptvbox.core.security.SecretRedactor
+import com.hktnv.iptvbox.data.playlist.xtream.XtreamApiClient
+import com.hktnv.iptvbox.data.playlist.xtream.XtreamPlaylistEnricher
 import java.io.IOException
-import java.net.URLEncoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -15,6 +16,7 @@ class RemotePlaylistLoader(
     private val client: OkHttpClient = HttpClientFactory.create(),
     private val directoryParser: PlaylistDirectoryParser = PlaylistDirectoryParser(),
     private val m3uParser: M3uPlaylistParser = M3uPlaylistParser(),
+    private val xtreamEnricher: XtreamPlaylistEnricher = XtreamPlaylistEnricher(XtreamApiClient(client)),
 ) {
     suspend fun load(
         playlistId: String,
@@ -72,6 +74,7 @@ class RemotePlaylistLoader(
         val warnings = directoryFetch.warnings.toMutableList()
         val allItems = mutableListOf<CatalogItem>()
         val epgUrls = linkedSetOf<String>()
+        var xtreamSupported = false
         var metrics = PlaylistLoadMetrics(
             urlNormalizeMs = directoryFetch.urlNormalizeMs,
             connectionOpenMs = directoryFetch.connectionOpenMs,
@@ -91,6 +94,7 @@ class RemotePlaylistLoader(
             }.onSuccess { loaded ->
                 epgUrls += loaded.epgUrls
                 allItems += loaded.items.map { it.copy(sourceId = playlistId) }
+                xtreamSupported = xtreamSupported || loaded.xtreamApiSupported
                 warnings += loaded.warnings
                 metrics += loaded.metrics
             }.onFailure { throwable ->
@@ -108,6 +112,7 @@ class RemotePlaylistLoader(
             epgUrls = epgUrls.toList(),
             warnings = warnings,
             metrics = metrics.copy(directoryMs = elapsedMs(directoryStartedNs)),
+            xtreamApiSupported = xtreamSupported,
         )
     }
 
@@ -131,9 +136,10 @@ class RemotePlaylistLoader(
                 totalItems = parsed.items.size,
             ),
         )
+        val enriched = xtreamEnricher.enrich(url, parsed.items)
         return PlaylistLoadResult(
             playlistName = name,
-            items = parsed.items,
+            items = enriched.items,
             epgUrls = parsed.epgUrls,
             warnings = fetch.warnings,
             metrics = PlaylistLoadMetrics(
@@ -149,6 +155,7 @@ class RemotePlaylistLoader(
                 seriesMs = parsed.seriesMs,
                 classificationMs = parsed.classificationMs,
             ),
+            xtreamApiSupported = enriched.supported,
         )
     }
 
@@ -308,30 +315,6 @@ class RemotePlaylistLoader(
         }
     }
 
-    private fun buildXtreamM3uUrl(
-        serverUrl: String,
-        username: String,
-        password: String,
-    ): String {
-        val normalized = normalizeUserUrl(serverUrl).trimEnd('/')
-        val base = when {
-            normalized.contains("/get.php", ignoreCase = true) -> normalized.substringBefore("/get.php") + "/get.php"
-            normalized.contains("/player_api.php", ignoreCase = true) -> normalized.substringBefore("/player_api.php") + "/get.php"
-            else -> "$normalized/get.php"
-        }
-        return "$base?username=${username.urlEncode()}&password=${password.urlEncode()}&type=m3u_plus&output=mpegts"
-    }
-
-    private fun normalizeUserUrl(rawUrl: String): String {
-        val trimmed = rawUrl.trim()
-        if (trimmed.startsWith("http://", ignoreCase = true) ||
-            trimmed.startsWith("https://", ignoreCase = true)
-        ) {
-            return trimmed
-        }
-        return "http://$trimmed"
-    }
-
     private fun Throwable.isLikelyTlsForPlainHttp(): Boolean {
         val text = (message ?: cause?.message).orEmpty().lowercase()
         return text.contains("tls") ||
@@ -367,8 +350,6 @@ class RemotePlaylistLoader(
     private fun safeMessage(throwable: Throwable): String {
         return SecretRedactor.redact(throwable.message ?: throwable.cause?.message ?: "Bilinmeyen hata")
     }
-
-    private fun String.urlEncode(): String = URLEncoder.encode(this, Charsets.UTF_8.name())
 
     private fun elapsedMs(startedNs: Long): Long = (System.nanoTime() - startedNs) / 1_000_000L
 }

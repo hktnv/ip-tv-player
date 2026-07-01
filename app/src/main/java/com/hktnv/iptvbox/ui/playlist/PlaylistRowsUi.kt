@@ -278,6 +278,14 @@ internal fun PlaylistRow(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(playlist.type.label(), color = MaterialTheme.colorScheme.onPrimaryContainer, fontWeight = FontWeight.Bold)
+                if (playlist.xtreamApiSupported) {
+                    Text(
+                        text = "Xtream API Destekli",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                    )
+                }
                 if (onRename != null) {
                     OutlinedButton(
                         onClick = onRename,

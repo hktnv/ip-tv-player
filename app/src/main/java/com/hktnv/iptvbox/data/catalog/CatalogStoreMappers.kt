@@ -35,6 +35,7 @@ internal fun LoadedPlaylist.toPlaylistValues(): ContentValues = ContentValues().
     put("movie_count", movies)
     put("series_count", series)
     put("auto_update_hours", autoUpdateHours.coerceAtLeast(0))
+    put("xtream_api_supported", if (xtreamApiSupported) 1 else 0)
     put("updated_at", System.currentTimeMillis())
 }
 
@@ -53,6 +54,7 @@ internal fun Cursor.toPlaylist(): LoadedPlaylist {
         cachedMovieCount = getInt(column("movie_count")),
         cachedSeriesCount = getInt(column("series_count")),
         autoUpdateHours = nullableInt("auto_update_hours") ?: 0,
+        xtreamApiSupported = nullableInt("xtream_api_supported") == 1,
     )
 }
 
@@ -73,6 +75,9 @@ internal fun Cursor.toItems(): List<CatalogItem> = buildList {
                 seasonNumber = nullableInt("season_number"),
                 episodeNumber = nullableInt("episode_number"),
                 episodeTitle = nullableString("episode_title"),
+                xtreamId = nullableInt("xtream_id"),
+                rating = nullableString("rating"),
+                tmdbId = nullableInt("tmdb_id"),
                 providerOrder = getInt(column("provider_order")),
             ),
         )

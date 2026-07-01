@@ -8,6 +8,7 @@ data class PlaylistLoadResult(
     val epgUrls: List<String>,
     val warnings: List<String>,
     val metrics: PlaylistLoadMetrics = PlaylistLoadMetrics(),
+    val xtreamApiSupported: Boolean = false,
 )
 
 data class PlaylistLoadMetrics(
