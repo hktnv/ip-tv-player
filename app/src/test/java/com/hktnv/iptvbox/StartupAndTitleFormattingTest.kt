@@ -67,8 +67,9 @@ class StartupAndTitleFormattingTest {
     @Test
     fun playlistAutoUpdateLabelsAreUserReadable() {
         assertEquals("Kapal\u0131", playlistAutoUpdateLabel(0))
-        assertEquals("6 saatte bir", playlistAutoUpdateLabel(6))
-        assertEquals("Her g\u00FCn", playlistAutoUpdateLabel(24))
+        assertEquals("6 Saat", playlistAutoUpdateLabel(6))
+        assertEquals("12 Saat", playlistAutoUpdateLabel(12))
+        assertEquals("G\u00FCnl\u00FCk", playlistAutoUpdateLabel(24))
     }
 
     @Test

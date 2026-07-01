@@ -1,5 +1,6 @@
 package com.hktnv.iptvbox.ui.host
 import android.os.SystemClock
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -12,6 +13,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
+import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentMetadata
 import com.hktnv.iptvbox.data.catalog.CatalogStore
@@ -23,7 +25,6 @@ import com.hktnv.iptvbox.model.AppScreen
 import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.model.PlaylistImportProgress
-import com.hktnv.iptvbox.model.playlistAutoUpdateLabel
 import com.hktnv.iptvbox.navigation.NavigationDrawerEvent
 import com.hktnv.iptvbox.navigation.NavigationDrawerFocusExpansion
 import com.hktnv.iptvbox.navigation.NavigationDrawerModel
@@ -292,14 +293,17 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
             onUpdated = { updated ->
                 val index = playlists.indexOfFirst { it.id == playlist.id }; if (index >= 0) playlists[index] = updated
                 if (selectedPlaylistId == playlist.id) selectedPlaylistId = updated.id
-                renamingPlaylist = null; banner = "Oynatma listesi adı güncellendi"
+                renamingPlaylist = null; banner = context.getString(R.string.playlist_rename_success)
             },
         )
     }
     fun updatePlaylistAutoRefresh(playlist: LoadedPlaylist, hours: Int) {
         scope.updatePlaylistAutoRefreshAction(playlist, hours, catalogStore) { updated ->
             val index = playlists.indexOfFirst { it.id == updated.id }; if (index >= 0) playlists[index] = updated
-            banner = "Otomatik güncelleme: ${playlistAutoUpdateLabel(updated.autoUpdateHours)}"
+            banner = context.getString(
+                R.string.playlist_auto_refresh_banner,
+                context.getString(autoUpdateOptionStringRes(updated.autoUpdateHours)),
+            )
         }
     }
     fun deletePlaylist(playlist: LoadedPlaylist) {
@@ -314,7 +318,8 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                     catalogSnapshot = null; selectedCategory = null; showCatalogCategoryLanding = true; selectedSeriesTitle = null
                     selectedSeasonNumber = null; submittedSearch = ""; searchDraft = ""; currentItem = null; playerContextItems = emptyList()
                 }
-                playlistDetailId = null; screen = nextState.screen; showPlaylistEntry = nextState.showPlaylistEntry; deletingPlaylist = null; banner = "${deleted.name} silindi"
+                playlistDetailId = null; screen = nextState.screen; showPlaylistEntry = nextState.showPlaylistEntry
+                deletingPlaylist = null; banner = context.getString(R.string.playlist_delete_success, deleted.name)
                 if (!nextState.showPlaylistEntry) requestContentFocus()
             },
             onFailure = { deletingPlaylist = null; banner = it },
@@ -406,4 +411,14 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         },
         onDismissUpdate = { updateState = AppUpdateUiState.Hidden },
     )
+}
+
+@StringRes
+private fun autoUpdateOptionStringRes(hours: Int): Int {
+    return when (hours) {
+        6 -> R.string.playlist_auto_refresh_6_hours
+        12 -> R.string.playlist_auto_refresh_12_hours
+        24 -> R.string.playlist_auto_refresh_daily
+        else -> R.string.playlist_auto_refresh_off
+    }
 }

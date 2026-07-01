@@ -26,13 +26,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import com.hktnv.iptvbox.model.PlaylistAutoUpdateHourOptions
-import com.hktnv.iptvbox.model.playlistAutoUpdateLabel
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
 import com.hktnv.iptvbox.ui.common.TvRestingBorder
@@ -72,7 +72,7 @@ internal fun AutoUpdateSelector(
         ) {
             PlaylistAutoUpdateHourOptions.forEach { hours ->
                 AutoUpdateOption(
-                    label = playlistAutoUpdateLabel(hours),
+                    label = autoUpdateOptionLabel(hours),
                     selected = selectedHours == hours,
                     onClick = { onSelect(hours) },
                     modifier = Modifier.weight(1f),
@@ -140,12 +140,25 @@ private fun AutoUpdateOption(
     ) {
         Text(
             text = label,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 11.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 11.dp),
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = 12.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+@Composable
+private fun autoUpdateOptionLabel(hours: Int): String {
+    return when (hours) {
+        6 -> stringResource(R.string.playlist_auto_refresh_6_hours)
+        12 -> stringResource(R.string.playlist_auto_refresh_12_hours)
+        24 -> stringResource(R.string.playlist_auto_refresh_daily)
+        else -> stringResource(R.string.playlist_auto_refresh_off)
     }
 }

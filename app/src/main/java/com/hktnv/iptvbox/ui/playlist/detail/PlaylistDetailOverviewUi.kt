@@ -124,13 +124,23 @@ private fun CatalogStatusLine(status: CatalogSyncStatus?) {
                 tint = if (model.error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Text(
-            text = stringResource(R.string.playlist_sync_inline_status, stringResource(model.titleRes), body),
-            color = if (model.error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = stringResource(model.titleRes),
+                color = if (model.error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                fontSize = 12.sp,
+                lineHeight = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = body,
+                color = if (model.error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.sp,
+                lineHeight = 14.sp,
+            )
+        }
     }
 }
