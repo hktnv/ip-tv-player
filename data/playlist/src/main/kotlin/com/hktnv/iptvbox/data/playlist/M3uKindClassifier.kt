@@ -8,6 +8,7 @@ internal fun guessM3uKind(
     streamUrl: String,
     title: String,
     normalizedTitle: String,
+    hasSeriesEpisodePattern: Boolean = title.hasSeriesEpisodePattern(),
 ): KindGuess {
     val normalizedGroup = info.normalizedGroupTitle
     val normalizedTvg = info.normalizedTvgName
@@ -21,7 +22,7 @@ internal fun guessM3uKind(
             KindGuess(ContentKind.MOVIE, 0.86, "movie markers")
 
         streamUrl.contains("/series/", ignoreCase = true) ||
-            (title.mayContainEpisodeInfo() && M3uPlaylistPatterns.seriesRegexes.any { it.containsMatchIn(title) }) ||
+            hasSeriesEpisodePattern ||
             containsSeriesMarker(normalizedTitle, normalizedGroup, normalizedTvg) ->
             KindGuess(ContentKind.EPISODE, 0.88, "series markers")
 
@@ -30,6 +31,11 @@ internal fun guessM3uKind(
 
         else -> KindGuess(ContentKind.LIVE_CHANNEL, 0.60, "default m3u live assumption")
     }
+}
+
+internal fun String.hasSeriesEpisodePattern(): Boolean {
+    if (!mayContainEpisodeInfo()) return false
+    return M3uPlaylistPatterns.seriesRegexes.any { it.containsMatchIn(this) }
 }
 
 internal fun deriveCategory(

@@ -152,6 +152,25 @@ class M3uPlaylistParserTest {
     }
 
     @Test
+    fun reportsOptionalParserStageMetricsWithoutASecondPass() {
+        val source = SingleUseSequence(syntheticLargeM3uLines(live = 120, movies = 600, series = 80))
+
+        val playlist = M3uPlaylistParser().parse(
+            sourceId = "measured-stream",
+            lines = source,
+            measureStages = true,
+        )
+
+        assertEquals(1, source.iteratorCount)
+        assertEquals(800, playlist.items.size)
+        assertTrue("content cleaning should be measured", playlist.contentCleaningMs >= 0)
+        assertTrue("series detection should be measured", playlist.seriesMs >= 0)
+        assertTrue("kind classification should be measured", playlist.classificationMs >= 0)
+        assertTrue("category derivation should be measured", playlist.categoryMs >= 0)
+        assertTrue("parser should report total elapsed time", playlist.parseMs >= playlist.parseOtherMs)
+    }
+
+    @Test
     fun reportsStreamingItemProgress() {
         val progress = mutableListOf<Int>()
         val source = SingleUseSequence(syntheticLargeM3uLines(live = 3, movies = 120, series = 2))

@@ -88,7 +88,12 @@ internal fun LoadedPlaylist.statsWithoutCacheForStore(): PlaylistStats {
 }
 
 internal fun CatalogItem.searchTextForStore(): String {
-    return SearchNormalizer.normalize(
-        listOfNotNull(title, category, tvgName, tvgId, seriesTitle, episodeTitle).joinToString(" "),
+    return SearchNormalizer.normalizeParts(
+        title,
+        category,
+        tvgName,
+        tvgId,
+        seriesTitle,
+        episodeTitle,
     )
 }

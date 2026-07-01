@@ -2,15 +2,16 @@ package com.hktnv.iptvbox
 
 import com.hktnv.iptvbox.core.model.PlaylistSourceType
 import com.hktnv.iptvbox.data.playlist.M3uPlaylistParser
+import com.hktnv.iptvbox.data.playlist.ParsedM3uPlaylist
+import com.hktnv.iptvbox.model.LoadedPlaylist
+import com.hktnv.iptvbox.repository.catalog.AppCatalogRepository
+import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
+import com.hktnv.iptvbox.ui.media.normalizedForUi
 import java.io.File
 import kotlin.system.measureTimeMillis
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
-import com.hktnv.iptvbox.repository.catalog.AppCatalogRepository
-import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
-import com.hktnv.iptvbox.model.LoadedPlaylist
-import com.hktnv.iptvbox.ui.media.normalizedForUi
 
 class RealM3uPerformanceTest {
     @Test
@@ -22,19 +23,22 @@ class RealM3uPerformanceTest {
         assumeTrue("Local performance M3U not found: ${file.absolutePath}", file.isFile)
 
         val parser = M3uPlaylistParser()
+        lateinit var parsedPlaylist: ParsedM3uPlaylist
         lateinit var playlist: LoadedPlaylist
         lateinit var snapshot: CatalogSnapshot
 
         val parseMs = measureTimeMillis {
-            val parsed = file.useLines { lines -> parser.parse("real-m3u", lines) }
+            parsedPlaylist = file.useLines { lines ->
+                parser.parse(sourceId = "real-m3u", lines = lines, measureStages = true)
+            }
             playlist = LoadedPlaylist(
                 id = "real-m3u",
                 name = "Desktop M3U",
                 type = PlaylistSourceType.M3U_URL,
                 endpoint = file.absolutePath,
                 headers = emptyMap(),
-                items = parsed.items,
-                epgUrls = parsed.epgUrls,
+                items = parsedPlaylist.items,
+                epgUrls = parsedPlaylist.epgUrls,
                 warnings = emptyList(),
             )
         }
@@ -52,7 +56,11 @@ class RealM3uPerformanceTest {
         println(
             "PERF realM3u fileBytes=${file.length()} items=${playlist.cachedItemCount} " +
                 "live=${playlist.cachedLiveCount} movies=${playlist.cachedMovieCount} series=${playlist.cachedSeriesCount} " +
-                "parseMs=$parseMs normalizeMs=$normalizeMs indexMs=$indexMs searchMs=$searchMs ramMb=$ramMb",
+                "parseMs=$parseMs parserReportedMs=${parsedPlaylist.parseMs} " +
+                "contentCleanMs=${parsedPlaylist.contentCleaningMs} seriesDetectMs=${parsedPlaylist.seriesMs} " +
+                "kindClassifyMs=${parsedPlaylist.classificationMs} categoryMs=${parsedPlaylist.categoryMs} " +
+                "parseOtherMs=${parsedPlaylist.parseOtherMs} normalizeMs=$normalizeMs indexMs=$indexMs " +
+                "searchMs=$searchMs ramMb=$ramMb",
         )
 
         assertTrue("Expected a large playlist", (playlist.cachedItemCount ?: 0) >= 8_000)

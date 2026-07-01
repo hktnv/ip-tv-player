@@ -23,15 +23,13 @@ internal fun LoadedPlaylist.cachedStats(): PlaylistStats {
 }
 
 internal fun CatalogItem.searchTextForIndex(): String {
-    return SearchNormalizer.normalize(
-        listOfNotNull(
-            title,
-            category,
-            tvgName,
-            tvgId,
-            seriesTitle,
-            episodeTitle,
-        ).joinToString(" "),
+    return SearchNormalizer.normalizeParts(
+        title,
+        category,
+        tvgName,
+        tvgId,
+        seriesTitle,
+        episodeTitle,
     )
 }
 
