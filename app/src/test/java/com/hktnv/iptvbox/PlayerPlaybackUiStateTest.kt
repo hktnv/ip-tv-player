@@ -69,11 +69,11 @@ class PlayerPlaybackUiStateTest {
             resolvePlayerTimelineKeyAction(PlayerTimelineRemoteKey.Down, canSeek = true),
         )
         assertEquals(
-            PlayerTimelineKeyAction.SeekBack,
+            PlayerTimelineKeyAction.PreviewBack,
             resolvePlayerTimelineKeyAction(PlayerTimelineRemoteKey.Left, canSeek = true),
         )
         assertEquals(
-            PlayerTimelineKeyAction.SeekForward,
+            PlayerTimelineKeyAction.PreviewForward,
             resolvePlayerTimelineKeyAction(PlayerTimelineRemoteKey.Right, canSeek = true),
         )
     }

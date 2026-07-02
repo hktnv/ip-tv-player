@@ -12,7 +12,6 @@ internal fun PlayerSurfaceView(
     player: Player,
     surfaceKey: String,
     controlsVisible: Boolean,
-    contentListVisible: Boolean,
     exitConfirmVisible: Boolean,
     playerFocusRequester: FocusRequester,
     onOverlayKeyEvent: (KeyEvent) -> Boolean,
@@ -38,7 +37,7 @@ internal fun PlayerSurfaceView(
             view.onOverlayKeyEvent = onOverlayKeyEvent
             view.shouldHandleKeyCode = shouldHandleKeyCode
             view.onRemoteCommand = onRemoteCommand
-            if (!contentListVisible && !exitConfirmVisible && !controlsVisible) {
+            if (!exitConfirmVisible && !controlsVisible) {
                 runCatching { playerFocusRequester.requestFocus() }
             }
         },

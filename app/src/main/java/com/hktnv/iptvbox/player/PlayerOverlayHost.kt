@@ -15,26 +15,26 @@ internal fun BoxScope.PlayerOverlayHost(
     loadingVisible: Boolean,
     loadingMessage: String?,
     controlsVisible: Boolean,
-    contentListVisible: Boolean,
     exitConfirmVisible: Boolean,
     zappingInfoActive: Boolean,
     connectionTimeoutVisible: Boolean,
     contentInfo: PlayerContentInfo,
-    queue: PlayerPlaybackQueue,
+    relatedItems: List<CatalogItem>,
     exitChoice: PlayerExitChoice,
     isPlaying: Boolean,
     positionMs: Long,
     durationMs: Long,
     speed: Float,
     canSeek: Boolean,
+    favorite: Boolean,
     onSeekBack: () -> Unit,
     onSeekTo: (Long) -> Unit,
     onTogglePlayback: () -> Unit,
     onSeekForward: () -> Unit,
     onCycleSpeed: () -> Unit,
     onControlsInteraction: () -> Unit,
-    onSelectContentListItem: (CatalogItem) -> Unit,
-    onDismissContentList: () -> Unit,
+    onToggleFavorite: () -> Unit,
+    onSelectRelatedItem: (CatalogItem) -> Unit,
     onConnectionRetry: () -> Unit,
     onConnectionDismiss: () -> Unit,
     onExitChoiceChange: (PlayerExitChoice) -> Unit,
@@ -58,7 +58,7 @@ internal fun BoxScope.PlayerOverlayHost(
     }
     AnimatedVisibility(
         visible = shouldShowPlayerContentInfo(controlsVisible, PlayerExitDialogState.Hidden) &&
-            !contentListVisible && !exitConfirmVisible,
+            !exitConfirmVisible,
         enter = fadeIn(),
         exit = fadeOut(),
         modifier = Modifier.align(Alignment.TopStart),
@@ -66,7 +66,7 @@ internal fun BoxScope.PlayerOverlayHost(
         PlayerInfoOverlay(info = contentInfo)
     }
     AnimatedVisibility(
-        visible = zappingInfoActive && !contentListVisible && !exitConfirmVisible,
+        visible = zappingInfoActive && !exitConfirmVisible,
         enter = fadeIn(),
         exit = fadeOut(),
         modifier = Modifier.align(Alignment.TopStart),
@@ -85,20 +85,16 @@ internal fun BoxScope.PlayerOverlayHost(
             durationMs = durationMs,
             speed = speed,
             canSeek = canSeek,
+            favorite = favorite,
+            relatedItems = relatedItems,
             onSeekBack = onSeekBack,
             onSeekTo = onSeekTo,
             onTogglePlayback = onTogglePlayback,
             onSeekForward = onSeekForward,
             onCycleSpeed = onCycleSpeed,
+            onToggleFavorite = onToggleFavorite,
+            onSelectRelatedItem = onSelectRelatedItem,
             onUserInteraction = onControlsInteraction,
-        )
-    }
-    if (contentListVisible) {
-        PlayerContentListOverlay(
-            queue = queue,
-            onSelectItem = onSelectContentListItem,
-            onDismiss = onDismissContentList,
-            modifier = Modifier.align(Alignment.CenterStart),
         )
     }
     if (connectionTimeoutVisible) {

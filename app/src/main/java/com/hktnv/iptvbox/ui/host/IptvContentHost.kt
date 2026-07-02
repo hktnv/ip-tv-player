@@ -116,6 +116,7 @@ internal fun IptvContentHost(
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     onSelectPlayerItem: (CatalogItem) -> Unit,
+    onTogglePlayerFavorite: (CatalogItem) -> Unit,
     onOpenPlaylistEntry: () -> Unit,
     onNavigate: (AppScreen) -> Unit,
     onDrawerEvent: (NavigationDrawerEvent) -> Unit,
@@ -202,7 +203,9 @@ internal fun IptvContentHost(
                     headers = currentHeaders,
                     playbackItems = playerContextItems,
                     playerUiMode = playerUiMode,
+                    isFavorite = currentItem.id in favoriteIds,
                     onSelectItem = onSelectPlayerItem,
+                    onToggleFavorite = onTogglePlayerFavorite,
                     onBack = onPlayerBack,
                 )
                 showPlaylistEntry -> PlaylistEntryScreen(

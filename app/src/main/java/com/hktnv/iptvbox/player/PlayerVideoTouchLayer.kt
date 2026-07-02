@@ -32,7 +32,6 @@ internal fun playerInputStateAfterVideoTap(inputState: PlayerInputState): Player
     return when (inputState) {
         PlayerInputState.Watching -> PlayerInputState.ControlsVisible
         PlayerInputState.ControlsVisible -> PlayerInputState.Watching
-        PlayerInputState.ContentListVisible,
         PlayerInputState.ExitConfirmVisible -> inputState
     }
 }

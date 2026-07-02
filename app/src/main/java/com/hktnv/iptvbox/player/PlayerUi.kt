@@ -33,7 +33,9 @@ internal fun PlayerScreen(
     headers: Map<String, String>,
     playbackItems: List<CatalogItem>,
     playerUiMode: PlayerUiMode,
+    isFavorite: Boolean,
     onSelectItem: (CatalogItem) -> Unit,
+    onToggleFavorite: (CatalogItem) -> Unit,
     onBack: () -> Unit,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -109,7 +111,6 @@ internal fun PlayerScreen(
     var seekLoadingRevision by remember(player, item.id) { mutableIntStateOf(0) }
     val backPressGuard = remember { PlayerBackPressGuard() }
     val controlsVisible = inputState == PlayerInputState.ControlsVisible
-    val contentListVisible = inputState == PlayerInputState.ContentListVisible
     val exitConfirmVisible = inputState == PlayerInputState.ExitConfirmVisible
     val connectionTimeoutVisible = connectionTimeoutUi.showTimeoutDialog
     val presentedAsPlaying = shouldPresentAsPlaying(player.playWhenReady, manuallyPaused)
@@ -118,7 +119,7 @@ internal fun PlayerScreen(
         playWhenReady = player.playWhenReady,
         manuallyPaused = manuallyPaused,
     )
-    val osdVisible = controlsVisible && !contentListVisible && !exitConfirmVisible && !connectionTimeoutVisible
+    val osdVisible = controlsVisible && !exitConfirmVisible && !connectionTimeoutVisible
     val zappingInfoActive = zappingInfoVisible && inputState == PlayerInputState.Watching && !connectionTimeoutVisible
     val playerFocusRequester = remember { FocusRequester() }
     LaunchedEffect(item.id, inputState) {
@@ -231,8 +232,6 @@ internal fun PlayerScreen(
             }
             playbackSnapshot.update(player)
         }
-        if (result.seekBack) seekBy(-10_000L)
-        if (result.seekForward) seekBy(10_000L)
         if (result.selectNextItem) queue.next?.let { switchTo(it, revealControls = !result.showZappingInfo) }
         if (result.selectPreviousItem) queue.previous?.let { switchTo(it, revealControls = !result.showZappingInfo) }
         if (result.exitRequested) onBack()
@@ -262,7 +261,7 @@ internal fun PlayerScreen(
         val action = command.toInputAction() ?: return false
         if (
             command == PlayerRemoteCommand.Back &&
-            (inputState == PlayerInputState.ControlsVisible || inputState == PlayerInputState.ContentListVisible)
+            inputState == PlayerInputState.ControlsVisible
         ) {
             backPressGuard.markOverlayBackHandled(SystemClock.uptimeMillis())
         } else if (
@@ -281,7 +280,7 @@ internal fun PlayerScreen(
     }
     fun handleBackPressed() {
         val nowMs = SystemClock.uptimeMillis()
-        if (inputState == PlayerInputState.ControlsVisible || inputState == PlayerInputState.ContentListVisible) {
+        if (inputState == PlayerInputState.ControlsVisible) {
             backPressGuard.markOverlayBackHandled(nowMs)
         } else if (inputState == PlayerInputState.Watching && backPressGuard.shouldSuppressExitBack(nowMs)) {
             return
@@ -305,7 +304,7 @@ internal fun PlayerScreen(
             .background(MaterialTheme.colorScheme.background)
             .focusRequester(playerFocusRequester)
             .focusable(
-                enabled = !controlsVisible && !contentListVisible &&
+                enabled = !controlsVisible &&
                     !exitConfirmVisible && !connectionTimeoutVisible,
             )
             .onPreviewKeyEvent { event ->
@@ -331,7 +330,6 @@ internal fun PlayerScreen(
             player = player,
             surfaceKey = item.id,
             controlsVisible = controlsVisible,
-            contentListVisible = contentListVisible,
             exitConfirmVisible = exitConfirmVisible || connectionTimeoutVisible,
             playerFocusRequester = playerFocusRequester,
             onOverlayKeyEvent = ::handleExitDialogKeyEvent,
@@ -339,7 +337,7 @@ internal fun PlayerScreen(
             onRemoteCommand = ::handleRemoteCommand,
             modifier = Modifier.fillMaxSize(),
         )
-        if (!contentListVisible && !exitConfirmVisible && !connectionTimeoutVisible) {
+        if (!exitConfirmVisible && !connectionTimeoutVisible) {
             PlayerVideoTouchLayer(
                 inputState = inputState,
                 onInputStateChange = { nextState -> inputState = nextState },
@@ -359,18 +357,18 @@ internal fun PlayerScreen(
             ),
             loadingMessage = connectionTimeoutUi.message,
             controlsVisible = controlsVisible,
-            contentListVisible = contentListVisible,
             exitConfirmVisible = exitConfirmVisible,
             zappingInfoActive = zappingInfoActive,
             connectionTimeoutVisible = connectionTimeoutVisible,
             contentInfo = contentInfo,
-            queue = queue,
+            relatedItems = queue.relatedItems(),
             exitChoice = exitChoice,
             isPlaying = presentedAsPlaying,
             positionMs = playbackSnapshot.currentPositionMs,
             durationMs = playbackSnapshot.durationMs,
             speed = playbackSnapshot.playbackSpeed,
             canSeek = playbackSnapshot.canSeek,
+            favorite = isFavorite,
             onSeekBack = { seekBy(-10_000L) },
             onSeekTo = ::seekTo,
             onTogglePlayback = {
@@ -386,11 +384,8 @@ internal fun PlayerScreen(
             onSeekForward = { seekBy(10_000L) },
             onCycleSpeed = ::cycleSpeed,
             onControlsInteraction = ::keepControlsAlive,
-            onSelectContentListItem = ::switchTo,
-            onDismissContentList = {
-                backPressGuard.markOverlayBackHandled(SystemClock.uptimeMillis())
-                applyInputResult(reducePlayerInput(inputState, PlayerInputAction.BackPressed))
-            },
+            onToggleFavorite = { onToggleFavorite(item) },
+            onSelectRelatedItem = ::switchTo,
             onConnectionRetry = ::retryCurrentContent,
             onConnectionDismiss = { connectionTimeoutDismissed = true },
             onExitChoiceChange = { exitChoice = it },

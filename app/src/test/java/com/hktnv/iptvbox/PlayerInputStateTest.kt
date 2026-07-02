@@ -10,7 +10,7 @@ import org.junit.Test
 
 class PlayerInputStateTest {
     @Test
-    fun leftOpensContentListOnlyWhileWatching() {
+    fun leftNeverOpensContentListOrSeeks() {
         val watchingResult = reducePlayerInput(
             state = PlayerInputState.Watching,
             action = PlayerInputAction.LeftPressed,
@@ -20,11 +20,10 @@ class PlayerInputStateTest {
             action = PlayerInputAction.LeftPressed,
         )
 
-        assertEquals(PlayerInputState.ContentListVisible, watchingResult.state)
+        assertEquals(PlayerInputState.Watching, watchingResult.state)
         assertEquals(PlayerInputState.ControlsVisible, controlsResult.state)
-        assertTrue(watchingResult.consumeInput)
-        assertTrue(controlsResult.consumeInput)
-        assertTrue(controlsResult.seekBack)
+        assertFalse(watchingResult.consumeInput)
+        assertFalse(controlsResult.consumeInput)
         assertFalse(controlsResult.togglePlayback)
         assertFalse(controlsResult.selectNextItem)
         assertFalse(controlsResult.selectPreviousItem)
@@ -51,11 +50,7 @@ class PlayerInputStateTest {
     }
 
     @Test
-    fun backClosesListBeforeShowingExitConfirmation() {
-        val listResult = reducePlayerInput(
-            state = PlayerInputState.ContentListVisible,
-            action = PlayerInputAction.BackPressed,
-        )
+    fun backClosesControlsBeforeShowingExitConfirmation() {
         val controlsResult = reducePlayerInput(
             state = PlayerInputState.ControlsVisible,
             action = PlayerInputAction.BackPressed,
@@ -65,16 +60,14 @@ class PlayerInputStateTest {
             action = PlayerInputAction.BackPressed,
         )
 
-        assertEquals(PlayerInputState.Watching, listResult.state)
         assertEquals(PlayerInputState.Watching, controlsResult.state)
-        assertFalse(listResult.exitRequested)
         assertFalse(controlsResult.exitRequested)
         assertEquals(PlayerInputState.ExitConfirmVisible, watchingResult.state)
         assertFalse(watchingResult.exitRequested)
     }
 
     @Test
-    fun rightSeeksForwardWhenControlsAreVisible() {
+    fun rightShowsControlsButDoesNotGloballySeekWhenControlsAreVisible() {
         val watchingResult = reducePlayerInput(
             state = PlayerInputState.Watching,
             action = PlayerInputAction.RightPressed,
@@ -86,9 +79,8 @@ class PlayerInputStateTest {
 
         assertEquals(PlayerInputState.ControlsVisible, watchingResult.state)
         assertTrue(watchingResult.showControls)
-        assertFalse(watchingResult.seekForward)
         assertEquals(PlayerInputState.ControlsVisible, controlsResult.state)
-        assertTrue(controlsResult.seekForward)
+        assertFalse(controlsResult.consumeInput)
     }
 
     @Test

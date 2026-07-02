@@ -23,10 +23,6 @@ class PlayerVideoTouchLayerTest {
     @Test
     fun videoTapDoesNotChangeBlockingOverlays() {
         assertEquals(
-            PlayerInputState.ContentListVisible,
-            playerInputStateAfterVideoTap(PlayerInputState.ContentListVisible),
-        )
-        assertEquals(
             PlayerInputState.ExitConfirmVisible,
             playerInputStateAfterVideoTap(PlayerInputState.ExitConfirmVisible),
         )

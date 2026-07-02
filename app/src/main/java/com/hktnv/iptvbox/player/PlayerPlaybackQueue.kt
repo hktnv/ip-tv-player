@@ -22,8 +22,8 @@ internal enum class PlayerRemoteCommand {
     TogglePlayPause,
     NextItem,
     PreviousItem,
-    OpenContentList,
-    SeekForward,
+    Left,
+    Right,
     Back,
     None,
 }
@@ -42,6 +42,10 @@ internal fun buildPlayerPlaybackQueue(
     val items = uniqueItems.values.toList()
     val currentIndex = items.indexOfFirst { it.id == currentItem.id }.coerceAtLeast(0)
     return PlayerPlaybackQueue(items = items, currentIndex = currentIndex)
+}
+
+internal fun PlayerPlaybackQueue.relatedItems(): List<CatalogItem> {
+    return items.filterIndexed { index, _ -> index != currentIndex }
 }
 
 private fun CatalogItem.belongsToPlaybackContextOf(currentItem: CatalogItem): Boolean {
@@ -70,8 +74,8 @@ internal fun playerRemoteCommandForKeyCode(keyCode: Int): PlayerRemoteCommand {
         KeyEvent.KEYCODE_NUMPAD_ENTER -> PlayerRemoteCommand.TogglePlayPause
         KeyEvent.KEYCODE_DPAD_UP -> PlayerRemoteCommand.NextItem
         KeyEvent.KEYCODE_DPAD_DOWN -> PlayerRemoteCommand.PreviousItem
-        KeyEvent.KEYCODE_DPAD_LEFT -> PlayerRemoteCommand.OpenContentList
-        KeyEvent.KEYCODE_DPAD_RIGHT -> PlayerRemoteCommand.SeekForward
+        KeyEvent.KEYCODE_DPAD_LEFT -> PlayerRemoteCommand.Left
+        KeyEvent.KEYCODE_DPAD_RIGHT -> PlayerRemoteCommand.Right
         KeyEvent.KEYCODE_BACK -> PlayerRemoteCommand.Back
         else -> PlayerRemoteCommand.None
     }

@@ -52,8 +52,8 @@ internal enum class PlayerTimelineRemoteKey {
 
 internal enum class PlayerTimelineKeyAction {
     None,
-    SeekBack,
-    SeekForward,
+    PreviewBack,
+    PreviewForward,
     ExitTimeline,
 }
 
@@ -63,8 +63,8 @@ internal fun resolvePlayerTimelineKeyAction(
 ): PlayerTimelineKeyAction {
     if (!canSeek) return PlayerTimelineKeyAction.None
     return when (key) {
-        PlayerTimelineRemoteKey.Left -> PlayerTimelineKeyAction.SeekBack
-        PlayerTimelineRemoteKey.Right -> PlayerTimelineKeyAction.SeekForward
+        PlayerTimelineRemoteKey.Left -> PlayerTimelineKeyAction.PreviewBack
+        PlayerTimelineRemoteKey.Right -> PlayerTimelineKeyAction.PreviewForward
         PlayerTimelineRemoteKey.Up,
         PlayerTimelineRemoteKey.Down -> PlayerTimelineKeyAction.ExitTimeline
         PlayerTimelineRemoteKey.Other -> PlayerTimelineKeyAction.None

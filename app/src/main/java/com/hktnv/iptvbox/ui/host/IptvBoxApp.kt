@@ -285,6 +285,13 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         while (recentIds.size > 60) recentIds.removeLast()
         currentItem = item; currentHeaders = selectedPlaylist?.headers.orEmpty()
     }
+    fun togglePlayerFavorite(item: CatalogItem) {
+        val wasFavorite = item.id in favoriteIds
+        toggleFavorite(favoriteIds, item.id)
+        banner = context.getString(
+            if (wasFavorite) R.string.banner_favorite_removed else R.string.banner_favorite_added,
+        )
+    }
 
     fun openItem(item: CatalogItem) {
         playerContextItems = currentContextItemsForPlayer(item); selectPlayerItem(item)
@@ -424,6 +431,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onSeasonSelected = { selectedSeasonNumber = it }, onShowItemOptions = { contentOptionsItem = it },
         onQueryChange = { searchDraft = it }, onSearch = { submittedSearch = searchDraft.trim() },
         onSelectPlayerItem = ::selectPlayerItem,
+        onTogglePlayerFavorite = ::togglePlayerFavorite,
         onOpenPlaylistEntry = ::openPlaylistLibrary, onNavigate = ::navigate, onDrawerEvent = ::applyDrawerEvent,
         onStartupBehaviorChange = startupBehaviorStore::setBehavior,
         onRequestExitConfirmation = { showExitDialog = true }, onDismissBanner = { banner = null },

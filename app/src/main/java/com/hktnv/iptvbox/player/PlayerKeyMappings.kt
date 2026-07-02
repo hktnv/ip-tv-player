@@ -19,8 +19,8 @@ internal fun playerRemoteCommandForComposeKey(key: Key): PlayerRemoteCommand {
         Key.NumPadEnter -> PlayerRemoteCommand.TogglePlayPause
         Key.DirectionUp -> PlayerRemoteCommand.NextItem
         Key.DirectionDown -> PlayerRemoteCommand.PreviousItem
-        Key.DirectionLeft -> PlayerRemoteCommand.OpenContentList
-        Key.DirectionRight -> PlayerRemoteCommand.SeekForward
+        Key.DirectionLeft -> PlayerRemoteCommand.Left
+        Key.DirectionRight -> PlayerRemoteCommand.Right
         Key.Back -> PlayerRemoteCommand.Back
         else -> PlayerRemoteCommand.None
     }

@@ -3,7 +3,6 @@ package com.hktnv.iptvbox.player
 internal enum class PlayerInputState {
     Watching,
     ControlsVisible,
-    ContentListVisible,
     ExitConfirmVisible,
 }
 
@@ -28,8 +27,6 @@ internal data class PlayerInputResult(
     val togglePlayback: Boolean = false,
     val selectNextItem: Boolean = false,
     val selectPreviousItem: Boolean = false,
-    val seekBack: Boolean = false,
-    val seekForward: Boolean = false,
     val exitRequested: Boolean = false,
 )
 
@@ -41,7 +38,6 @@ internal fun reducePlayerInput(
         PlayerInputAction.ControllerShown -> when (state) {
             PlayerInputState.Watching,
             PlayerInputState.ControlsVisible -> PlayerInputResult(PlayerInputState.ControlsVisible, consumeInput = false)
-            PlayerInputState.ContentListVisible,
             PlayerInputState.ExitConfirmVisible -> PlayerInputResult(state, consumeInput = false)
         }
         PlayerInputAction.ControllerHidden -> when (state) {
@@ -85,11 +81,8 @@ internal fun reducePlayerInput(
             else -> PlayerInputResult(state, consumeInput = false)
         }
         PlayerInputAction.LeftPressed -> when (state) {
-            PlayerInputState.Watching -> PlayerInputResult(PlayerInputState.ContentListVisible)
-            PlayerInputState.ControlsVisible -> PlayerInputResult(
-                state = PlayerInputState.ControlsVisible,
-                seekBack = true,
-            )
+            PlayerInputState.Watching,
+            PlayerInputState.ControlsVisible -> PlayerInputResult(state, consumeInput = false)
             else -> PlayerInputResult(state, consumeInput = false)
         }
         PlayerInputAction.RightPressed -> when (state) {
@@ -99,12 +92,11 @@ internal fun reducePlayerInput(
             )
             PlayerInputState.ControlsVisible -> PlayerInputResult(
                 state = PlayerInputState.ControlsVisible,
-                seekForward = true,
+                consumeInput = false,
             )
             else -> PlayerInputResult(state, consumeInput = false)
         }
         PlayerInputAction.BackPressed -> when (state) {
-            PlayerInputState.ContentListVisible -> PlayerInputResult(PlayerInputState.Watching)
             PlayerInputState.ControlsVisible -> PlayerInputResult(PlayerInputState.Watching)
             PlayerInputState.Watching -> PlayerInputResult(PlayerInputState.ExitConfirmVisible)
             PlayerInputState.ExitConfirmVisible -> PlayerInputResult(
@@ -125,8 +117,8 @@ internal fun PlayerRemoteCommand.toInputAction(): PlayerInputAction? {
         PlayerRemoteCommand.TogglePlayPause -> PlayerInputAction.OkPressed
         PlayerRemoteCommand.NextItem -> PlayerInputAction.UpPressed
         PlayerRemoteCommand.PreviousItem -> PlayerInputAction.DownPressed
-        PlayerRemoteCommand.OpenContentList -> PlayerInputAction.LeftPressed
-        PlayerRemoteCommand.SeekForward -> PlayerInputAction.RightPressed
+        PlayerRemoteCommand.Left -> PlayerInputAction.LeftPressed
+        PlayerRemoteCommand.Right -> PlayerInputAction.RightPressed
         PlayerRemoteCommand.Back -> PlayerInputAction.BackPressed
         PlayerRemoteCommand.None -> null
     }

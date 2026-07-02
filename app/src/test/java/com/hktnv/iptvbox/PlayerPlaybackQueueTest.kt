@@ -6,6 +6,7 @@ import com.hktnv.iptvbox.core.model.ContentKind
 import com.hktnv.iptvbox.player.PlayerRemoteCommand
 import com.hktnv.iptvbox.player.buildPlayerPlaybackQueue
 import com.hktnv.iptvbox.player.playerRemoteCommandForKeyCode
+import com.hktnv.iptvbox.player.relatedItems
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -71,6 +72,19 @@ class PlayerPlaybackQueueTest {
     }
 
     @Test
+    fun relatedItemsExcludeCurrentItem() {
+        val first = item("1")
+        val second = item("2")
+        val third = item("3")
+        val queue = buildPlayerPlaybackQueue(
+            contextItems = listOf(first, second, third),
+            currentItem = second,
+        )
+
+        assertEquals(listOf(first, third), queue.relatedItems())
+    }
+
+    @Test
     fun mapsTvRemoteKeysToPlayerCommands() {
         assertEquals(
             PlayerRemoteCommand.TogglePlayPause,
@@ -85,11 +99,11 @@ class PlayerPlaybackQueueTest {
             playerRemoteCommandForKeyCode(KeyEvent.KEYCODE_DPAD_DOWN),
         )
         assertEquals(
-            PlayerRemoteCommand.OpenContentList,
+            PlayerRemoteCommand.Left,
             playerRemoteCommandForKeyCode(KeyEvent.KEYCODE_DPAD_LEFT),
         )
         assertEquals(
-            PlayerRemoteCommand.SeekForward,
+            PlayerRemoteCommand.Right,
             playerRemoteCommandForKeyCode(KeyEvent.KEYCODE_DPAD_RIGHT),
         )
         assertEquals(

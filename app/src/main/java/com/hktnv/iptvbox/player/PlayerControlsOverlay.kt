@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Audiotrack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -36,13 +38,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.accentSubtle
 import com.hktnv.iptvbox.core.designsystem.accentText
 import com.hktnv.iptvbox.core.designsystem.focusBorder
+import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.ui.common.TvFocusBorder
 import com.hktnv.iptvbox.ui.common.TvRestingBorder
 import com.hktnv.iptvbox.ui.common.tvClickable
@@ -56,11 +61,15 @@ internal fun PlayerControlsOverlay(
     durationMs: Long,
     speed: Float,
     canSeek: Boolean,
+    favorite: Boolean,
+    relatedItems: List<CatalogItem>,
     onSeekBack: () -> Unit,
     onSeekTo: (Long) -> Unit,
     onTogglePlayback: () -> Unit,
     onSeekForward: () -> Unit,
     onCycleSpeed: () -> Unit,
+    onToggleFavorite: () -> Unit,
+    onSelectRelatedItem: (CatalogItem) -> Unit,
     onUserInteraction: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -89,10 +98,6 @@ internal fun PlayerControlsOverlay(
                     onUserInteraction()
                     onSeekTo(it)
                 },
-                onSeekBy = {
-                    onUserInteraction()
-                    if (it < 0L) onSeekBack() else onSeekForward()
-                },
                 timelineExitFocusRequester = playFocusRequester,
                 onUserInteraction = onUserInteraction,
             )
@@ -101,7 +106,7 @@ internal fun PlayerControlsOverlay(
             ) {
                 PlayerIconControl(
                     icon = Icons.Filled.Replay10,
-                    contentDescription = "10 saniye geri",
+                    contentDescription = stringResource(R.string.player_seek_back_10),
                     enabled = canSeek,
                     onClick = {
                         onUserInteraction()
@@ -110,7 +115,9 @@ internal fun PlayerControlsOverlay(
                 )
                 PlayerIconControl(
                     icon = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    contentDescription = if (isPlaying) "Duraklat" else "Devam Et",
+                    contentDescription = stringResource(
+                        if (isPlaying) R.string.player_pause else R.string.player_resume,
+                    ),
                     modifier = Modifier.focusRequester(playFocusRequester),
                     emphasized = true,
                     onClick = {
@@ -120,7 +127,7 @@ internal fun PlayerControlsOverlay(
                 )
                 PlayerIconControl(
                     icon = Icons.Filled.Forward10,
-                    contentDescription = "10 saniye ileri",
+                    contentDescription = stringResource(R.string.player_seek_forward_10),
                     enabled = canSeek,
                     onClick = {
                         onUserInteraction()
@@ -135,24 +142,42 @@ internal fun PlayerControlsOverlay(
                     },
                 )
                 PlayerIconControl(
+                    icon = if (favorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    contentDescription = stringResource(
+                        if (favorite) R.string.player_favorite_remove else R.string.player_favorite_add,
+                    ),
+                    emphasized = favorite,
+                    onClick = {
+                        onUserInteraction()
+                        onToggleFavorite()
+                    },
+                )
+                PlayerIconControl(
                     icon = Icons.Filled.Subtitles,
-                    contentDescription = "Altyazı",
+                    contentDescription = stringResource(R.string.player_subtitles),
                     enabled = false,
                     onClick = onUserInteraction,
                 )
                 PlayerIconControl(
                     icon = Icons.Filled.Audiotrack,
-                    contentDescription = "Ses",
+                    contentDescription = stringResource(R.string.player_audio),
                     enabled = false,
                     onClick = onUserInteraction,
                 )
                 PlayerIconControl(
                     icon = Icons.Filled.Settings,
-                    contentDescription = "Ayarlar",
+                    contentDescription = stringResource(R.string.player_settings),
                     enabled = false,
                     onClick = onUserInteraction,
                 )
             }
+            PlayerRelatedContentRail(
+                items = relatedItems,
+                onSelectItem = {
+                    onUserInteraction()
+                    onSelectRelatedItem(it)
+                },
+            )
         }
     }
 }

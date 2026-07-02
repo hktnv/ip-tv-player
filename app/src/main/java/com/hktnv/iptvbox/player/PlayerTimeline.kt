@@ -14,7 +14,9 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -28,12 +30,15 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.accentText
 import com.hktnv.iptvbox.core.designsystem.focusBorder
+import kotlinx.coroutines.delay
 
 @Composable
 internal fun PlayerTimeline(
@@ -41,17 +46,37 @@ internal fun PlayerTimeline(
     durationMs: Long,
     canSeek: Boolean,
     onSeekTo: (Long) -> Unit,
-    onSeekBy: (Long) -> Unit,
     timelineExitFocusRequester: FocusRequester,
     onUserInteraction: () -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
     var previewPositionMs by remember { mutableStateOf<Long?>(null) }
+    var previewRevision by remember { mutableIntStateOf(0) }
     val shownPositionMs = previewPositionMs ?: positionMs
     val progress = if (canSeek && durationMs > 0L) {
         (shownPositionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
     } else {
         1f
+    }
+    LaunchedEffect(previewRevision) {
+        val target = previewPositionMs ?: return@LaunchedEffect
+        delay(TIMELINE_SEEK_COMMIT_DEBOUNCE_MS)
+        if (previewPositionMs == target) {
+            onSeekTo(target)
+            previewPositionMs = null
+        }
+    }
+    fun updatePreview(deltaMs: Long) {
+        previewPositionMs = calculateSeekTarget(shownPositionMs, durationMs, deltaMs)
+        previewRevision++
+        onUserInteraction()
+    }
+    fun commitPreview(): Boolean {
+        val target = previewPositionMs ?: return false
+        onSeekTo(target)
+        previewPositionMs = null
+        previewRevision++
+        return true
     }
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -59,7 +84,7 @@ internal fun PlayerTimeline(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = if (canSeek) formatPlayerTime(shownPositionMs) else "Canlı",
+            text = if (canSeek) formatPlayerTime(shownPositionMs) else stringResource(R.string.player_live_label),
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
@@ -107,18 +132,24 @@ internal fun PlayerTimeline(
                     .focusable(enabled = canSeek)
                     .onPreviewKeyEvent { event ->
                         if (!canSeek) return@onPreviewKeyEvent false
+                        if (event.key.isTimelineConfirmKey()) {
+                            if (previewPositionMs == null) return@onPreviewKeyEvent false
+                            if (event.type == KeyEventType.KeyDown) {
+                                onUserInteraction()
+                                commitPreview()
+                            }
+                            return@onPreviewKeyEvent true
+                        }
                         val action = resolvePlayerTimelineKeyAction(event.key.toTimelineRemoteKey(), canSeek)
                         if (action == PlayerTimelineKeyAction.None) return@onPreviewKeyEvent false
                         if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent true
                         when (action) {
-                            PlayerTimelineKeyAction.SeekBack -> {
-                                previewPositionMs = calculateSeekTarget(shownPositionMs, durationMs, -10_000L)
-                                onSeekBy(-10_000L)
+                            PlayerTimelineKeyAction.PreviewBack -> {
+                                updatePreview(-10_000L)
                                 true
                             }
-                            PlayerTimelineKeyAction.SeekForward -> {
-                                previewPositionMs = calculateSeekTarget(shownPositionMs, durationMs, 10_000L)
-                                onSeekBy(10_000L)
+                            PlayerTimelineKeyAction.PreviewForward -> {
+                                updatePreview(10_000L)
                                 true
                             }
                             PlayerTimelineKeyAction.ExitTimeline -> {
@@ -132,7 +163,7 @@ internal fun PlayerTimeline(
             )
         }
         Text(
-            text = if (canSeek) formatPlayerTime(durationMs) else "Yayın",
+            text = if (canSeek) formatPlayerTime(durationMs) else stringResource(R.string.player_stream_label),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
@@ -142,6 +173,8 @@ internal fun PlayerTimeline(
     }
 }
 
+private const val TIMELINE_SEEK_COMMIT_DEBOUNCE_MS = 650L
+
 private fun Key.toTimelineRemoteKey(): PlayerTimelineRemoteKey {
     return when (this) {
         Key.DirectionLeft -> PlayerTimelineRemoteKey.Left
@@ -150,6 +183,10 @@ private fun Key.toTimelineRemoteKey(): PlayerTimelineRemoteKey {
         Key.DirectionDown -> PlayerTimelineRemoteKey.Down
         else -> PlayerTimelineRemoteKey.Other
     }
+}
+
+private fun Key.isTimelineConfirmKey(): Boolean {
+    return this == Key.DirectionCenter || this == Key.Enter || this == Key.NumPadEnter
 }
 
 @Composable
