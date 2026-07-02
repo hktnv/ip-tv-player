@@ -211,11 +211,9 @@ internal fun PlayerControlsOverlay(
                 },
                 onRequestOptionsFocus = {
                     onUserInteraction()
-                    runCatching { relatedOptionFocusRequester.requestFocus() }
                 },
                 onRequestCardsFocus = {
                     onUserInteraction()
-                    runCatching { relatedCardFocusRequester.requestFocus() }
                 },
                 onLoadMoreItems = {
                     onUserInteraction()

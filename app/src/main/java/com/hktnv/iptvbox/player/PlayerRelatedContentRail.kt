@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
@@ -53,6 +54,28 @@ internal fun PlayerRelatedContentRail(
     modifier: Modifier = Modifier,
 ) {
     if (!model.hasContent) return
+    val optionKeys = model.options.map { it.id }
+    val itemKeys = model.items.map { it.id }
+    val selectedOptionIndex = model.options.indexOfFirst { it.selected }.takeIf { it >= 0 } ?: 0
+    val optionFocusRequesters = remember(optionKeys, selectedOptionIndex, optionFocusRequester) {
+        List(model.options.size) { index ->
+            if (index == selectedOptionIndex) optionFocusRequester else FocusRequester()
+        }
+    }
+    val cardFocusRequesters = remember(itemKeys, cardFocusRequester) {
+        List(model.items.size) { index ->
+            if (index == 0) cardFocusRequester else FocusRequester()
+        }
+    }
+    var focusRequestNonce by remember(optionKeys, itemKeys) { mutableStateOf(0) }
+    var optionFocusRequest by remember(optionKeys) { mutableStateOf<IndexedFocusRequest?>(null) }
+    var cardFocusRequest by remember(itemKeys) { mutableStateOf<IndexedFocusRequest?>(null) }
+
+    fun nextFocusRequest(index: Int): IndexedFocusRequest {
+        focusRequestNonce += 1
+        return IndexedFocusRequest(index = index, nonce = focusRequestNonce)
+    }
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(if (expanded) 6.dp else 0.dp),
@@ -75,11 +98,17 @@ internal fun PlayerRelatedContentRail(
                     if (model.options.isNotEmpty()) {
                         PlayerRelatedOptionRow(
                             options = model.options,
-                            optionFocusRequester = optionFocusRequester,
+                            focusRequesters = optionFocusRequesters,
+                            cardFocusRequesters = cardFocusRequesters,
+                            focusRequest = optionFocusRequest,
                             cardWidth = optionCardWidth,
                             onMoveUp = onReturnToControls,
-                            onMoveDown = {
-                                if (model.items.isNotEmpty()) onRequestCardsFocus()
+                            onMoveDown = { sourceIndex ->
+                                val targetIndex = relatedVerticalTargetIndex(sourceIndex, model.items.size)
+                                if (targetIndex != null) {
+                                    onRequestCardsFocus()
+                                    cardFocusRequest = nextFocusRequest(targetIndex)
+                                }
                             },
                             onOptionSelected = onOptionSelected,
                         )
@@ -87,12 +116,20 @@ internal fun PlayerRelatedContentRail(
                     if (model.items.isNotEmpty()) {
                         PlayerRelatedCardRow(
                             items = model.items,
-                            cardFocusRequester = cardFocusRequester,
+                            focusRequesters = cardFocusRequesters,
+                            optionFocusRequesters = optionFocusRequesters,
+                            focusRequest = cardFocusRequest,
                             cardWidth = contentCardWidth,
                             onMoveUp = if (model.options.isEmpty()) {
-                                onReturnToControls
+                                { _: Int -> onReturnToControls() }
                             } else {
-                                onRequestOptionsFocus
+                                { sourceIndex ->
+                                    val targetIndex = relatedVerticalTargetIndex(sourceIndex, model.options.size)
+                                    if (targetIndex != null) {
+                                        onRequestOptionsFocus()
+                                        optionFocusRequest = nextFocusRequest(targetIndex)
+                                    }
+                                }
                             },
                             hasMoreItems = model.hasMoreItems,
                             onLoadMoreItems = onLoadMoreItems,
@@ -117,25 +154,35 @@ internal fun relatedRailOptionCardWidth(maxWidth: Dp): Dp {
     return (availableWidth / RelatedOptionVisibleCardCount).coerceAtLeast(RelatedRailMinimumCardWidth)
 }
 
+internal fun relatedVerticalTargetIndex(sourceIndex: Int, targetCount: Int): Int? {
+    if (targetCount <= 0) return null
+    return sourceIndex.coerceIn(0, targetCount - 1)
+}
+
 @Composable
 private fun PlayerRelatedCardRow(
     items: List<CatalogItem>,
-    cardFocusRequester: FocusRequester,
+    focusRequesters: List<FocusRequester>,
+    optionFocusRequesters: List<FocusRequester>,
+    focusRequest: IndexedFocusRequest?,
     cardWidth: Dp,
-    onMoveUp: () -> Unit,
+    onMoveUp: (Int) -> Unit,
     hasMoreItems: Boolean,
     onLoadMoreItems: () -> Unit,
     onSelectItem: (CatalogItem) -> Unit,
 ) {
     val itemKeys = items.map { it.id }
     val listState = rememberLazyListState()
-    val focusRequesters = remember(itemKeys, cardFocusRequester) {
-        List(items.size) { index ->
-            if (index == 0) cardFocusRequester else FocusRequester()
-        }
-    }
     var focusedIndex by remember(itemKeys) { mutableStateOf(0) }
     var pendingFocusIndex by remember(itemKeys) { mutableStateOf<Int?>(null) }
+    LaunchedEffect(itemKeys, focusRequest) {
+        val targetIndex = focusRequest?.index ?: return@LaunchedEffect
+        if (targetIndex in focusRequesters.indices) {
+            listState.animateScrollToItem(targetIndex)
+            withFrameNanos { }
+            runCatching { focusRequesters[targetIndex].requestFocus() }
+        }
+    }
     LaunchedEffect(itemKeys, pendingFocusIndex) {
         val targetIndex = pendingFocusIndex ?: return@LaunchedEffect
         if (targetIndex in focusRequesters.indices) {
@@ -152,10 +199,6 @@ private fun PlayerRelatedCardRow(
             .onPreviewKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 when (event.key) {
-                    Key.DirectionUp -> {
-                        onMoveUp()
-                        true
-                    }
                     Key.DirectionRight -> {
                         if (focusedIndex >= items.lastIndex && hasMoreItems) {
                             pendingFocusIndex = items.size
@@ -179,13 +222,47 @@ private fun PlayerRelatedCardRow(
                 onClick = { onSelectItem(item) },
                 modifier = Modifier
                     .focusRequester(focusRequesters[index])
+                    .focusProperties {
+                        relatedVerticalTargetIndex(index, optionFocusRequesters.size)?.let { targetIndex ->
+                            up = optionFocusRequesters[targetIndex]
+                        }
+                    }
+                    .onPreviewKeyEvent { event ->
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        when (event.key) {
+                            Key.DirectionUp -> {
+                                relatedVerticalTargetIndex(index, optionFocusRequesters.size)?.let { targetIndex ->
+                                    runCatching { optionFocusRequesters[targetIndex].requestFocus() }
+                                }
+                                onMoveUp(index)
+                                true
+                            }
+                            Key.DirectionRight -> {
+                                if (index >= items.lastIndex && hasMoreItems) {
+                                    pendingFocusIndex = items.size
+                                    onLoadMoreItems()
+                                    true
+                                } else {
+                                    false
+                                }
+                            }
+                            else -> false
+                        }
+                    }
                     .onFocusChanged {
-                        if (it.isFocused) focusedIndex = index
+                        if (it.isFocused) {
+                            focusedIndex = index
+                        }
                     },
             )
         }
     }
 }
+
+internal data class IndexedFocusRequest(
+    val index: Int,
+    val nonce: Int,
+)
 
 private const val RelatedRailVisibleCardCount = 6.1f
 private const val RelatedRailVisibleGapCount = 6

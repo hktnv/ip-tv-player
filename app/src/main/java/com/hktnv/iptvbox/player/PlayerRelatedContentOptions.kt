@@ -36,6 +36,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
@@ -114,21 +115,26 @@ internal fun PlayerRelatedHandle(
 @Composable
 internal fun PlayerRelatedOptionRow(
     options: List<PlayerRelatedContentOption>,
-    optionFocusRequester: FocusRequester,
+    focusRequesters: List<FocusRequester>,
+    cardFocusRequesters: List<FocusRequester>,
+    focusRequest: IndexedFocusRequest?,
     cardWidth: Dp,
     onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit,
+    onMoveDown: (Int) -> Unit,
     onOptionSelected: (String) -> Unit,
 ) {
     val optionKeys = options.map { it.id }
     val selectedIndex = options.indexOfFirst { it.selected }.takeIf { it >= 0 } ?: 0
-    val focusRequesters = remember(optionKeys, selectedIndex, optionFocusRequester) {
-        List(options.size) { index ->
-            if (index == selectedIndex) optionFocusRequester else FocusRequester()
-        }
-    }
     val listState = rememberLazyListState()
     var focusedIndex by remember(optionKeys, selectedIndex) { mutableStateOf(selectedIndex) }
+    LaunchedEffect(optionKeys, focusRequest) {
+        val targetIndex = focusRequest?.index ?: return@LaunchedEffect
+        if (targetIndex in focusRequesters.indices) {
+            listState.animateScrollToItem(targetIndex)
+            withFrameNanos { }
+            runCatching { focusRequesters[targetIndex].requestFocus() }
+        }
+    }
     LaunchedEffect(optionKeys, selectedIndex) {
         focusedIndex = selectedIndex
         listState.animateScrollToItem(selectedIndex)
@@ -136,22 +142,7 @@ internal fun PlayerRelatedOptionRow(
     }
     LazyRow(
         state = listState,
-        modifier = Modifier
-            .fillMaxWidth()
-            .onPreviewKeyEvent { event ->
-                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                when (event.key) {
-                    Key.DirectionUp -> {
-                        onMoveUp()
-                        true
-                    }
-                    Key.DirectionDown -> {
-                        onMoveDown()
-                        true
-                    }
-                    else -> false
-                }
-            },
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(mediaCardSpacing),
         contentPadding = PaddingValues(horizontal = 2.dp),
     ) {
@@ -161,7 +152,33 @@ internal fun PlayerRelatedOptionRow(
                 width = cardWidth,
                 modifier = Modifier
                     .focusRequester(focusRequesters[index])
-                    .onFocusChanged { if (it.isFocused) focusedIndex = index },
+                    .focusProperties {
+                        relatedVerticalTargetIndex(index, cardFocusRequesters.size)?.let { targetIndex ->
+                            down = cardFocusRequesters[targetIndex]
+                        }
+                    }
+                    .onPreviewKeyEvent { event ->
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        when (event.key) {
+                            Key.DirectionUp -> {
+                                onMoveUp()
+                                true
+                            }
+                            Key.DirectionDown -> {
+                                relatedVerticalTargetIndex(index, cardFocusRequesters.size)?.let { targetIndex ->
+                                    runCatching { cardFocusRequesters[targetIndex].requestFocus() }
+                                }
+                                onMoveDown(index)
+                                true
+                            }
+                            else -> false
+                        }
+                    }
+                    .onFocusChanged {
+                        if (it.isFocused) {
+                            focusedIndex = index
+                        }
+                    },
                 onClick = { onOptionSelected(option.id) },
             )
         }

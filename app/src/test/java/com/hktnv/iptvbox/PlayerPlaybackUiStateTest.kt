@@ -9,6 +9,7 @@ import com.hktnv.iptvbox.player.PlayerTimelineRemoteKey
 import com.hktnv.iptvbox.player.calculateSeekTarget
 import com.hktnv.iptvbox.player.relatedRailCardWidth
 import com.hktnv.iptvbox.player.relatedRailOptionCardWidth
+import com.hktnv.iptvbox.player.relatedVerticalTargetIndex
 import com.hktnv.iptvbox.player.resolvePlayerTimelineKeyAction
 import com.hktnv.iptvbox.player.resolvePlayerTimelinePresentation
 import com.hktnv.iptvbox.player.shouldAutoHidePlayerOsd
@@ -17,6 +18,7 @@ import com.hktnv.iptvbox.player.shouldShowBufferingIndicator
 import com.hktnv.iptvbox.player.shouldShowPlayerLoadingIndicator
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -140,6 +142,14 @@ class PlayerPlaybackUiStateTest {
         val occupiedWidth = cardWidth.value * 7.2f + mediaCardSpacing.value * 7f
 
         assertEquals(railWidth.value, occupiedWidth, 0.1f)
+    }
+
+    @Test
+    fun relatedVerticalFocusKeepsNearestHorizontalIndex() {
+        assertEquals(3, relatedVerticalTargetIndex(sourceIndex = 3, targetCount = 8))
+        assertEquals(5, relatedVerticalTargetIndex(sourceIndex = 9, targetCount = 6))
+        assertEquals(0, relatedVerticalTargetIndex(sourceIndex = -2, targetCount = 6))
+        assertNull(relatedVerticalTargetIndex(sourceIndex = 2, targetCount = 0))
     }
 
     @Test
