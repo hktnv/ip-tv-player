@@ -1,10 +1,13 @@
 package com.hktnv.iptvbox
 
+import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
+import com.hktnv.iptvbox.core.designsystem.mediaCardSpacing
 import com.hktnv.iptvbox.player.PlayerTimelineKeyAction
 import com.hktnv.iptvbox.player.PlayerTimelineLabel
 import com.hktnv.iptvbox.player.PlayerTimelineRemoteKey
 import com.hktnv.iptvbox.player.calculateSeekTarget
+import com.hktnv.iptvbox.player.relatedRailCardWidth
 import com.hktnv.iptvbox.player.resolvePlayerTimelineKeyAction
 import com.hktnv.iptvbox.player.resolvePlayerTimelinePresentation
 import com.hktnv.iptvbox.player.shouldAutoHidePlayerOsd
@@ -118,6 +121,15 @@ class PlayerPlaybackUiStateTest {
         assertEquals(PlayerTimelineLabel.Text("00:00"), timeline.startLabel)
         assertEquals(PlayerTimelineLabel.Text("--:--"), timeline.endLabel)
         assertEquals(0f, timeline.progress, 0.001f)
+    }
+
+    @Test
+    fun relatedRailWidthLeavesSixCardsAndPreviewVisible() {
+        val railWidth = 872.dp
+        val cardWidth = relatedRailCardWidth(railWidth)
+        val occupiedWidth = cardWidth.value * 6.1f + mediaCardSpacing.value * 6f
+
+        assertEquals(railWidth.value, occupiedWidth, 0.1f)
     }
 
     @Test

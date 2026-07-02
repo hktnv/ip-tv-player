@@ -1,14 +1,20 @@
 package com.hktnv.iptvbox.player
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -25,13 +31,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
@@ -43,16 +47,18 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.accentSubtle
 import com.hktnv.iptvbox.core.designsystem.accentText
 import com.hktnv.iptvbox.core.designsystem.focusBorder
+import com.hktnv.iptvbox.core.designsystem.mediaCardRadius
+import com.hktnv.iptvbox.core.designsystem.mediaCardSpacing
 import com.hktnv.iptvbox.ui.common.TvRestingBorder
 import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.tvFocusLift
-import kotlinx.coroutines.launch
 
 @Composable
 internal fun PlayerRelatedHandle(
@@ -109,27 +115,24 @@ internal fun PlayerRelatedHandle(
 internal fun PlayerRelatedOptionRow(
     options: List<PlayerRelatedContentOption>,
     optionFocusRequester: FocusRequester,
+    cardWidth: Dp,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onOptionSelected: (String) -> Unit,
 ) {
     val optionKeys = options.map { it.id }
-    val focusRequesters = remember(optionKeys) { List(options.size) { FocusRequester() } }
-    val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
     val selectedIndex = options.indexOfFirst { it.selected }.takeIf { it >= 0 } ?: 0
-    var focusedIndex by remember(optionKeys, selectedIndex) { mutableStateOf(selectedIndex) }
-    fun moveFocusTo(index: Int) {
-        val targetIndex = index.coerceIn(options.indices)
-        focusedIndex = targetIndex
-        scope.launch {
-            listState.scrollToItem(targetIndex)
-            withFrameNanos { }
-            runCatching { focusRequesters[targetIndex].requestFocus() }
+    val focusRequesters = remember(optionKeys, selectedIndex, optionFocusRequester) {
+        List(options.size) { index ->
+            if (index == selectedIndex) optionFocusRequester else FocusRequester()
         }
     }
+    val listState = rememberLazyListState()
+    var focusedIndex by remember(optionKeys, selectedIndex) { mutableStateOf(selectedIndex) }
     LaunchedEffect(optionKeys, selectedIndex) {
         focusedIndex = selectedIndex
+        listState.animateScrollToItem(selectedIndex)
+        withFrameNanos { }
     }
     LazyRow(
         state = listState,
@@ -138,14 +141,6 @@ internal fun PlayerRelatedOptionRow(
             .onPreviewKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 when (event.key) {
-                    Key.DirectionLeft -> {
-                        if (focusedIndex > 0) moveFocusTo(focusedIndex - 1)
-                        true
-                    }
-                    Key.DirectionRight -> {
-                        if (focusedIndex < options.lastIndex) moveFocusTo(focusedIndex + 1)
-                        true
-                    }
                     Key.DirectionUp -> {
                         onMoveUp()
                         true
@@ -157,43 +152,16 @@ internal fun PlayerRelatedOptionRow(
                     else -> false
                 }
             },
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        horizontalArrangement = Arrangement.spacedBy(mediaCardSpacing),
         contentPadding = PaddingValues(horizontal = 2.dp),
     ) {
         itemsIndexed(items = options, key = { _, option -> option.id }) { index, option ->
             PlayerRelatedOptionChip(
                 option = option,
+                width = cardWidth,
                 modifier = Modifier
                     .focusRequester(focusRequesters[index])
-                    .then(
-                        if (index == selectedIndex) {
-                            Modifier.focusRequester(optionFocusRequester)
-                        } else {
-                            Modifier
-                        },
-                    )
                     .onFocusChanged { if (it.isFocused) focusedIndex = index },
-                onDirectionalKey = { key ->
-                    when (key) {
-                        Key.DirectionLeft -> {
-                            if (index > 0) moveFocusTo(index - 1)
-                            true
-                        }
-                        Key.DirectionRight -> {
-                            if (index < options.lastIndex) moveFocusTo(index + 1)
-                            true
-                        }
-                        Key.DirectionUp -> {
-                            onMoveUp()
-                            true
-                        }
-                        Key.DirectionDown -> {
-                            onMoveDown()
-                            true
-                        }
-                        else -> false
-                    }
-                },
                 onClick = { onOptionSelected(option.id) },
             )
         }
@@ -203,7 +171,7 @@ internal fun PlayerRelatedOptionRow(
 @Composable
 private fun PlayerRelatedOptionChip(
     option: PlayerRelatedContentOption,
-    onDirectionalKey: (Key) -> Boolean,
+    width: Dp,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -215,39 +183,62 @@ private fun PlayerRelatedOptionChip(
     }
     Surface(
         modifier = modifier
+            .width(width)
+            .height(RelatedOptionCardHeight)
             .tvFocusLift(focused = focused, scale = 1.018f, liftPx = -2f)
-            .focusProperties {
-                left = FocusRequester.Cancel
-                right = FocusRequester.Cancel
-            }
             .onFocusChanged { focused = it.isFocused }
-            .onPreviewKeyEvent { event ->
-                event.type == KeyEventType.KeyDown && onDirectionalKey(event.key)
-            }
             .tvClickable(onClick = onClick),
         color = when {
-            focused -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.76f)
-            option.selected -> MaterialTheme.colorScheme.accentSubtle.copy(alpha = 0.48f)
-            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f)
+            focused -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.64f)
+            option.selected -> MaterialTheme.colorScheme.accentSubtle.copy(alpha = 0.34f)
+            else -> MaterialTheme.colorScheme.surface.copy(alpha = 0.36f)
         },
-        shape = RoundedCornerShape(999.dp),
+        shape = RoundedCornerShape(mediaCardRadius),
         border = BorderStroke(
             if (focused) 2.dp else 1.dp,
-            if (focused) MaterialTheme.colorScheme.focusBorder else TvRestingBorder.copy(alpha = 0.58f),
+            if (focused) MaterialTheme.colorScheme.focusBorder else TvRestingBorder.copy(alpha = 0.42f),
         ),
     ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-            color = if (focused || option.selected) {
-                MaterialTheme.colorScheme.accentText
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            },
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(end = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(if (option.selected) 4.dp else 0.dp)
+                    .background(MaterialTheme.colorScheme.accentText),
+            )
+            Text(
+                text = label,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = if (option.selected) 12.dp else 16.dp),
+                color = if (focused || option.selected) {
+                    MaterialTheme.colorScheme.accentText
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (option.selected) {
+                Box(
+                    modifier = Modifier
+                        .size(5.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.accentText,
+                            shape = RoundedCornerShape(999.dp),
+                        ),
+                )
+            }
+        }
     }
 }
+
+private val RelatedOptionCardHeight = 46.dp

@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -50,12 +51,43 @@ private const val MediaCardArtworkRatio = 0.78f
 private val MediaCardRailInfoHeight = 64.dp
 private val MediaCardGridInfoHeight = MediaCardRailInfoHeight
 
+internal data class CompactContentCardChrome(
+    val restingContainerAlpha: Float = 1f,
+    val focusedContainerAlpha: Float = 1f,
+    val restingTitleAlpha: Float = 1f,
+    val focusedTitleAlpha: Float = 1f,
+    val restingArtworkAlpha: Float = 1f,
+    val focusedArtworkAlpha: Float = 1f,
+    val restingBorderAlpha: Float = 1f,
+    val focusedBorderAlpha: Float = 1f,
+    val restingElevation: Dp = 1.dp,
+    val focusedElevation: Dp = 14.dp,
+) {
+    companion object {
+        val Solid = CompactContentCardChrome()
+        val TranslucentOsd = CompactContentCardChrome(
+            restingContainerAlpha = 0.52f,
+            focusedContainerAlpha = 0.78f,
+            restingTitleAlpha = 0.66f,
+            focusedTitleAlpha = 0.84f,
+            restingArtworkAlpha = 0.78f,
+            focusedArtworkAlpha = 0.92f,
+            restingBorderAlpha = 0.52f,
+            focusedBorderAlpha = 1f,
+            restingElevation = 0.dp,
+            focusedElevation = 8.dp,
+        )
+    }
+}
+
 @Composable
 internal fun CompactContentCard(
     item: CatalogItem,
     onClick: () -> Unit,
     favorite: Boolean = false,
     onLongClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    chrome: CompactContentCardChrome = CompactContentCardChrome.Solid,
     fixedWidth: Dp? = null,
     fixedRatio: Float? = null,
     onFocused: () -> Unit = {},
@@ -65,8 +97,12 @@ internal fun CompactContentCard(
     val cardWidth = fixedWidth ?: MediaCardCompactWidth
     val artworkRatio = fixedRatio ?: MediaCardArtworkRatio
     val title = item.compactTitle()
+    val containerAlpha = if (focused) chrome.focusedContainerAlpha else chrome.restingContainerAlpha
+    val borderAlpha = if (focused) chrome.focusedBorderAlpha else chrome.restingBorderAlpha
+    val artworkAlpha = if (focused) chrome.focusedArtworkAlpha else chrome.restingArtworkAlpha
+    val titleSurfaceAlpha = if (focused) chrome.focusedTitleAlpha else chrome.restingTitleAlpha
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .width(cardWidth)
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -5f)
@@ -78,10 +114,17 @@ internal fun CompactContentCard(
                 if (isFocused) onFocused()
             }
             .tvClickable(onLongClick = onLongClick, onClick = onClick),
-        color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
+        color = (if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface).copy(alpha = containerAlpha),
         shape = MediaCardShape,
-        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
-        shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
+        border = BorderStroke(
+            if (focused) 2.dp else 1.dp,
+            (if (focused) TvFocusBorder else TvRestingBorder).copy(alpha = borderAlpha),
+        ),
+        shadowElevation = tvFocusElevation(
+            focused = focused,
+            resting = chrome.restingElevation,
+            focusedElevation = chrome.focusedElevation,
+        ),
     ) {
         Column {
             FavoriteArtworkFrame(
@@ -90,13 +133,16 @@ internal fun CompactContentCard(
                 logoUrl = item.logoUrl,
                 favorite = favorite,
                 showBadge = true,
-                modifier = Modifier.fillMaxWidth().aspectRatio(artworkRatio),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(artworkRatio)
+                    .graphicsLayer(alpha = artworkAlpha),
             )
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(MediaCardRailInfoHeight)
-                    .background(MaterialTheme.colorScheme.cardTitleSurface)
+                    .background(MaterialTheme.colorScheme.cardTitleSurface.copy(alpha = titleSurfaceAlpha))
                     .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {

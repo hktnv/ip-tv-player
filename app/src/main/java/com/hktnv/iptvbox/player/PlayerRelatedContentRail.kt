@@ -19,7 +19,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
@@ -31,9 +30,12 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.hktnv.iptvbox.core.designsystem.mediaCardSpacing
 import com.hktnv.iptvbox.core.model.CatalogItem
-import kotlinx.coroutines.launch
+import com.hktnv.iptvbox.ui.media.CompactContentCard
+import com.hktnv.iptvbox.ui.media.CompactContentCardChrome
 
 @Composable
 internal fun PlayerRelatedContentRail(
@@ -66,142 +68,118 @@ internal fun PlayerRelatedContentRail(
             exit = fadeOut(animationSpec = tween(durationMillis = 90)) +
                 shrinkVertically(animationSpec = tween(durationMillis = 140)),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (model.options.isNotEmpty()) {
-                    PlayerRelatedOptionRow(
-                        options = model.options,
-                        optionFocusRequester = optionFocusRequester,
-                        onMoveUp = onReturnToControls,
-                        onMoveDown = onRequestCardsFocus,
-                        onOptionSelected = onOptionSelected,
-                    )
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val cardWidth = relatedRailCardWidth(maxWidth)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (model.options.isNotEmpty()) {
+                        PlayerRelatedOptionRow(
+                            options = model.options,
+                            optionFocusRequester = optionFocusRequester,
+                            cardWidth = cardWidth,
+                            onMoveUp = onReturnToControls,
+                            onMoveDown = {
+                                if (model.items.isNotEmpty()) onRequestCardsFocus()
+                            },
+                            onOptionSelected = onOptionSelected,
+                        )
+                    }
+                    if (model.items.isNotEmpty()) {
+                        PlayerRelatedCardRow(
+                            items = model.items,
+                            cardFocusRequester = cardFocusRequester,
+                            cardWidth = cardWidth,
+                            onMoveUp = if (model.options.isEmpty()) {
+                                onReturnToControls
+                            } else {
+                                onRequestOptionsFocus
+                            },
+                            hasMoreItems = model.hasMoreItems,
+                            onLoadMoreItems = onLoadMoreItems,
+                            onSelectItem = onSelectItem,
+                        )
+                    }
                 }
-                PlayerRelatedCardRow(
-                    items = model.items,
-                    cardFocusRequester = cardFocusRequester,
-                    onMoveUp = if (model.options.isEmpty()) onReturnToControls else onRequestOptionsFocus,
-                    hasMoreItems = model.hasMoreItems,
-                    onLoadMoreItems = onLoadMoreItems,
-                    onSelectItem = onSelectItem,
-                )
             }
         }
     }
+}
+
+internal fun relatedRailCardWidth(maxWidth: Dp): Dp {
+    val availableWidth = (maxWidth - mediaCardSpacing * RelatedRailVisibleGapCount)
+        .coerceAtLeast(RelatedRailMinimumCardWidth)
+    return (availableWidth / RelatedRailVisibleCardCount).coerceAtLeast(RelatedRailMinimumCardWidth)
 }
 
 @Composable
 private fun PlayerRelatedCardRow(
     items: List<CatalogItem>,
     cardFocusRequester: FocusRequester,
+    cardWidth: Dp,
     onMoveUp: () -> Unit,
     hasMoreItems: Boolean,
     onLoadMoreItems: () -> Unit,
     onSelectItem: (CatalogItem) -> Unit,
 ) {
     val itemKeys = items.map { it.id }
-    val focusRequesters = remember(itemKeys) { List(items.size) { FocusRequester() } }
     val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
-    var focusedIndex by remember(itemKeys) { mutableStateOf(0) }
-    var pendingFocusIndex by remember { mutableStateOf<Int?>(null) }
-    fun moveFocusTo(index: Int) {
-        val targetIndex = index.coerceIn(items.indices)
-        focusedIndex = targetIndex
-        scope.launch {
-            listState.scrollToItem(targetIndex)
-            withFrameNanos { }
-            runCatching { focusRequesters[targetIndex].requestFocus() }
+    val focusRequesters = remember(itemKeys, cardFocusRequester) {
+        List(items.size) { index ->
+            if (index == 0) cardFocusRequester else FocusRequester()
         }
     }
-    LaunchedEffect(items.size, pendingFocusIndex) {
+    var focusedIndex by remember(itemKeys) { mutableStateOf(0) }
+    var pendingFocusIndex by remember(itemKeys) { mutableStateOf<Int?>(null) }
+    LaunchedEffect(itemKeys, pendingFocusIndex) {
         val targetIndex = pendingFocusIndex ?: return@LaunchedEffect
         if (targetIndex in focusRequesters.indices) {
-            focusedIndex = targetIndex
-            listState.scrollToItem(targetIndex)
+            listState.animateScrollToItem(targetIndex)
             withFrameNanos { }
             runCatching { focusRequesters[targetIndex].requestFocus() }
             pendingFocusIndex = null
         }
     }
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val cardWidth = when {
-            maxWidth < 600.dp -> 122.dp
-            maxWidth < 900.dp -> 138.dp
-            else -> 154.dp
-        }
-        LazyRow(
-            state = listState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .onPreviewKeyEvent { event ->
-                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                    when (event.key) {
-                        Key.DirectionLeft -> {
-                            if (focusedIndex > 0) {
-                                moveFocusTo(focusedIndex - 1)
-                            }
-                            true
-                        }
-                        Key.DirectionRight -> {
-                            if (focusedIndex < items.lastIndex) {
-                                moveFocusTo(focusedIndex + 1)
-                            } else if (hasMoreItems) {
-                                pendingFocusIndex = items.size
-                                onLoadMoreItems()
-                            }
-                            true
-                        }
-                        Key.DirectionUp -> {
-                            onMoveUp()
-                            true
-                        }
-                        else -> false
+    LazyRow(
+        state = listState,
+        modifier = Modifier
+            .fillMaxWidth()
+            .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                when (event.key) {
+                    Key.DirectionUp -> {
+                        onMoveUp()
+                        true
                     }
-                },
-            contentPadding = PaddingValues(horizontal = 2.dp),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
-        ) {
-            itemsIndexed(items = items, key = { _, item -> item.id }) { index, item ->
-                PlayerRelatedContentCard(
-                    item = item,
-                    width = cardWidth,
-                    modifier = Modifier
-                        .focusRequester(focusRequesters[index])
-                        .then(
-                            if (index == 0) {
-                                Modifier.focusRequester(cardFocusRequester)
-                            } else {
-                                Modifier
-                            },
-                        )
-                        .onFocusChanged { if (it.isFocused) focusedIndex = index },
-                    onDirectionalKey = { key ->
-                        when (key) {
-                            Key.DirectionLeft -> {
-                                if (index > 0) {
-                                    moveFocusTo(index - 1)
-                                }
-                                true
-                            }
-                            Key.DirectionRight -> {
-                                if (index < items.lastIndex) {
-                                    moveFocusTo(index + 1)
-                                } else if (hasMoreItems) {
-                                    pendingFocusIndex = items.size
-                                    onLoadMoreItems()
-                                }
-                                true
-                            }
-                            Key.DirectionUp -> {
-                                onMoveUp()
-                                true
-                            }
-                            else -> false
+                    Key.DirectionRight -> {
+                        if (focusedIndex >= items.lastIndex && hasMoreItems) {
+                            pendingFocusIndex = items.size
+                            onLoadMoreItems()
+                            true
+                        } else {
+                            false
                         }
+                    }
+                    else -> false
+                }
+            },
+        contentPadding = PaddingValues(horizontal = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(mediaCardSpacing),
+    ) {
+        itemsIndexed(items = items, key = { _, item -> item.id }) { index, item ->
+            CompactContentCard(
+                item = item,
+                fixedWidth = cardWidth,
+                chrome = CompactContentCardChrome.TranslucentOsd,
+                onClick = { onSelectItem(item) },
+                modifier = Modifier
+                    .focusRequester(focusRequesters[index])
+                    .onFocusChanged {
+                        if (it.isFocused) focusedIndex = index
                     },
-                    onClick = { onSelectItem(item) },
-                )
-            }
+            )
         }
     }
 }
+
+private const val RelatedRailVisibleCardCount = 6.1f
+private const val RelatedRailVisibleGapCount = 6
+private val RelatedRailMinimumCardWidth = 110.dp
