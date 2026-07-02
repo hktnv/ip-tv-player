@@ -32,6 +32,7 @@
     <string name="playlist_last_update_date">Son güncelleme: %1$s</string>
     <string name="playlist_rename_success">Oynatma listesi adı güncellendi</string>
     <string name="playlist_delete_success">%1$s silindi</string>
+    <string name="playlist_detail_back_action">Oynatma listelerine dön</string>
     <string name="playlist_detail_info_section">Liste bilgileri</string>
     <string name="playlist_detail_actions_section">İşlemler</string>
     <string name="playlist_xtream_supported">Xtream API Destekli</string>
