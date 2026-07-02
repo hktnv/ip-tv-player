@@ -20,6 +20,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -40,6 +42,7 @@ internal fun PlayerTimeline(
     canSeek: Boolean,
     onSeekTo: (Long) -> Unit,
     onSeekBy: (Long) -> Unit,
+    timelineExitFocusRequester: FocusRequester,
     onUserInteraction: () -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
@@ -97,21 +100,33 @@ internal fun PlayerTimeline(
                 modifier = Modifier
                     .fillMaxWidth()
                     .onFocusChanged { focused = it.isFocused }
+                    .focusProperties {
+                        up = timelineExitFocusRequester
+                        down = timelineExitFocusRequester
+                    }
                     .focusable(enabled = canSeek)
                     .onPreviewKeyEvent { event ->
-                        if (!canSeek || event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                        when (event.key) {
-                            Key.DirectionLeft -> {
+                        if (!canSeek) return@onPreviewKeyEvent false
+                        val action = resolvePlayerTimelineKeyAction(event.key.toTimelineRemoteKey(), canSeek)
+                        if (action == PlayerTimelineKeyAction.None) return@onPreviewKeyEvent false
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent true
+                        when (action) {
+                            PlayerTimelineKeyAction.SeekBack -> {
                                 previewPositionMs = calculateSeekTarget(shownPositionMs, durationMs, -10_000L)
                                 onSeekBy(-10_000L)
                                 true
                             }
-                            Key.DirectionRight -> {
+                            PlayerTimelineKeyAction.SeekForward -> {
                                 previewPositionMs = calculateSeekTarget(shownPositionMs, durationMs, 10_000L)
                                 onSeekBy(10_000L)
                                 true
                             }
-                            else -> false
+                            PlayerTimelineKeyAction.ExitTimeline -> {
+                                onUserInteraction()
+                                runCatching { timelineExitFocusRequester.requestFocus() }
+                                true
+                            }
+                            PlayerTimelineKeyAction.None -> false
                         }
                     },
             )
@@ -124,6 +139,16 @@ internal fun PlayerTimeline(
             textAlign = TextAlign.End,
             modifier = Modifier.width(70.dp),
         )
+    }
+}
+
+private fun Key.toTimelineRemoteKey(): PlayerTimelineRemoteKey {
+    return when (this) {
+        Key.DirectionLeft -> PlayerTimelineRemoteKey.Left
+        Key.DirectionRight -> PlayerTimelineRemoteKey.Right
+        Key.DirectionUp -> PlayerTimelineRemoteKey.Up
+        Key.DirectionDown -> PlayerTimelineRemoteKey.Down
+        else -> PlayerTimelineRemoteKey.Other
     }
 }
 

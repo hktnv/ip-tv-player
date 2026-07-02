@@ -18,11 +18,49 @@ internal fun shouldShowBufferingIndicator(
     return playbackState == Player.STATE_BUFFERING && !manuallyPaused
 }
 
+internal fun shouldShowPlayerLoadingIndicator(
+    playbackState: Int,
+    manuallyPaused: Boolean,
+    connectionLoading: Boolean,
+    seekLoading: Boolean,
+): Boolean {
+    return seekLoading || connectionLoading || shouldShowBufferingIndicator(playbackState, manuallyPaused)
+}
+
 internal fun shouldPresentAsPlaying(
     playWhenReady: Boolean,
     manuallyPaused: Boolean,
 ): Boolean {
     return playWhenReady && !manuallyPaused
+}
+
+internal enum class PlayerTimelineRemoteKey {
+    Left,
+    Right,
+    Up,
+    Down,
+    Other,
+}
+
+internal enum class PlayerTimelineKeyAction {
+    None,
+    SeekBack,
+    SeekForward,
+    ExitTimeline,
+}
+
+internal fun resolvePlayerTimelineKeyAction(
+    key: PlayerTimelineRemoteKey,
+    canSeek: Boolean,
+): PlayerTimelineKeyAction {
+    if (!canSeek) return PlayerTimelineKeyAction.None
+    return when (key) {
+        PlayerTimelineRemoteKey.Left -> PlayerTimelineKeyAction.SeekBack
+        PlayerTimelineRemoteKey.Right -> PlayerTimelineKeyAction.SeekForward
+        PlayerTimelineRemoteKey.Up,
+        PlayerTimelineRemoteKey.Down -> PlayerTimelineKeyAction.ExitTimeline
+        PlayerTimelineRemoteKey.Other -> PlayerTimelineKeyAction.None
+    }
 }
 
 internal fun formatPlayerTime(valueMs: Long): String {

@@ -1,9 +1,13 @@
 package com.hktnv.iptvbox
 
 import androidx.media3.common.Player
+import com.hktnv.iptvbox.player.PlayerTimelineKeyAction
+import com.hktnv.iptvbox.player.PlayerTimelineRemoteKey
 import com.hktnv.iptvbox.player.calculateSeekTarget
+import com.hktnv.iptvbox.player.resolvePlayerTimelineKeyAction
 import com.hktnv.iptvbox.player.shouldPresentAsPlaying
 import com.hktnv.iptvbox.player.shouldShowBufferingIndicator
+import com.hktnv.iptvbox.player.shouldShowPlayerLoadingIndicator
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -23,6 +27,66 @@ class PlayerPlaybackUiStateTest {
         assertTrue(shouldShowBufferingIndicator(Player.STATE_BUFFERING, manuallyPaused = false))
         assertFalse(shouldShowBufferingIndicator(Player.STATE_BUFFERING, manuallyPaused = true))
         assertFalse(shouldShowBufferingIndicator(Player.STATE_READY, manuallyPaused = false))
+    }
+
+    @Test
+    fun loadingIndicatorIncludesSeekAndConnectionFeedback() {
+        assertTrue(
+            shouldShowPlayerLoadingIndicator(
+                playbackState = Player.STATE_READY,
+                manuallyPaused = false,
+                connectionLoading = false,
+                seekLoading = true,
+            ),
+        )
+        assertTrue(
+            shouldShowPlayerLoadingIndicator(
+                playbackState = Player.STATE_READY,
+                manuallyPaused = false,
+                connectionLoading = true,
+                seekLoading = false,
+            ),
+        )
+        assertFalse(
+            shouldShowPlayerLoadingIndicator(
+                playbackState = Player.STATE_READY,
+                manuallyPaused = false,
+                connectionLoading = false,
+                seekLoading = false,
+            ),
+        )
+    }
+
+    @Test
+    fun timelineVerticalKeysExitInsteadOfSeeking() {
+        assertEquals(
+            PlayerTimelineKeyAction.ExitTimeline,
+            resolvePlayerTimelineKeyAction(PlayerTimelineRemoteKey.Up, canSeek = true),
+        )
+        assertEquals(
+            PlayerTimelineKeyAction.ExitTimeline,
+            resolvePlayerTimelineKeyAction(PlayerTimelineRemoteKey.Down, canSeek = true),
+        )
+        assertEquals(
+            PlayerTimelineKeyAction.SeekBack,
+            resolvePlayerTimelineKeyAction(PlayerTimelineRemoteKey.Left, canSeek = true),
+        )
+        assertEquals(
+            PlayerTimelineKeyAction.SeekForward,
+            resolvePlayerTimelineKeyAction(PlayerTimelineRemoteKey.Right, canSeek = true),
+        )
+    }
+
+    @Test
+    fun timelineKeysAreIgnoredWhenSeekIsDisabled() {
+        assertEquals(
+            PlayerTimelineKeyAction.None,
+            resolvePlayerTimelineKeyAction(PlayerTimelineRemoteKey.Up, canSeek = false),
+        )
+        assertEquals(
+            PlayerTimelineKeyAction.None,
+            resolvePlayerTimelineKeyAction(PlayerTimelineRemoteKey.Right, canSeek = false),
+        )
     }
 
     @Test

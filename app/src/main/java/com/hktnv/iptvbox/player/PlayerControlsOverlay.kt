@@ -93,6 +93,7 @@ internal fun PlayerControlsOverlay(
                     onUserInteraction()
                     if (it < 0L) onSeekBack() else onSeekForward()
                 },
+                timelineExitFocusRequester = playFocusRequester,
                 onUserInteraction = onUserInteraction,
             )
             Row(

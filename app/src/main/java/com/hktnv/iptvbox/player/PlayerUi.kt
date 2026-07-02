@@ -2,9 +2,6 @@ package com.hktnv.iptvbox.player
 
 import android.os.SystemClock
 import android.view.KeyEvent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -19,7 +16,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -44,11 +40,7 @@ internal fun PlayerScreen(
     PlayerOrientationLock()
     val player = rememberIptvPlayerSession(context, headers, item)
     val diagnosticsContext = remember(item.id, item.streamUrl, playerUiMode) {
-        if (isPlayerDiagnosticEnabled) {
-            item.toPlayerDiagnosticContext(playerUiMode)
-        } else {
-            null
-        }
+        if (isPlayerDiagnosticEnabled) item.toPlayerDiagnosticContext(playerUiMode) else null
     }
     val queue = remember(playbackItems, item.id) {
         buildPlayerPlaybackQueue(playbackItems, item)
@@ -77,12 +69,8 @@ internal fun PlayerScreen(
         diagnostics = diagnostics,
         onBeforeSwitch = { manuallyPaused = false },
     )
-
     val contentInfo = remember(item.id, queue.previous?.id, queue.next?.id) {
-        item.toPlayerContentInfo(
-            previousItem = queue.previous,
-            nextItem = queue.next,
-        )
+        item.toPlayerContentInfo(previousItem = queue.previous, nextItem = queue.next)
     }
     val playbackSnapshot = rememberPlayerPlaybackSnapshot(player)
     LaunchedEffect(player, item.id) {
@@ -96,12 +84,9 @@ internal fun PlayerScreen(
         }
         player.addListener(listener)
         playbackSnapshot.update(player)
-        onDispose {
-            player.removeListener(listener)
-        }
+        onDispose { player.removeListener(listener) }
     }
     PlayerDiagnosticsLifecycle(player = player, diagnostics = diagnostics)
-
     var connectionTimeoutDismissed by remember(player, item.id, connectionRetryRevision) {
         mutableStateOf(false)
     }
@@ -116,11 +101,12 @@ internal fun PlayerScreen(
         elapsedMs = connectionAttempt.elapsedMs,
         timeoutDismissed = connectionTimeoutDismissed,
     )
-
     var inputState by remember { mutableStateOf(PlayerInputState.Watching) }
     var exitChoice by remember { mutableStateOf(PlayerExitChoice.Exit) }
     var controlsRevision by remember { mutableIntStateOf(0) }
     var zappingInfoVisible by remember { mutableStateOf(false) }
+    var seekLoadingVisible by remember(player, item.id) { mutableStateOf(false) }
+    var seekLoadingRevision by remember(player, item.id) { mutableIntStateOf(0) }
     val backPressGuard = remember { PlayerBackPressGuard() }
     val controlsVisible = inputState == PlayerInputState.ControlsVisible
     val contentListVisible = inputState == PlayerInputState.ContentListVisible
@@ -151,9 +137,31 @@ internal fun PlayerScreen(
         delay(1_900L)
         zappingInfoVisible = false
     }
+    LaunchedEffect(seekLoadingRevision, item.id) {
+        if (seekLoadingRevision == 0) return@LaunchedEffect
+        delay(650L)
+        if (playbackSnapshot.playbackState != Player.STATE_BUFFERING) {
+            seekLoadingVisible = false
+        }
+    }
+    LaunchedEffect(playbackSnapshot.playbackState, item.id) {
+        if (
+            seekLoadingVisible &&
+            (playbackSnapshot.playbackState == Player.STATE_READY ||
+                playbackSnapshot.playbackState == Player.STATE_ENDED)
+        ) {
+            delay(250L)
+            seekLoadingVisible = false
+        }
+    }
 
+    fun markSeekLoading() {
+        seekLoadingVisible = true
+        seekLoadingRevision++
+    }
     fun switchTo(itemToPlay: CatalogItem, revealControls: Boolean = true) {
         manuallyPaused = false
+        seekLoadingVisible = false
         zappingInfoVisible = !revealControls
         inputState = if (revealControls) PlayerInputState.ControlsVisible else PlayerInputState.Watching
         if (revealControls) controlsRevision++
@@ -163,6 +171,7 @@ internal fun PlayerScreen(
         val target = calculateSeekTarget(player.currentPosition, playbackSnapshot.durationMs, deltaMs)
         diagnostics?.logSeekRequest(targetMs = target, canSeek = playbackSnapshot.canSeek, source = "remote")
         if (!playbackSnapshot.canSeek) return
+        markSeekLoading()
         player.seekTo(target)
         playbackSnapshot.update(player)
     }
@@ -170,10 +179,10 @@ internal fun PlayerScreen(
         val target = targetMs.coerceIn(0L, playbackSnapshot.durationMs)
         diagnostics?.logSeekRequest(targetMs = target, canSeek = playbackSnapshot.canSeek, source = "timeline")
         if (!playbackSnapshot.canSeek) return
+        markSeekLoading()
         player.seekTo(target)
         playbackSnapshot.update(player)
     }
-
     fun retryCurrentContent() {
         connectionTimeoutDismissed = false
         connectionRetryRevision++
@@ -187,7 +196,6 @@ internal fun PlayerScreen(
         player.play()
         playbackSnapshot.update(player)
     }
-
     fun applyInputResult(result: PlayerInputResult): Boolean {
         val previousState = inputState
         inputState = result.state
@@ -218,9 +226,11 @@ internal fun PlayerScreen(
         if (result.exitRequested) onBack()
         return result.consumeInput
     }
+
     fun keepControlsAlive() {
         if (inputState == PlayerInputState.ControlsVisible) controlsRevision++
     }
+
     fun performExitChoice() {
         val action = when (exitChoice) {
             PlayerExitChoice.Exit -> PlayerInputAction.ExitSelected
@@ -236,7 +246,6 @@ internal fun PlayerScreen(
         player.setPlaybackSpeed(nextSpeed)
         playbackSnapshot.update(player)
     }
-
     fun handleRemoteCommand(command: PlayerRemoteCommand): Boolean {
         val action = command.toInputAction() ?: return false
         if (
@@ -258,7 +267,6 @@ internal fun PlayerScreen(
         val action = playerRemoteCommandForKeyCode(keyCode).toInputAction() ?: return false
         return reducePlayerInput(inputState, action).consumeInput
     }
-
     fun handleBackPressed() {
         val nowMs = SystemClock.uptimeMillis()
         if (inputState == PlayerInputState.ControlsVisible || inputState == PlayerInputState.ContentListVisible) {
@@ -278,9 +286,7 @@ internal fun PlayerScreen(
             applyInputResult(reducePlayerInput(inputState, PlayerInputAction.ExitSelected))
         },
     )
-
     BackHandler(enabled = !connectionTimeoutVisible) { handleBackPressed() }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -331,96 +337,57 @@ internal fun PlayerScreen(
                 },
             )
         }
-        AnimatedVisibility(
-            visible = osdVisible,
-            enter = fadeIn(),
-            exit = fadeOut(),
-        ) {
-            PlayerOsdScrims()
-        }
-        AnimatedVisibility(
-            visible = (shouldShowBufferingIndicator(playbackSnapshot.playbackState, manuallyPaused) ||
-                connectionTimeoutUi.showLoading) && !connectionTimeoutVisible,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.align(Alignment.Center),
-        ) {
-            PlayerConnectionLoadingOverlay(message = connectionTimeoutUi.message)
-        }
-        AnimatedVisibility(
-            visible = shouldShowPlayerContentInfo(controlsVisible, PlayerExitDialogState.Hidden) &&
-                !contentListVisible && !exitConfirmVisible,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.align(Alignment.TopStart),
-        ) {
-            PlayerInfoOverlay(info = contentInfo)
-        }
-        AnimatedVisibility(
-            visible = zappingInfoActive && !contentListVisible && !exitConfirmVisible,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.align(Alignment.TopStart),
-        ) {
-            PlayerZappingInfoOverlay(info = contentInfo)
-        }
-        AnimatedVisibility(
-            visible = osdVisible,
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter),
-        ) {
-            PlayerControlsOverlay(
-                isPlaying = shouldPresentAsPlaying(player.playWhenReady, manuallyPaused),
-                positionMs = playbackSnapshot.currentPositionMs,
-                durationMs = playbackSnapshot.durationMs,
-                speed = playbackSnapshot.playbackSpeed,
-                canSeek = playbackSnapshot.canSeek,
-                onSeekBack = { seekBy(-10_000L) },
-                onSeekTo = ::seekTo,
-                onTogglePlayback = {
-                    if (manuallyPaused || !player.playWhenReady) {
-                        manuallyPaused = false
-                        player.play()
-                    } else {
-                        manuallyPaused = true
-                        player.pause()
-                    }
-                    playbackSnapshot.update(player)
-                },
-                onSeekForward = { seekBy(10_000L) },
-                onCycleSpeed = ::cycleSpeed,
-                onUserInteraction = ::keepControlsAlive,
-            )
-        }
-        if (contentListVisible) {
-            PlayerContentListOverlay(
-                queue = queue,
-                onSelectItem = ::switchTo,
-                onDismiss = {
-                    backPressGuard.markOverlayBackHandled(SystemClock.uptimeMillis())
-                    applyInputResult(reducePlayerInput(inputState, PlayerInputAction.BackPressed))
-                },
-                modifier = Modifier.align(Alignment.CenterStart),
-            )
-        }
-        if (connectionTimeoutVisible) {
-            PlayerConnectionTimeoutDialog(
-                onRetry = ::retryCurrentContent,
-                onDismiss = { connectionTimeoutDismissed = true },
-            )
-        }
-        if (exitConfirmVisible) {
-            PlayerExitConfirmationDialog(
-                selectedChoice = exitChoice,
-                onChoiceChange = { exitChoice = it },
-                onExit = {
-                    applyInputResult(reducePlayerInput(inputState, PlayerInputAction.ExitSelected))
-                },
-                onContinue = {
-                    applyInputResult(reducePlayerInput(inputState, PlayerInputAction.ContinueSelected))
-                },
-            )
-        }
+        PlayerOverlayHost(
+            osdVisible = osdVisible,
+            loadingVisible = shouldShowPlayerLoadingIndicator(
+                playbackState = playbackSnapshot.playbackState,
+                manuallyPaused = manuallyPaused,
+                connectionLoading = connectionTimeoutUi.showLoading,
+                seekLoading = seekLoadingVisible,
+            ),
+            loadingMessage = connectionTimeoutUi.message,
+            controlsVisible = controlsVisible,
+            contentListVisible = contentListVisible,
+            exitConfirmVisible = exitConfirmVisible,
+            zappingInfoActive = zappingInfoActive,
+            connectionTimeoutVisible = connectionTimeoutVisible,
+            contentInfo = contentInfo,
+            queue = queue,
+            exitChoice = exitChoice,
+            isPlaying = shouldPresentAsPlaying(player.playWhenReady, manuallyPaused),
+            positionMs = playbackSnapshot.currentPositionMs,
+            durationMs = playbackSnapshot.durationMs,
+            speed = playbackSnapshot.playbackSpeed,
+            canSeek = playbackSnapshot.canSeek,
+            onSeekBack = { seekBy(-10_000L) },
+            onSeekTo = ::seekTo,
+            onTogglePlayback = {
+                if (manuallyPaused || !player.playWhenReady) {
+                    manuallyPaused = false
+                    player.play()
+                } else {
+                    manuallyPaused = true
+                    player.pause()
+                }
+                playbackSnapshot.update(player)
+            },
+            onSeekForward = { seekBy(10_000L) },
+            onCycleSpeed = ::cycleSpeed,
+            onControlsInteraction = ::keepControlsAlive,
+            onSelectContentListItem = ::switchTo,
+            onDismissContentList = {
+                backPressGuard.markOverlayBackHandled(SystemClock.uptimeMillis())
+                applyInputResult(reducePlayerInput(inputState, PlayerInputAction.BackPressed))
+            },
+            onConnectionRetry = ::retryCurrentContent,
+            onConnectionDismiss = { connectionTimeoutDismissed = true },
+            onExitChoiceChange = { exitChoice = it },
+            onExit = {
+                applyInputResult(reducePlayerInput(inputState, PlayerInputAction.ExitSelected))
+            },
+            onContinue = {
+                applyInputResult(reducePlayerInput(inputState, PlayerInputAction.ContinueSelected))
+            },
+        )
     }
 }
