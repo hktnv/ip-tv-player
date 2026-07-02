@@ -34,8 +34,9 @@ import com.hktnv.iptvbox.model.PlaylistImportProgress
 import com.hktnv.iptvbox.navigation.NavigationDrawerEvent
 import com.hktnv.iptvbox.navigation.NavigationDrawerFocusExpansion
 import com.hktnv.iptvbox.navigation.PlaylistContentScaffold
+import com.hktnv.iptvbox.navigation.RootBackAction
+import com.hktnv.iptvbox.navigation.resolveRootBackAction
 import com.hktnv.iptvbox.navigation.shouldHandleSeriesBack
-import com.hktnv.iptvbox.navigation.shouldHandlePlaylistEntryBack
 import com.hktnv.iptvbox.navigation.shouldReturnToCatalogCategories
 import com.hktnv.iptvbox.player.PlayerScreen
 import com.hktnv.iptvbox.player.PlayerUiMode
@@ -123,33 +124,26 @@ internal fun IptvContentHost(
     onDismissBanner: () -> Unit,
 ) {
     CompositionLocalProvider(LocalPerformanceMode provides performanceMode) {
+        val seriesBackEnabled = shouldHandleSeriesBack(
+            screen = screen,
+            selectedTab = selectedTab,
+            showCategoryLanding = showCatalogCategoryLanding,
+            selectedSeriesTitle = selectedSeriesTitle,
+            selectedSeasonNumber = selectedSeasonNumber,
+        )
+        val categoryBackEnabled = shouldReturnToCatalogCategories(
+            screen = screen,
+            showCategoryLanding = showCatalogCategoryLanding,
+            selectedSeriesTitle = selectedSeriesTitle,
+            selectedSeasonNumber = selectedSeasonNumber,
+        )
         BackHandler(
-            shouldHandlePlaylistEntryBack(
-                showPlaylistEntry = showPlaylistEntry,
-                playlistDetailId = playlistDetailId,
-                returnScreen = playlistEntryReturnScreen,
-            ),
-        ) {
-            onPlaylistEntryBack()
-        }
-        BackHandler(
-            shouldHandleSeriesBack(
-                screen = screen,
-                selectedTab = selectedTab,
-                showCategoryLanding = showCatalogCategoryLanding,
-                selectedSeriesTitle = selectedSeriesTitle,
-                selectedSeasonNumber = selectedSeasonNumber,
-            ),
+            seriesBackEnabled,
         ) {
             onSeriesBack()
         }
         BackHandler(
-            shouldReturnToCatalogCategories(
-                screen = screen,
-                showCategoryLanding = showCatalogCategoryLanding,
-                selectedSeriesTitle = selectedSeriesTitle,
-                selectedSeasonNumber = selectedSeasonNumber,
-            ),
+            categoryBackEnabled,
         ) {
             onShowCatalogCategories()
         }
@@ -161,28 +155,23 @@ internal fun IptvContentHost(
             val wide = maxWidth >= 900.dp
             val contentPadding = if (wide) 30.dp else 18.dp
             val focusManager = LocalFocusManager.current
+            val rootBackAction = resolveRootBackAction(
+                wide = wide,
+                contentBackBlocked = seriesBackEnabled || categoryBackEnabled,
+                showPlaylistEntry = showPlaylistEntry,
+                playlistDetailId = playlistDetailId,
+                playlistEntryReturnScreen = playlistEntryReturnScreen,
+                screen = screen,
+                sideMenuExpanded = sideMenuExpanded,
+            )
             BackHandler(
-                enabled = wide &&
-                    !showPlaylistEntry &&
-                    screen != AppScreen.PLAYER &&
-                    !shouldHandleSeriesBack(
-                        screen = screen,
-                        selectedTab = selectedTab,
-                        showCategoryLanding = showCatalogCategoryLanding,
-                        selectedSeriesTitle = selectedSeriesTitle,
-                        selectedSeasonNumber = selectedSeasonNumber,
-                    ) &&
-                    !shouldReturnToCatalogCategories(
-                        screen = screen,
-                        showCategoryLanding = showCatalogCategoryLanding,
-                        selectedSeriesTitle = selectedSeriesTitle,
-                        selectedSeasonNumber = selectedSeasonNumber,
-                    ),
+                enabled = rootBackAction != RootBackAction.None,
             ) {
-                if (sideMenuExpanded) {
-                    onRequestExitConfirmation()
-                } else {
-                    onDrawerEvent(NavigationDrawerEvent.OpenByUserNavigation)
+                when (rootBackAction) {
+                    RootBackAction.ReturnToPlaylistEntryOrigin -> onPlaylistEntryBack()
+                    RootBackAction.OpenNavigationDrawer -> onDrawerEvent(NavigationDrawerEvent.OpenByUserNavigation)
+                    RootBackAction.ShowExitConfirmation -> onRequestExitConfirmation()
+                    RootBackAction.None -> Unit
                 }
             }
 
