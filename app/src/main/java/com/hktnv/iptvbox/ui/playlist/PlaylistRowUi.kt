@@ -61,7 +61,11 @@ internal fun PlaylistRow(
             .tvFocusLift(focused = focused, scale = 1.01f, liftPx = 0f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
-        color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
+        color = when {
+            focused -> TvFocusPanel
+            selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+            else -> MaterialTheme.colorScheme.surface
+        },
         shape = RoundedCornerShape(10.dp),
         border = BorderStroke(
             width = if (focused) 2.dp else 1.dp,
@@ -76,7 +80,7 @@ internal fun PlaylistRow(
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(3.dp)
+                    .width(if (selected) 4.dp else 3.dp)
                     .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent),
             )
             Row(

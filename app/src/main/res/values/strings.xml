@@ -88,7 +88,6 @@
     <string name="playlist_hub_subtitle">%1$d liste hazır</string>
     <string name="playlist_hub_add_action">Yeni Liste</string>
     <string name="playlist_hub_settings_action">Ayarlar</string>
-    <string name="playlist_hub_continue_action">Devam Et</string>
     <string name="playlist_hub_section_title">Listelerim</string>
     <string name="playlist_empty_title">İlk listenizi ekleyin</string>
     <string name="playlist_empty_body">M3U, JSON veya Xtream listenizi bağlayın; uygulama içerikleri düzenli bir kataloğa dönüştürsün.</string>

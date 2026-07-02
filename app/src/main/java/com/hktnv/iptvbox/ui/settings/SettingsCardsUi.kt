@@ -65,16 +65,25 @@ internal fun SettingsActionCard(
         modifier = modifier
             .focusRequester(focusRequester)
             .onPreviewKeyEvent { event ->
-                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 when (event.key) {
                     Key.DirectionLeft -> {
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                         leftFocusRequester.requestFocusSafely() || onRequestSideMenu.invokeIfPresent()
                     }
-                    Key.DirectionRight -> rightFocusRequester.requestFocusSafely()
-                    Key.DirectionUp -> upFocusRequester.requestFocusSafely()
-                    Key.DirectionDown -> downFocusRequester.requestFocusSafely()
+                    Key.DirectionRight -> {
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        rightFocusRequester.requestFocusSafely()
+                    }
+                    Key.DirectionUp -> {
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        upFocusRequester.requestFocusSafely()
+                    }
+                    Key.DirectionDown -> {
+                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        downFocusRequester.requestFocusSafely()
+                    }
                     Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
-                        onClick()
+                        if (event.type == KeyEventType.KeyUp) onClick()
                         true
                     }
                     else -> false

@@ -71,7 +71,6 @@ internal fun PlaylistEntryScreen(
     selectedPlaylistId: String?,
     detailPlaylistId: String?,
     contentPadding: Dp,
-    onOpenLastPlaylist: () -> Unit,
     onAddPlaylist: () -> Unit,
     onOpenPlaylistDetails: (String) -> Unit,
     onClosePlaylistDetails: () -> Unit,
@@ -107,14 +106,13 @@ internal fun PlaylistEntryScreen(
         return
     }
 
-    PlaylistHubContent(
-        playlists = playlists,
-        selectedPlaylistId = selectedPlaylistId,
-        contentPadding = contentPadding,
-        onOpenLastPlaylist = onOpenLastPlaylist,
-        onAddPlaylist = onAddPlaylist,
-        onOpenSettings = onOpenSettings,
-        onOpenPlaylistDetails = onOpenPlaylistDetails,
+        PlaylistHubContent(
+            playlists = playlists,
+            selectedPlaylistId = selectedPlaylistId,
+            contentPadding = contentPadding,
+            onAddPlaylist = onAddPlaylist,
+            onOpenSettings = onOpenSettings,
+            onOpenPlaylistDetails = onOpenPlaylistDetails,
     )
 }
 
@@ -123,12 +121,10 @@ private fun PlaylistHubContent(
     playlists: List<LoadedPlaylist>,
     selectedPlaylistId: String?,
     contentPadding: Dp,
-    onOpenLastPlaylist: () -> Unit,
     onAddPlaylist: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenPlaylistDetails: (String) -> Unit,
 ) {
-    val lastPlaylist = playlists.firstOrNull { it.id == selectedPlaylistId } ?: playlists.first()
     val settingsFocusRequester = remember { FocusRequester() }
     BoxWithConstraints(
         modifier = Modifier
@@ -149,13 +145,6 @@ private fun PlaylistHubContent(
                     onOpenSettings = onOpenSettings,
                     settingsFocusRequester = settingsFocusRequester,
                     requestSettingsFocus = true,
-                )
-            }
-            item(key = "playlist-hub-continue", contentType = "continue") {
-                ContinuePlaylistBanner(
-                    playlist = lastPlaylist,
-                    compact = compact,
-                    onClick = onOpenLastPlaylist,
                 )
             }
             item(key = "playlist-hub-list-title", contentType = "section-title") {

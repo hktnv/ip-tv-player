@@ -390,7 +390,6 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         onRecoveryContinue = { showRecovery = false; bootError = null },
         onRecoveryReload = { showRecovery = false; bootError = null; selectedPlaylist?.let(::reloadPlaylist) ?: run { showAddDialog = true } },
         onRecoveryRemove = ::clearBrokenState,
-        onOpenLastPlaylist = { selectedPlaylist?.let { openPlaylistCatalog(it.id) } ?: run { showAddDialog = true } },
         onAddPlaylist = { showAddDialog = true }, onOpenPlaylistDetails = ::openPlaylistDetails,
         onClosePlaylistDetails = { playlistDetailId = null }, onUsePlaylist = ::openPlaylistCatalog,
         onOpenSettingsFromEntry = ::openSettingsFromEntry, onOpenCatalog = { openCatalogRoot() },
