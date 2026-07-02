@@ -41,6 +41,17 @@ internal fun CatalogSnapshot.playbackContextItemsFor(item: CatalogItem): List<Ca
     }.ifEmpty { items(tab) }
 }
 
+internal fun CatalogSnapshot.discoveryContextItemsFor(item: CatalogItem): List<CatalogItem> {
+    val tab = item.tabForPlayerContext()
+    return when (item.kind) {
+        ContentKind.EPISODE -> {
+            val seriesTitle = item.seriesTitle?.takeIf { !it.isNullOrBlank() }
+            if (seriesTitle != null) episodes(seriesTitle, seasonNumber = null) else items(tab)
+        }
+        else -> items(tab)
+    }.ifEmpty { playbackContextItemsFor(item) }
+}
+
 internal fun CatalogItem.tabForPlayerContext(): CatalogTab {
     return when (kind) {
         ContentKind.LIVE_CHANNEL,

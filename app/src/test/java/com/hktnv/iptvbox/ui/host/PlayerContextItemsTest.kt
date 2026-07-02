@@ -34,6 +34,31 @@ class PlayerContextItemsTest {
         assertEquals(listOf(first, second), context)
     }
 
+    @Test
+    fun discoveryContextKeepsAllSeasonsForSeries() {
+        val first = episode("dune-s1e1", "Dune", 1)
+        val second = episode("dune-s1e2", "Dune", 1)
+        val nextSeason = episode("dune-s2e1", "Dune", 2)
+        val other = episode("prens-s1e1", "Prens", 1)
+        val snapshot = snapshot(listOf(first, second, nextSeason, other))
+
+        val context = snapshot.discoveryContextItemsFor(first)
+
+        assertEquals(listOf(first, second, nextSeason), context)
+    }
+
+    @Test
+    fun discoveryContextKeepsTabItemsForCategoryChips() {
+        val newsOne = item("news-1", ContentKind.LIVE_CHANNEL, "Haber 1", "Haber")
+        val newsTwo = item("news-2", ContentKind.LIVE_CHANNEL, "Haber 2", "Haber")
+        val sport = item("sport-1", ContentKind.LIVE_CHANNEL, "Spor 1", "Spor")
+        val snapshot = snapshot(listOf(newsOne, newsTwo, sport))
+
+        val context = snapshot.discoveryContextItemsFor(newsOne)
+
+        assertEquals(listOf(newsOne, newsTwo, sport), context)
+    }
+
     private fun snapshot(items: List<CatalogItem>): CatalogSnapshot {
         val tabItems = CatalogTab.entries.associateWith { tab ->
             items.filter { item -> item.tab() == tab }

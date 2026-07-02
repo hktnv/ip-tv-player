@@ -100,7 +100,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var playlistDetailId by rememberSaveable { mutableStateOf<String?>(null) }
     var playlistEntryReturnScreen by rememberSaveable { mutableStateOf<AppScreen?>(null) }
     var playlistImportProgress by remember { mutableStateOf<PlaylistImportProgress?>(null) }
-    var currentItem by remember { mutableStateOf<CatalogItem?>(null) }; var currentHeaders by remember { mutableStateOf<Map<String, String>>(emptyMap()) }; var playerContextItems by remember { mutableStateOf<List<CatalogItem>>(emptyList()) }; var contentOptionsItem by remember { mutableStateOf<CatalogItem?>(null) }
+    var currentItem by remember { mutableStateOf<CatalogItem?>(null) }; var currentHeaders by remember { mutableStateOf<Map<String, String>>(emptyMap()) }; var playerContextItems by remember { mutableStateOf<List<CatalogItem>>(emptyList()) }; var playerDiscoveryItems by remember { mutableStateOf<List<CatalogItem>>(emptyList()) }; var contentOptionsItem by remember { mutableStateOf<CatalogItem?>(null) }
     var contentOptionsMetadata by remember { mutableStateOf<ContentMetadata?>(null) }
     var catalogSnapshot by remember { mutableStateOf<CatalogSnapshot?>(null) }; var catalogIndexLoading by remember { mutableStateOf(false) }
     var startupStreamApplied by rememberSaveable { mutableStateOf(false) }
@@ -279,10 +279,16 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         val sourceItems = catalogSnapshot?.playbackContextItemsFor(item).orEmpty()
         return contextWindowForPlayer(sourceItems, item)
     }
+    fun currentDiscoveryItemsForPlayer(item: CatalogItem): List<CatalogItem> {
+        val sourceItems = catalogSnapshot?.discoveryContextItemsFor(item).orEmpty()
+        return contextWindowForPlayer(sourceItems, item)
+    }
 
     fun selectPlayerItem(item: CatalogItem) {
         recentIds.remove(item.id); recentIds.add(0, item.id)
         while (recentIds.size > 60) recentIds.removeLast()
+        playerContextItems = currentContextItemsForPlayer(item)
+        playerDiscoveryItems = currentDiscoveryItemsForPlayer(item)
         currentItem = item; currentHeaders = selectedPlaylist?.headers.orEmpty()
     }
     fun togglePlayerFavorite(item: CatalogItem) {
@@ -294,7 +300,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     }
 
     fun openItem(item: CatalogItem) {
-        playerContextItems = currentContextItemsForPlayer(item); selectPlayerItem(item)
+        selectPlayerItem(item)
         returnScreen = screen.takeIf { it != AppScreen.PLAYER } ?: AppScreen.CATALOG; screen = AppScreen.PLAYER
     }
     LaunchedEffect(restoredApplied, startupBehavior, catalogSnapshot, recentSignature, showPlaylistEntry) {
@@ -363,7 +369,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
                 selectedPlaylistId = nextState.selectedPlaylistId
                 if (nextState.deletedActivePlaylist) {
                     catalogSnapshot = null; selectedCategory = null; showCatalogCategoryLanding = true; selectedSeriesTitle = null
-                    selectedSeasonNumber = null; submittedSearch = ""; searchDraft = ""; currentItem = null; playerContextItems = emptyList()
+                    selectedSeasonNumber = null; submittedSearch = ""; searchDraft = ""; currentItem = null; playerContextItems = emptyList(); playerDiscoveryItems = emptyList()
                 }
                 playlistDetailId = null; playlistEntryReturnScreen = null; screen = nextState.screen; showPlaylistEntry = nextState.showPlaylistEntry
                 deletingPlaylist = null; banner = context.getString(R.string.playlist_delete_success, deleted.name)
@@ -401,7 +407,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     IptvContentHost(
         performanceMode = performanceMode, restoredApplied = restoredApplied, showRecovery = showRecovery, bootError = bootError,
         selectedPlaylist = selectedPlaylist, screen = screen, showPlaylistEntry = showPlaylistEntry, currentItem = currentItem,
-        currentHeaders = currentHeaders, playerContextItems = playerContextItems, playlists = playlists,
+        currentHeaders = currentHeaders, playerContextItems = playerContextItems, playerDiscoveryItems = playerDiscoveryItems, playlists = playlists,
         playlistEntryReturnScreen = playlistEntryReturnScreen, catalogSnapshot = catalogSnapshot, catalogIndexLoading = catalogIndexLoading,
         playerUiMode = playerUiMode,
         startupBehavior = startupBehavior,
@@ -412,7 +418,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         catalogSyncStatuses = catalogSyncStatuses,
         contentFocusRequest = contentFocusRequest, contentInitialFocusRequester = contentInitialFocusRequester,
         catalogRepository = catalogRepository, telemetry = telemetry, searchDraft = searchDraft, submittedSearch = submittedSearch,
-        onPlayerBack = { screen = returnScreen; currentItem = null; playerContextItems = emptyList() },
+        onPlayerBack = { screen = returnScreen; currentItem = null; playerContextItems = emptyList(); playerDiscoveryItems = emptyList() },
         onSeriesBack = { if (selectedSeasonNumber != null) selectedSeasonNumber = null else selectedSeriesTitle = null },
         onShowCatalogCategories = ::showCatalogCategories,
         onRecoveryContinue = { showRecovery = false; bootError = null },

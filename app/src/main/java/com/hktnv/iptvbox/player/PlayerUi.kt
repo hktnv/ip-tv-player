@@ -32,6 +32,7 @@ internal fun PlayerScreen(
     item: CatalogItem,
     headers: Map<String, String>,
     playbackItems: List<CatalogItem>,
+    discoveryItems: List<CatalogItem>,
     playerUiMode: PlayerUiMode,
     isFavorite: Boolean,
     onSelectItem: (CatalogItem) -> Unit,
@@ -46,6 +47,12 @@ internal fun PlayerScreen(
     }
     val queue = remember(playbackItems, item.id) {
         buildPlayerPlaybackQueue(playbackItems, item)
+    }
+    val relatedContextItems = remember(discoveryItems, queue.items) {
+        val uniqueItems = LinkedHashMap<String, CatalogItem>()
+        discoveryItems.forEach { uniqueItems[it.id] = it }
+        queue.items.forEach { uniqueItems[it.id] = it }
+        uniqueItems.values.toList()
     }
     val playerMediaItems = remember(queue.items) {
         queue.items.map { it.toPlayerMediaItem() }
@@ -361,7 +368,8 @@ internal fun PlayerScreen(
             zappingInfoActive = zappingInfoActive,
             connectionTimeoutVisible = connectionTimeoutVisible,
             contentInfo = contentInfo,
-            relatedItems = queue.relatedItems(),
+            currentItem = item,
+            relatedContextItems = relatedContextItems,
             exitChoice = exitChoice,
             isPlaying = presentedAsPlaying,
             positionMs = playbackSnapshot.currentPositionMs,
