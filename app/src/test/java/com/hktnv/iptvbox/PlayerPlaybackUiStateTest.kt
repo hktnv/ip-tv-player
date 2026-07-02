@@ -5,6 +5,7 @@ import com.hktnv.iptvbox.player.PlayerTimelineKeyAction
 import com.hktnv.iptvbox.player.PlayerTimelineRemoteKey
 import com.hktnv.iptvbox.player.calculateSeekTarget
 import com.hktnv.iptvbox.player.resolvePlayerTimelineKeyAction
+import com.hktnv.iptvbox.player.shouldAutoHidePlayerOsd
 import com.hktnv.iptvbox.player.shouldPresentAsPlaying
 import com.hktnv.iptvbox.player.shouldShowBufferingIndicator
 import com.hktnv.iptvbox.player.shouldShowPlayerLoadingIndicator
@@ -94,5 +95,37 @@ class PlayerPlaybackUiStateTest {
         assertTrue(shouldPresentAsPlaying(playWhenReady = true, manuallyPaused = false))
         assertFalse(shouldPresentAsPlaying(playWhenReady = true, manuallyPaused = true))
         assertFalse(shouldPresentAsPlaying(playWhenReady = false, manuallyPaused = false))
+    }
+
+    @Test
+    fun osdAutoHideOnlyRunsWhileContentIsPlaying() {
+        assertTrue(
+            shouldAutoHidePlayerOsd(
+                controlsVisible = true,
+                playWhenReady = true,
+                manuallyPaused = false,
+            ),
+        )
+        assertFalse(
+            shouldAutoHidePlayerOsd(
+                controlsVisible = true,
+                playWhenReady = true,
+                manuallyPaused = true,
+            ),
+        )
+        assertFalse(
+            shouldAutoHidePlayerOsd(
+                controlsVisible = true,
+                playWhenReady = false,
+                manuallyPaused = false,
+            ),
+        )
+        assertFalse(
+            shouldAutoHidePlayerOsd(
+                controlsVisible = false,
+                playWhenReady = true,
+                manuallyPaused = false,
+            ),
+        )
     }
 }

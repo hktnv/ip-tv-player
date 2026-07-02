@@ -34,6 +34,14 @@ internal fun shouldPresentAsPlaying(
     return playWhenReady && !manuallyPaused
 }
 
+internal fun shouldAutoHidePlayerOsd(
+    controlsVisible: Boolean,
+    playWhenReady: Boolean,
+    manuallyPaused: Boolean,
+): Boolean {
+    return controlsVisible && shouldPresentAsPlaying(playWhenReady, manuallyPaused)
+}
+
 internal enum class PlayerTimelineRemoteKey {
     Left,
     Right,

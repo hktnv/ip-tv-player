@@ -112,6 +112,12 @@ internal fun PlayerScreen(
     val contentListVisible = inputState == PlayerInputState.ContentListVisible
     val exitConfirmVisible = inputState == PlayerInputState.ExitConfirmVisible
     val connectionTimeoutVisible = connectionTimeoutUi.showTimeoutDialog
+    val presentedAsPlaying = shouldPresentAsPlaying(player.playWhenReady, manuallyPaused)
+    val autoHideOsd = shouldAutoHidePlayerOsd(
+        controlsVisible = controlsVisible,
+        playWhenReady = player.playWhenReady,
+        manuallyPaused = manuallyPaused,
+    )
     val osdVisible = controlsVisible && !contentListVisible && !exitConfirmVisible && !connectionTimeoutVisible
     val zappingInfoActive = zappingInfoVisible && inputState == PlayerInputState.Watching && !connectionTimeoutVisible
     val playerFocusRequester = remember { FocusRequester() }
@@ -124,10 +130,16 @@ internal fun PlayerScreen(
             delay(500L)
         }
     }
-    LaunchedEffect(inputState, controlsRevision, item.id) {
-        if (inputState == PlayerInputState.ControlsVisible) {
+    LaunchedEffect(inputState, controlsRevision, item.id, autoHideOsd) {
+        if (autoHideOsd) {
             delay(3_500L)
-            if (inputState == PlayerInputState.ControlsVisible) {
+            if (
+                shouldAutoHidePlayerOsd(
+                    controlsVisible = inputState == PlayerInputState.ControlsVisible,
+                    playWhenReady = player.playWhenReady,
+                    manuallyPaused = manuallyPaused,
+                )
+            ) {
                 inputState = PlayerInputState.Watching
             }
         }
@@ -354,7 +366,7 @@ internal fun PlayerScreen(
             contentInfo = contentInfo,
             queue = queue,
             exitChoice = exitChoice,
-            isPlaying = shouldPresentAsPlaying(player.playWhenReady, manuallyPaused),
+            isPlaying = presentedAsPlaying,
             positionMs = playbackSnapshot.currentPositionMs,
             durationMs = playbackSnapshot.durationMs,
             speed = playbackSnapshot.playbackSpeed,
