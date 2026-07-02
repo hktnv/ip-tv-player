@@ -33,8 +33,8 @@ android {
         applicationId = "com.hktnv.iptvbox"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 33
-        versionName = "0.1.32"
+        versionCode = 34
+        versionName = "0.1.33"
     }
 
     signingConfigs {

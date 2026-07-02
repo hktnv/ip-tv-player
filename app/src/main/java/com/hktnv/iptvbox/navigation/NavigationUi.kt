@@ -171,7 +171,7 @@ internal fun SideNavigation(
                     }
                 }
             }
-            .focusable()
+            .focusable(enabled = drawerContainerCanFocus(expanded))
             .focusGroup()
             .background(MaterialTheme.colorScheme.background, RoundedCornerShape(18.dp))
             .statusBarsPadding()

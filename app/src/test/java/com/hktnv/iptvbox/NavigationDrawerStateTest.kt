@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import com.hktnv.iptvbox.navigation.countDrawerWidthTransitions
 import com.hktnv.iptvbox.navigation.consumeUserLeftIntentAfterDrawerEvent
+import com.hktnv.iptvbox.navigation.drawerContainerCanFocus
 import com.hktnv.iptvbox.navigation.NavigationDrawerEvent
 import com.hktnv.iptvbox.navigation.NavigationDrawerFocusExpansion
 import com.hktnv.iptvbox.navigation.NavigationDrawerModel
@@ -163,6 +164,12 @@ class NavigationDrawerStateTest {
     @Test
     fun firstLeftAfterReturningFromExpandedDrawerStillOpensMenu() {
         assertEquals(true, shouldExpandCollapsedDrawerOnFocus(nowMs = 5_950L, lastUserLeftIntentMs = 4_700L))
+    }
+
+    @Test
+    fun collapsedDrawerCannotAbsorbContentLeftFocus() {
+        assertEquals(false, drawerContainerCanFocus(expanded = false))
+        assertEquals(true, drawerContainerCanFocus(expanded = true))
     }
 
     @Test

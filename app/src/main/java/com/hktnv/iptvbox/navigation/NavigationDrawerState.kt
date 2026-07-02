@@ -100,3 +100,7 @@ internal fun shouldExpandCollapsedDrawerOnFocus(
     return lastUserLeftIntentMs > 0L &&
         nowMs - lastUserLeftIntentMs in 0L..thresholdMs
 }
+
+internal fun drawerContainerCanFocus(expanded: Boolean): Boolean {
+    return expanded
+}
