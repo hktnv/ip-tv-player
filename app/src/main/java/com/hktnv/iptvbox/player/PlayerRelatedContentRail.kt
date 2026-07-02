@@ -1,5 +1,11 @@
 package com.hktnv.iptvbox.player
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -49,27 +55,36 @@ internal fun PlayerRelatedContentRail(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(if (expanded) 6.dp else 0.dp),
     ) {
-        if (!expanded) {
-            PlayerRelatedHandle(expanded = false, onClick = onExpand)
-        } else {
-            PlayerRelatedHandle(expanded = true, onClick = onReturnToControls)
-            if (model.options.isNotEmpty()) {
-                PlayerRelatedOptionRow(
-                    options = model.options,
-                    optionFocusRequester = optionFocusRequester,
-                    onMoveUp = onReturnToControls,
-                    onMoveDown = onRequestCardsFocus,
-                    onOptionSelected = onOptionSelected,
+        PlayerRelatedHandle(
+            expanded = expanded,
+            onClick = if (expanded) onReturnToControls else onExpand,
+        )
+        AnimatedVisibility(
+            visible = expanded,
+            enter = fadeIn(animationSpec = tween(durationMillis = 120)) +
+                expandVertically(animationSpec = tween(durationMillis = 180)),
+            exit = fadeOut(animationSpec = tween(durationMillis = 90)) +
+                shrinkVertically(animationSpec = tween(durationMillis = 140)),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (model.options.isNotEmpty()) {
+                    PlayerRelatedOptionRow(
+                        options = model.options,
+                        optionFocusRequester = optionFocusRequester,
+                        onMoveUp = onReturnToControls,
+                        onMoveDown = onRequestCardsFocus,
+                        onOptionSelected = onOptionSelected,
+                    )
+                }
+                PlayerRelatedCardRow(
+                    items = model.items,
+                    cardFocusRequester = cardFocusRequester,
+                    onMoveUp = if (model.options.isEmpty()) onReturnToControls else onRequestOptionsFocus,
+                    hasMoreItems = model.hasMoreItems,
+                    onLoadMoreItems = onLoadMoreItems,
+                    onSelectItem = onSelectItem,
                 )
             }
-            PlayerRelatedCardRow(
-                items = model.items,
-                cardFocusRequester = cardFocusRequester,
-                onMoveUp = if (model.options.isEmpty()) onReturnToControls else onRequestOptionsFocus,
-                hasMoreItems = model.hasMoreItems,
-                onLoadMoreItems = onLoadMoreItems,
-                onSelectItem = onSelectItem,
-            )
         }
     }
 }

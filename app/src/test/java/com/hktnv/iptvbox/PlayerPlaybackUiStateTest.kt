@@ -2,9 +2,11 @@ package com.hktnv.iptvbox
 
 import androidx.media3.common.Player
 import com.hktnv.iptvbox.player.PlayerTimelineKeyAction
+import com.hktnv.iptvbox.player.PlayerTimelineLabel
 import com.hktnv.iptvbox.player.PlayerTimelineRemoteKey
 import com.hktnv.iptvbox.player.calculateSeekTarget
 import com.hktnv.iptvbox.player.resolvePlayerTimelineKeyAction
+import com.hktnv.iptvbox.player.resolvePlayerTimelinePresentation
 import com.hktnv.iptvbox.player.shouldAutoHidePlayerOsd
 import com.hktnv.iptvbox.player.shouldPresentAsPlaying
 import com.hktnv.iptvbox.player.shouldShowBufferingIndicator
@@ -88,6 +90,34 @@ class PlayerPlaybackUiStateTest {
             PlayerTimelineKeyAction.None,
             resolvePlayerTimelineKeyAction(PlayerTimelineRemoteKey.Right, canSeek = false),
         )
+    }
+
+    @Test
+    fun liveTimelineUsesLiveLabelsWhenSeekIsDisabled() {
+        val timeline = resolvePlayerTimelinePresentation(
+            positionMs = 0L,
+            durationMs = 0L,
+            canSeek = false,
+            liveContent = true,
+        )
+
+        assertEquals(PlayerTimelineLabel.Live, timeline.startLabel)
+        assertEquals(PlayerTimelineLabel.Stream, timeline.endLabel)
+        assertEquals(1f, timeline.progress, 0.001f)
+    }
+
+    @Test
+    fun vodTimelineDoesNotFallbackToLiveWhileDurationIsUnknown() {
+        val timeline = resolvePlayerTimelinePresentation(
+            positionMs = 0L,
+            durationMs = 0L,
+            canSeek = false,
+            liveContent = false,
+        )
+
+        assertEquals(PlayerTimelineLabel.Text("00:00"), timeline.startLabel)
+        assertEquals(PlayerTimelineLabel.Text("--:--"), timeline.endLabel)
+        assertEquals(0f, timeline.progress, 0.001f)
     }
 
     @Test

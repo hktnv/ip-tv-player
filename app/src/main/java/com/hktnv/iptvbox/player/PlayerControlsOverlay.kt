@@ -1,5 +1,7 @@
 package com.hktnv.iptvbox.player
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,6 +44,7 @@ internal fun PlayerControlsOverlay(
     durationMs: Long,
     speed: Float,
     canSeek: Boolean,
+    liveContent: Boolean,
     favorite: Boolean,
     currentItem: CatalogItem,
     relatedContextItems: List<CatalogItem>,
@@ -75,7 +78,7 @@ internal fun PlayerControlsOverlay(
         withFrameNanos { }
         runCatching { playFocusRequester.requestFocus() }
     }
-    LaunchedEffect(relatedExpanded, relatedModel) {
+    LaunchedEffect(relatedExpanded, currentItem.id) {
         if (relatedExpanded && relatedModel.hasContent) {
             withFrameNanos { }
             runCatching {
@@ -107,12 +110,14 @@ internal fun PlayerControlsOverlay(
             },
     ) {
         androidx.compose.foundation.layout.Column(
+            modifier = Modifier.animateContentSize(animationSpec = tween(durationMillis = 180)),
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
         ) {
             PlayerTimeline(
                 positionMs = positionMs,
                 durationMs = durationMs,
                 canSeek = canSeek,
+                liveContent = liveContent,
                 onSeekTo = {
                     onUserInteraction()
                     onSeekTo(it)

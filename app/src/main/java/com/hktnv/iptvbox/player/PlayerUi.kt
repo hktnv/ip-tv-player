@@ -25,6 +25,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.media3.common.Player
 import com.hktnv.iptvbox.core.model.CatalogItem
+import com.hktnv.iptvbox.core.model.ContentKind
 import kotlinx.coroutines.delay
 
 @Composable
@@ -80,6 +81,9 @@ internal fun PlayerScreen(
     )
     val contentInfo = remember(item.id, queue.previous?.id, queue.next?.id) {
         item.toPlayerContentInfo(previousItem = queue.previous, nextItem = queue.next)
+    }
+    val liveContent = remember(item.id) {
+        item.kind == ContentKind.LIVE_CHANNEL || item.kind == ContentKind.RADIO
     }
     val playbackSnapshot = rememberPlayerPlaybackSnapshot(player)
     LaunchedEffect(player, item.id) {
@@ -376,6 +380,7 @@ internal fun PlayerScreen(
             durationMs = playbackSnapshot.durationMs,
             speed = playbackSnapshot.playbackSpeed,
             canSeek = playbackSnapshot.canSeek,
+            liveContent = liveContent,
             favorite = isFavorite,
             onSeekBack = { seekBy(-10_000L) },
             onSeekTo = ::seekTo,

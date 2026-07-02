@@ -45,6 +45,7 @@ internal fun PlayerTimeline(
     positionMs: Long,
     durationMs: Long,
     canSeek: Boolean,
+    liveContent: Boolean,
     onSeekTo: (Long) -> Unit,
     timelineExitFocusRequester: FocusRequester,
     onUserInteraction: () -> Unit,
@@ -53,11 +54,12 @@ internal fun PlayerTimeline(
     var previewPositionMs by remember { mutableStateOf<Long?>(null) }
     var previewRevision by remember { mutableIntStateOf(0) }
     val shownPositionMs = previewPositionMs ?: positionMs
-    val progress = if (canSeek && durationMs > 0L) {
-        (shownPositionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
-    } else {
-        1f
-    }
+    val timeline = resolvePlayerTimelinePresentation(
+        positionMs = shownPositionMs,
+        durationMs = durationMs,
+        canSeek = canSeek,
+        liveContent = liveContent,
+    )
     LaunchedEffect(previewRevision) {
         val target = previewPositionMs ?: return@LaunchedEffect
         delay(TIMELINE_SEEK_COMMIT_DEBOUNCE_MS)
@@ -84,7 +86,11 @@ internal fun PlayerTimeline(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = if (canSeek) formatPlayerTime(shownPositionMs) else stringResource(R.string.player_live_label),
+            text = when (val label = timeline.startLabel) {
+                PlayerTimelineLabel.Live -> stringResource(R.string.player_live_label)
+                PlayerTimelineLabel.Stream -> stringResource(R.string.player_stream_label)
+                is PlayerTimelineLabel.Text -> label.value
+            },
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
@@ -103,7 +109,7 @@ internal fun PlayerTimeline(
                 )
             }
             Slider(
-                value = progress,
+                value = timeline.progress,
                 onValueChange = { value ->
                     if (!canSeek || durationMs <= 0L) return@Slider
                     previewPositionMs = (durationMs * value).toLong().coerceIn(0L, durationMs)
@@ -163,7 +169,11 @@ internal fun PlayerTimeline(
             )
         }
         Text(
-            text = if (canSeek) formatPlayerTime(durationMs) else stringResource(R.string.player_stream_label),
+            text = when (val label = timeline.endLabel) {
+                PlayerTimelineLabel.Live -> stringResource(R.string.player_live_label)
+                PlayerTimelineLabel.Stream -> stringResource(R.string.player_stream_label)
+                is PlayerTimelineLabel.Text -> label.value
+            },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,

@@ -57,6 +57,45 @@ internal enum class PlayerTimelineKeyAction {
     ExitTimeline,
 }
 
+internal sealed interface PlayerTimelineLabel {
+    data object Live : PlayerTimelineLabel
+    data object Stream : PlayerTimelineLabel
+    data class Text(val value: String) : PlayerTimelineLabel
+}
+
+internal data class PlayerTimelinePresentation(
+    val progress: Float,
+    val startLabel: PlayerTimelineLabel,
+    val endLabel: PlayerTimelineLabel,
+)
+
+internal fun resolvePlayerTimelinePresentation(
+    positionMs: Long,
+    durationMs: Long,
+    canSeek: Boolean,
+    liveContent: Boolean,
+): PlayerTimelinePresentation {
+    if (liveContent) {
+        return PlayerTimelinePresentation(
+            progress = 1f,
+            startLabel = PlayerTimelineLabel.Live,
+            endLabel = PlayerTimelineLabel.Stream,
+        )
+    }
+    if (canSeek && durationMs > 0L) {
+        return PlayerTimelinePresentation(
+            progress = (positionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f),
+            startLabel = PlayerTimelineLabel.Text(formatPlayerTime(positionMs)),
+            endLabel = PlayerTimelineLabel.Text(formatPlayerTime(durationMs)),
+        )
+    }
+    return PlayerTimelinePresentation(
+        progress = 0f,
+        startLabel = PlayerTimelineLabel.Text(formatPlayerTime(positionMs)),
+        endLabel = PlayerTimelineLabel.Text("--:--"),
+    )
+}
+
 internal fun resolvePlayerTimelineKeyAction(
     key: PlayerTimelineRemoteKey,
     canSeek: Boolean,
