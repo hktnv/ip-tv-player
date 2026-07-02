@@ -138,31 +138,11 @@ internal fun CompactContentCard(
                     .aspectRatio(artworkRatio)
                     .graphicsLayer(alpha = artworkAlpha),
             )
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(MediaCardRailInfoHeight)
-                    .background(MaterialTheme.colorScheme.cardTitleSurface.copy(alpha = titleSurfaceAlpha))
-                    .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp),
-            ) {
-                Text(
-                    text = title,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 11.sp,
-                    lineHeight = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = item.metaLine(),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 10.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            MediaCardInfoBlock(
+                title = title,
+                meta = item.metaLine(),
+                titleSurfaceAlpha = titleSurfaceAlpha,
+            )
         }
     }
 }
@@ -213,7 +193,7 @@ internal fun SeriesGroupCard(
                     .height(MediaCardRailInfoHeight)
                     .background(MaterialTheme.colorScheme.cardTitleSurface)
                     .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
                     text = title,
@@ -322,31 +302,11 @@ internal fun ContentCard(
                 showBadge = true,
                 modifier = Modifier.fillMaxWidth().aspectRatio(MediaCardArtworkRatio),
             )
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .height(MediaCardGridInfoHeight)
-                    .background(MaterialTheme.colorScheme.cardTitleSurface)
-                    .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp),
-            ) {
-                Text(
-                    text = title,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 11.sp,
-                    lineHeight = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = item.metaLine(),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 10.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            MediaCardInfoBlock(
+                title = title,
+                meta = item.metaLine(),
+                height = MediaCardGridInfoHeight,
+            )
         }
     }
 }
@@ -375,6 +335,43 @@ private fun FavoriteArtworkFrame(
                     .padding(7.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun MediaCardInfoBlock(
+    title: String,
+    meta: String,
+    modifier: Modifier = Modifier,
+    height: Dp = MediaCardRailInfoHeight,
+    titleSurfaceAlpha: Float = 1f,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height)
+            .background(MaterialTheme.colorScheme.cardTitleSurface.copy(alpha = titleSurfaceAlpha))
+            .padding(start = 9.dp, end = 9.dp, top = 8.dp, bottom = 9.dp),
+    ) {
+        Text(
+            text = title,
+            modifier = Modifier.align(Alignment.TopStart).fillMaxWidth(),
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 11.sp,
+            lineHeight = 14.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = meta,
+            modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 10.sp,
+            lineHeight = 12.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

@@ -2,7 +2,10 @@ package com.hktnv.iptvbox.player
 
 import android.content.Context
 import android.view.KeyEvent
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.media3.common.Player
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 
 @Suppress("UnstableApiUsage")
@@ -15,6 +18,11 @@ internal class TvRemotePlayerView(context: Context) : PlayerView(context) {
     init {
         useController = false
         keepScreenOn = true
+        layoutParams = FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+        )
+        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
         setEnableComposeSurfaceSyncWorkaround(true)
     }
 
@@ -23,6 +31,16 @@ internal class TvRemotePlayerView(context: Context) : PlayerView(context) {
         setPlayer(null)
         setPlayer(nextPlayer)
         boundSurfaceKey = surfaceKey
+        requestVideoLayout()
+    }
+
+    private fun requestVideoLayout() {
+        requestLayout()
+        invalidate()
+        post {
+            requestLayout()
+            invalidate()
+        }
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {

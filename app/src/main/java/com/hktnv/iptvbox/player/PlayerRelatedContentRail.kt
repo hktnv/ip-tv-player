@@ -69,13 +69,14 @@ internal fun PlayerRelatedContentRail(
                 shrinkVertically(animationSpec = tween(durationMillis = 140)),
         ) {
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val cardWidth = relatedRailCardWidth(maxWidth)
+                val optionCardWidth = relatedRailOptionCardWidth(maxWidth)
+                val contentCardWidth = relatedRailCardWidth(maxWidth)
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (model.options.isNotEmpty()) {
                         PlayerRelatedOptionRow(
                             options = model.options,
                             optionFocusRequester = optionFocusRequester,
-                            cardWidth = cardWidth,
+                            cardWidth = optionCardWidth,
                             onMoveUp = onReturnToControls,
                             onMoveDown = {
                                 if (model.items.isNotEmpty()) onRequestCardsFocus()
@@ -87,7 +88,7 @@ internal fun PlayerRelatedContentRail(
                         PlayerRelatedCardRow(
                             items = model.items,
                             cardFocusRequester = cardFocusRequester,
-                            cardWidth = cardWidth,
+                            cardWidth = contentCardWidth,
                             onMoveUp = if (model.options.isEmpty()) {
                                 onReturnToControls
                             } else {
@@ -108,6 +109,12 @@ internal fun relatedRailCardWidth(maxWidth: Dp): Dp {
     val availableWidth = (maxWidth - mediaCardSpacing * RelatedRailVisibleGapCount)
         .coerceAtLeast(RelatedRailMinimumCardWidth)
     return (availableWidth / RelatedRailVisibleCardCount).coerceAtLeast(RelatedRailMinimumCardWidth)
+}
+
+internal fun relatedRailOptionCardWidth(maxWidth: Dp): Dp {
+    val availableWidth = (maxWidth - mediaCardSpacing * RelatedOptionVisibleGapCount)
+        .coerceAtLeast(RelatedRailMinimumCardWidth)
+    return (availableWidth / RelatedOptionVisibleCardCount).coerceAtLeast(RelatedRailMinimumCardWidth)
 }
 
 @Composable
@@ -182,4 +189,6 @@ private fun PlayerRelatedCardRow(
 
 private const val RelatedRailVisibleCardCount = 6.1f
 private const val RelatedRailVisibleGapCount = 6
+private const val RelatedOptionVisibleCardCount = 7.2f
+private const val RelatedOptionVisibleGapCount = 7
 private val RelatedRailMinimumCardWidth = 110.dp

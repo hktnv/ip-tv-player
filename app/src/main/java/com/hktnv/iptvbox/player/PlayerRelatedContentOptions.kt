@@ -222,7 +222,7 @@ private fun PlayerRelatedOptionChip(
                     MaterialTheme.colorScheme.onSurface
                 },
                 fontSize = 12.sp,
-                lineHeight = 16.sp,
+                lineHeight = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -241,4 +241,4 @@ private fun PlayerRelatedOptionChip(
     }
 }
 
-private val RelatedOptionCardHeight = 46.dp
+private val RelatedOptionCardHeight = 42.dp

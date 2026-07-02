@@ -8,6 +8,7 @@ import com.hktnv.iptvbox.player.PlayerTimelineLabel
 import com.hktnv.iptvbox.player.PlayerTimelineRemoteKey
 import com.hktnv.iptvbox.player.calculateSeekTarget
 import com.hktnv.iptvbox.player.relatedRailCardWidth
+import com.hktnv.iptvbox.player.relatedRailOptionCardWidth
 import com.hktnv.iptvbox.player.resolvePlayerTimelineKeyAction
 import com.hktnv.iptvbox.player.resolvePlayerTimelinePresentation
 import com.hktnv.iptvbox.player.shouldAutoHidePlayerOsd
@@ -128,6 +129,15 @@ class PlayerPlaybackUiStateTest {
         val railWidth = 872.dp
         val cardWidth = relatedRailCardWidth(railWidth)
         val occupiedWidth = cardWidth.value * 6.1f + mediaCardSpacing.value * 6f
+
+        assertEquals(railWidth.value, occupiedWidth, 0.1f)
+    }
+
+    @Test
+    fun relatedOptionRailWidthLeavesSevenCategoriesAndPreviewVisible() {
+        val railWidth = 872.dp
+        val cardWidth = relatedRailOptionCardWidth(railWidth)
+        val occupiedWidth = cardWidth.value * 7.2f + mediaCardSpacing.value * 7f
 
         assertEquals(railWidth.value, occupiedWidth, 0.1f)
     }
