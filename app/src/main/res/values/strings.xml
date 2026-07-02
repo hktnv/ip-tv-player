@@ -131,6 +131,7 @@
     <string name="catalog_series">Diziler</string>
     <string name="catalog_empty_try_other_category">Başka kategori seç veya farklı bir oynatma listesi yükle.</string>
     <string name="search_ready_prompt">Aramak istediğin metni yazıp Ara’ya bas.</string>
+    <string name="search_action">Ara</string>
     <string name="searching">Aranıyor</string>
     <string name="search_no_results">Sonuç bulunamadı</string>
     <string name="search_no_results_body">Farklı bir kanal, film, dizi veya kategori adıyla tekrar ara.</string>

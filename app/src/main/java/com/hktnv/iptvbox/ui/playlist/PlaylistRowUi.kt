@@ -34,10 +34,9 @@ import androidx.compose.ui.zIndex
 import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import com.hktnv.iptvbox.model.LoadedPlaylist
-import com.hktnv.iptvbox.ui.common.TvFocusBorder
-import com.hktnv.iptvbox.ui.common.TvFocusPanel
 import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.tvFocusElevation
+import com.hktnv.iptvbox.ui.common.tvFocusableSurfaceStyle
 import com.hktnv.iptvbox.ui.common.tvFocusLift
 import com.hktnv.iptvbox.ui.media.label
 import com.hktnv.iptvbox.ui.media.stats
@@ -54,23 +53,18 @@ internal fun PlaylistRow(
         (stats.live + stats.movies + stats.series).takeIf { it > 0 } ?: playlist.items.size
     }
     var focused by remember { mutableStateOf(false) }
+    val focusStyle = tvFocusableSurfaceStyle(focused = focused, selected = selected)
     Surface(
         modifier = modifier
             .height(72.dp)
             .zIndex(if (focused) 1f else 0f)
-            .tvFocusLift(focused = focused, scale = 1.01f, liftPx = 0f)
+            .tvFocusLift(focused = focused, scale = 1.018f, liftPx = -2f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
-        color = when {
-            focused -> TvFocusPanel
-            selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-            else -> MaterialTheme.colorScheme.surface
-        },
+        color = focusStyle.container,
+        contentColor = focusStyle.content,
         shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(
-            width = if (focused) 2.dp else 1.dp,
-            color = if (focused) TvFocusBorder else MaterialTheme.colorScheme.surfaceBorder,
-        ),
+        border = focusStyle.border,
         shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 0.dp),
     ) {
         Row(

@@ -36,16 +36,16 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.searchControlHeight
 import com.hktnv.iptvbox.core.designsystem.searchControlRadius
-import com.hktnv.iptvbox.ui.common.TvFocusBorder
-import com.hktnv.iptvbox.ui.common.TvFocusPanel
-import com.hktnv.iptvbox.ui.common.TvRestingBorder
 import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.tvFocusElevation
+import com.hktnv.iptvbox.ui.common.tvFocusableSurfaceStyle
 import com.hktnv.iptvbox.ui.common.tvFocusLift
 
 @Composable
@@ -270,18 +270,11 @@ private fun SearchSubmitButton(
 ) {
     var focused by remember { mutableStateOf(false) }
     val compact = LocalConfiguration.current.screenWidthDp < 420
-    val panelColor = when {
-        focused && enabled -> MaterialTheme.colorScheme.primary
-        focused -> TvFocusPanel
-        enabled -> MaterialTheme.colorScheme.primaryContainer
-        else -> MaterialTheme.colorScheme.surfaceVariant
-    }
-    val borderColor = when {
-        focused && enabled -> MaterialTheme.colorScheme.primary
-        focused -> TvFocusBorder
-        enabled -> MaterialTheme.colorScheme.surfaceBorder
-        else -> TvRestingBorder
-    }
+    val focusStyle = tvFocusableSurfaceStyle(
+        focused = focused,
+        primary = enabled,
+        enabled = enabled,
+    )
     Surface(
         modifier = modifier
             .height(searchControlHeight)
@@ -290,19 +283,15 @@ private fun SearchSubmitButton(
             .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -4f)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(enabled = enabled, onClick = onSearch),
-        color = panelColor,
+        color = focusStyle.container,
         shape = RoundedCornerShape(searchControlRadius),
-        border = BorderStroke(if (focused) 2.dp else 1.dp, borderColor),
+        border = focusStyle.border,
         shadowElevation = tvFocusElevation(focused = focused, resting = 1.dp, focusedElevation = 14.dp),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(
-                text = "Ara",
-                color = when {
-                    !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    focused -> MaterialTheme.colorScheme.onPrimary
-                    else -> MaterialTheme.colorScheme.onPrimaryContainer
-                },
+                text = stringResource(R.string.search_action),
+                color = focusStyle.content,
                 fontSize = if (compact) 14.sp else 15.sp,
             )
         }

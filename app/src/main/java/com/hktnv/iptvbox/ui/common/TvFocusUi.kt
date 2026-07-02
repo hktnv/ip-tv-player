@@ -3,6 +3,7 @@ import android.os.SystemClock
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -24,9 +25,11 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.hktnv.iptvbox.core.designsystem.accentPressed
 import com.hktnv.iptvbox.core.designsystem.accentSubtle
 import com.hktnv.iptvbox.core.designsystem.focusBorder
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
+import com.hktnv.iptvbox.core.designsystem.textDisabled
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -42,6 +45,51 @@ internal val TvSelectedPanel: Color
 
 internal val TvRestingBorder: Color
     @Composable get() = MaterialTheme.colorScheme.surfaceBorder
+
+internal data class TvFocusableSurfaceStyle(
+    val container: Color,
+    val content: Color,
+    val border: BorderStroke,
+)
+
+@Composable
+internal fun tvFocusableSurfaceStyle(
+    focused: Boolean,
+    primary: Boolean = false,
+    selected: Boolean = false,
+    enabled: Boolean = true,
+): TvFocusableSurfaceStyle {
+    val scheme = MaterialTheme.colorScheme
+    val width = if (focused) 2.dp else 1.dp
+    val container = when {
+        !enabled -> scheme.surfaceVariant
+        focused && primary -> scheme.accentPressed
+        focused -> TvFocusPanel
+        primary -> scheme.primary
+        selected -> scheme.primaryContainer.copy(alpha = 0.45f)
+        else -> scheme.surface
+    }
+    val content = when {
+        !enabled -> scheme.textDisabled
+        focused && primary -> scheme.onPrimary
+        focused -> scheme.onSurface
+        primary -> scheme.onPrimary
+        selected -> scheme.onPrimaryContainer
+        else -> scheme.onSurfaceVariant
+    }
+    val borderColor = when {
+        !enabled -> TvRestingBorder
+        focused -> TvFocusBorder
+        primary -> scheme.primary.copy(alpha = 0.72f)
+        selected -> scheme.onPrimaryContainer.copy(alpha = 0.54f)
+        else -> TvRestingBorder
+    }
+    return TvFocusableSurfaceStyle(
+        container = container,
+        content = content,
+        border = BorderStroke(width, borderColor),
+    )
+}
 
 @Composable
 internal fun Modifier.tvFocusLift(

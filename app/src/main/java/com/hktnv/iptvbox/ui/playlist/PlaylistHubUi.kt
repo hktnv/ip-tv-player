@@ -47,11 +47,9 @@ import androidx.compose.ui.zIndex
 import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import com.hktnv.iptvbox.model.LoadedPlaylist
-import com.hktnv.iptvbox.ui.common.TvFocusBorder
-import com.hktnv.iptvbox.ui.common.TvFocusPanel
-import com.hktnv.iptvbox.ui.common.TvRestingBorder
 import com.hktnv.iptvbox.ui.common.tvClickable
 import com.hktnv.iptvbox.ui.common.tvFocusElevation
+import com.hktnv.iptvbox.ui.common.tvFocusableSurfaceStyle
 import com.hktnv.iptvbox.ui.common.tvFocusLift
 
 @Composable
@@ -183,6 +181,7 @@ private fun HubActionButton(
     requestInitialFocus: Boolean = false,
 ) {
     var focused by remember { mutableStateOf(false) }
+    val focusStyle = tvFocusableSurfaceStyle(focused = focused, primary = primary)
     LaunchedEffect(requestInitialFocus, focusRequester) {
         if (requestInitialFocus && focusRequester != null) {
             withFrameNanos { }
@@ -193,19 +192,15 @@ private fun HubActionButton(
         modifier = Modifier
             .height(44.dp)
             .zIndex(if (focused) 1f else 0f)
-            .tvFocusLift(focused = focused, scale = 1.012f, liftPx = 0f)
+            .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -3f)
             .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
-        color = when {
-            primary -> MaterialTheme.colorScheme.primary
-            focused -> TvFocusPanel
-            else -> MaterialTheme.colorScheme.surface
-        },
-        contentColor = if (primary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+        color = focusStyle.container,
+        contentColor = focusStyle.content,
         shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(if (focused) 2.dp else 1.dp, if (focused) TvFocusBorder else TvRestingBorder),
-        shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 0.dp),
+        border = focusStyle.border,
+        shadowElevation = tvFocusElevation(focused = focused, resting = 0.dp, focusedElevation = 6.dp),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = if (label == null) 12.dp else 14.dp),
