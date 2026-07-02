@@ -116,11 +116,11 @@ internal fun SelectedPlaylistRepairEffect(
 internal fun CatalogSnapshotEffect(
     selectedPlaylist: LoadedPlaylist?,
     showPlaylistEntry: Boolean,
-    screen: AppScreen,
     selectedTab: CatalogTab,
     selectedCategory: String?,
     selectedSeriesTitle: String?,
     selectedSeasonNumber: Int?,
+    currentSnapshotPlaylistId: String?,
     favoriteIds: List<String>,
     recentIds: List<String>,
     favoriteSignature: String,
@@ -140,7 +140,6 @@ internal fun CatalogSnapshotEffect(
         selectedPlaylist?.cachedLiveCount,
         selectedPlaylist?.cachedMovieCount,
         selectedPlaylist?.cachedSeriesCount,
-        screen,
         selectedTab,
         selectedCategory,
         selectedSeriesTitle,
@@ -152,13 +151,15 @@ internal fun CatalogSnapshotEffect(
     ) {
         val playlist = selectedPlaylist
         if (playlist == null || showPlaylistEntry) {
-            onSnapshotChange(null)
+            val loadPlan = planCatalogSnapshotLoad(currentSnapshotPlaylistId, playlist?.id, showPlaylistEntry)
+            if (loadPlan.clearSnapshot) onSnapshotChange(null)
             onLoadingChange(false)
             return@LaunchedEffect
         }
 
-        onLoadingChange(true)
-        onSnapshotChange(null)
+        val loadPlan = planCatalogSnapshotLoad(currentSnapshotPlaylistId, playlist.id, showPlaylistEntry)
+        if (loadPlan.clearSnapshot) onSnapshotChange(null)
+        onLoadingChange(loadPlan.showBlockingLoading)
         val catalogStartedAt = SystemClock.elapsedRealtime()
         val snapshot = withContext(Dispatchers.IO) {
             if (playlist.items.isEmpty() && !catalogStore.hasItems(playlist.id)) {

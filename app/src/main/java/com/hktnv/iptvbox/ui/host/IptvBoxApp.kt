@@ -157,8 +157,9 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val recentSignature = recentIds.joinToString("|")
     val selectedContentCategory = if (showCatalogCategoryLanding) null else selectedCategory
     CatalogSnapshotEffect(
-        selectedPlaylist = selectedPlaylist, showPlaylistEntry = showPlaylistEntry, screen = screen, selectedTab = selectedTab,
+        selectedPlaylist = selectedPlaylist, showPlaylistEntry = showPlaylistEntry, selectedTab = selectedTab,
         selectedCategory = selectedContentCategory, selectedSeriesTitle = selectedSeriesTitle, selectedSeasonNumber = selectedSeasonNumber,
+        currentSnapshotPlaylistId = catalogSnapshot?.playlistId,
         favoriteIds = favoriteIds, recentIds = recentIds, favoriteSignature = favoriteSignature, recentSignature = recentSignature, performanceMode = performanceMode,
         refreshToken = catalogRefreshToken,
         catalogStore = catalogStore, catalogRepository = catalogRepository, telemetry = telemetry,

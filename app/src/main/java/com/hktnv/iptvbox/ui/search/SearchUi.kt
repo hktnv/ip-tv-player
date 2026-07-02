@@ -28,9 +28,12 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.common.SearchNormalizer
 import com.hktnv.iptvbox.core.model.CatalogItem
 import kotlinx.coroutines.Dispatchers
@@ -246,22 +249,22 @@ internal fun SearchScreen(
         )
         Text(
             text = when {
-                catalogIndexLoading || snapshot == null -> "Katalog hazırlanıyor"
-                submittedQuery.isBlank() -> "Aramak istediğin metni yazıp Ara'ya bas."
-                searchLoading -> "Aranıyor"
-                results.isEmpty() -> "Sonuç bulunamadı"
-                else -> "${results.size} sonuç"
+                snapshot == null -> stringResource(R.string.catalog_preparing)
+                submittedQuery.isBlank() -> stringResource(R.string.search_ready_prompt)
+                searchLoading -> stringResource(R.string.searching)
+                results.isEmpty() -> stringResource(R.string.search_no_results)
+                else -> pluralStringResource(R.plurals.search_results_count, results.size, results.size)
             },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp,
             modifier = Modifier.padding(bottom = 8.dp),
         )
-        if (catalogIndexLoading || snapshot == null) {
-            LoadingPanel("Katalog hazırlanıyor", Modifier.padding(top = 12.dp))
+        if (snapshot == null) {
+            LoadingPanel(stringResource(R.string.catalog_preparing), Modifier.padding(top = 12.dp))
         } else if (submittedQuery.isNotBlank() && !searchLoading && results.isEmpty()) {
             EmptyState(
-                title = "Sonuç bulunamadı",
-                body = "Farklı bir kanal, film, dizi veya kategori adıyla tekrar ara.",
+                title = stringResource(R.string.search_no_results),
+                body = stringResource(R.string.search_no_results_body),
                 actionLabel = null,
                 onAction = null,
                 modifier = Modifier.padding(top = 12.dp),

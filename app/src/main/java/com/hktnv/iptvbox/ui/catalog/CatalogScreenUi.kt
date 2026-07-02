@@ -12,8 +12,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.model.LoadedPlaylist
@@ -74,8 +76,8 @@ internal fun CatalogScreen(
             WarningText(playlist.warnings.first())
         }
         when {
-            snapshot == null || catalogIndexLoading -> LoadingPanel(
-                text = "Katalog hazırlanıyor",
+            snapshot == null -> LoadingPanel(
+                text = stringResource(R.string.catalog_preparing),
                 modifier = Modifier.padding(top = 18.dp),
             )
             showCategoryLanding -> CategoryLandingGrid(
@@ -106,7 +108,7 @@ internal fun CatalogScreen(
             )
             visibleItems.isEmpty() -> EmptyState(
                 title = selectedTab.emptyLabel,
-                body = "Başka kategori seç veya farklı bir oynatma listesi yükle.",
+                body = stringResource(R.string.catalog_empty_try_other_category),
                 actionLabel = null,
                 onAction = null,
                 modifier = Modifier.padding(top = 18.dp),

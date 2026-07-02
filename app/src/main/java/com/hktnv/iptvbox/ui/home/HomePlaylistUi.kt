@@ -79,6 +79,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -92,6 +93,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
+import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.common.SearchNormalizer
 import com.hktnv.iptvbox.core.designsystem.IptvTheme
 import com.hktnv.iptvbox.core.model.CatalogItem
@@ -201,9 +203,9 @@ internal fun HomeScreen(
                 )
             }
         } else {
-            if (catalogIndexLoading || snapshot == null) {
+            if (snapshot == null) {
                 item(key = "catalog-loading", contentType = "loading") {
-                    LoadingPanel("Katalog hazırlanıyor")
+                    LoadingPanel(stringResource(R.string.catalog_preparing))
                 }
             }
             item(key = "recent-row", contentType = "media-row") {

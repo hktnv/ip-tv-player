@@ -49,7 +49,7 @@ internal fun SavedItemsScreen(
             .fillMaxSize()
             .padding(horizontal = contentPadding),
     ) {
-        if (snapshot == null || catalogIndexLoading) {
+        if (snapshot == null) {
             LoadingPanel(stringResource(R.string.catalog_preparing), Modifier.padding(top = 18.dp))
         } else if (items.isEmpty()) {
             EmptyState(
@@ -103,7 +103,7 @@ internal fun LatestItemsScreen(
             .fillMaxSize()
             .padding(horizontal = contentPadding),
     ) {
-        if (snapshot == null || catalogIndexLoading) {
+        if (snapshot == null) {
             LoadingPanel(stringResource(R.string.catalog_preparing), Modifier.padding(top = 18.dp))
         } else if (items.isEmpty()) {
             EmptyState(

@@ -16,6 +16,8 @@ class LocalizationResourcesTest {
         assertEquals("Oynatıcı arayüzü", strings["settings_player_ui_title"])
         assertEquals("Modern OSD", strings["settings_player_ui_value"])
         assertTrue(strings["settings_player_ui_detail_body"]?.contains("Modern OSD") == true)
+        assertTrue(strings["catalog_empty_try_other_category"]?.contains("kategori") == true)
+        assertTrue(strings["search_no_results_body"]?.contains("kanal") == true)
     }
 
     private fun readDefaultStrings(): Map<String, String> {
