@@ -126,6 +126,8 @@ private fun PlaylistHubContent(
     onOpenPlaylistDetails: (String) -> Unit,
 ) {
     val settingsFocusRequester = remember { FocusRequester() }
+    val firstPlaylistFocusRequester = remember { FocusRequester() }
+    val firstPlaylistId = playlists.firstOrNull()?.id
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -144,6 +146,7 @@ private fun PlaylistHubContent(
                     onAddPlaylist = onAddPlaylist,
                     onOpenSettings = onOpenSettings,
                     settingsFocusRequester = settingsFocusRequester,
+                    firstPlaylistFocusRequester = firstPlaylistFocusRequester,
                     requestSettingsFocus = true,
                 )
             }
@@ -171,6 +174,7 @@ private fun PlaylistHubContent(
                             playlist = playlist,
                             selected = playlist.id == selectedPlaylistId,
                             onClick = { onOpenPlaylistDetails(playlist.id) },
+                            focusRequester = firstPlaylistFocusRequester.takeIf { playlist.id == firstPlaylistId },
                             modifier = Modifier.weight(1f),
                         )
                     }

@@ -33,6 +33,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -58,6 +59,7 @@ internal fun PlaylistHubHeader(
     onAddPlaylist: () -> Unit,
     onOpenSettings: () -> Unit,
     settingsFocusRequester: FocusRequester? = null,
+    firstPlaylistFocusRequester: FocusRequester? = null,
     requestSettingsFocus: Boolean = false,
 ) {
     Row(
@@ -92,6 +94,7 @@ internal fun PlaylistHubHeader(
             label = stringResource(R.string.playlist_hub_add_action),
             icon = Icons.Filled.Add,
             primary = true,
+            downFocusRequester = firstPlaylistFocusRequester,
             onClick = onAddPlaylist,
         )
         HubActionButton(
@@ -100,6 +103,7 @@ internal fun PlaylistHubHeader(
             contentDescription = stringResource(R.string.playlist_hub_settings_action),
             primary = false,
             focusRequester = settingsFocusRequester,
+            downFocusRequester = firstPlaylistFocusRequester,
             requestInitialFocus = requestSettingsFocus,
             onClick = onOpenSettings,
         )
@@ -178,6 +182,7 @@ private fun HubActionButton(
     onClick: () -> Unit,
     contentDescription: String? = label,
     focusRequester: FocusRequester? = null,
+    downFocusRequester: FocusRequester? = null,
     requestInitialFocus: Boolean = false,
 ) {
     var focused by remember { mutableStateOf(false) }
@@ -194,6 +199,13 @@ private fun HubActionButton(
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.035f, liftPx = -3f)
             .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+            .then(
+                if (downFocusRequester != null) {
+                    Modifier.focusProperties { down = downFocusRequester }
+                } else {
+                    Modifier
+                },
+            )
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
         color = focusStyle.container,

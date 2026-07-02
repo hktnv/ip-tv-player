@@ -23,6 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -47,6 +49,7 @@ internal fun PlaylistRow(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    focusRequester: FocusRequester? = null,
 ) {
     val stats = remember(playlist.id, playlist.items) { playlist.stats() }
     val totalCount = remember(stats, playlist.items.size) {
@@ -59,6 +62,7 @@ internal fun PlaylistRow(
             .height(72.dp)
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.018f, liftPx = -2f)
+            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
         color = focusStyle.container,

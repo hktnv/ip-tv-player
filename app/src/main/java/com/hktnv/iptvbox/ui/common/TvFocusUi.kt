@@ -63,9 +63,9 @@ internal fun tvFocusableSurfaceStyle(
     val width = if (focused) 2.dp else 1.dp
     val container = when {
         !enabled -> scheme.surfaceVariant
-        focused && primary -> scheme.accentPressed
+        focused && primary -> scheme.primary
         focused -> TvFocusPanel
-        primary -> scheme.primary
+        primary -> scheme.surface
         selected -> scheme.primaryContainer.copy(alpha = 0.45f)
         else -> scheme.surface
     }
@@ -73,14 +73,14 @@ internal fun tvFocusableSurfaceStyle(
         !enabled -> scheme.textDisabled
         focused && primary -> scheme.onPrimary
         focused -> scheme.onSurface
-        primary -> scheme.onPrimary
+        primary -> scheme.onSurface
         selected -> scheme.onPrimaryContainer
         else -> scheme.onSurfaceVariant
     }
     val borderColor = when {
         !enabled -> TvRestingBorder
         focused -> TvFocusBorder
-        primary -> scheme.primary.copy(alpha = 0.72f)
+        primary -> TvRestingBorder
         selected -> scheme.onPrimaryContainer.copy(alpha = 0.54f)
         else -> TvRestingBorder
     }
