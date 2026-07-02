@@ -77,7 +77,7 @@ internal fun SideNavigation(
     onDrawerEvent: (NavigationDrawerEvent) -> Unit,
     onNavigate: (AppScreen) -> Unit,
     onOpenTab: (CatalogTab) -> Unit,
-    lastCollapsedMenuIntentAt: Long,
+    lastCollapsedMenuIntentAt: () -> Long,
     onRequestExitConfirmation: () -> Unit,
 ) {
     val entries = playlistNavEntries(hasPlaylist, stats)
@@ -158,7 +158,7 @@ internal fun SideNavigation(
                     if (!expanded) {
                         val focusFollowsUserLeftIntent = shouldExpandCollapsedDrawerOnFocus(
                             nowMs = SystemClock.uptimeMillis(),
-                            lastUserLeftIntentMs = lastCollapsedMenuIntentAt,
+                            lastUserLeftIntentMs = lastCollapsedMenuIntentAt(),
                             focusExpansion = focusExpansion,
                         )
                         onDrawerEvent(

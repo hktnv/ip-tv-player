@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -52,6 +53,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -61,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.model.ContentHint
 import com.hktnv.iptvbox.core.model.PlaylistSourceType
 import com.hktnv.iptvbox.data.playlist.CreatePlaylistSourceRequest
@@ -112,11 +115,19 @@ internal fun AddPlaylistDialog(
         (type != PlaylistSourceType.XTREAM || (username.trim().isNotBlank() && password.isNotBlank()))
     val dialogConfiguration = LocalConfiguration.current
     val compactDialog = dialogConfiguration.screenWidthDp < 768
+    val maxDialogHeight = (dialogConfiguration.screenHeightDp - 48).coerceAtLeast(420).dp
     val dialogWidth = when {
         compactDialog -> 0.dp
         dialogConfiguration.screenWidthDp >= 1280 -> 880.dp
         else -> (dialogConfiguration.screenWidthDp - 56).coerceIn(560, 720).dp
     }
+    val connectingMessage = stringResource(R.string.playlist_add_connecting)
+    val downloadingMessage = stringResource(R.string.playlist_stage_downloading)
+    val preparingMessage = stringResource(R.string.playlist_stage_preparing)
+    val loadFailedMessage = stringResource(R.string.playlist_load_failed)
+    val cancelText = stringResource(R.string.action_cancel)
+    val loadingText = stringResource(R.string.playlist_add_loading)
+    val saveLoadText = stringResource(R.string.playlist_add_save_load)
 
     fun request(finalName: String): CreatePlaylistSourceRequest {
         return CreatePlaylistSourceRequest(
@@ -144,8 +155,8 @@ internal fun AddPlaylistDialog(
             state = DraftLoadState(error = validation)
             return
         }
-        state = DraftLoadState(loading = true, message = "Bağlantı kuruluyor")
-        state = DraftLoadState(loading = true, message = "İndiriliyor")
+        state = DraftLoadState(loading = true, message = connectingMessage)
+        state = DraftLoadState(loading = true, message = downloadingMessage)
         val firstResponseMs = android.os.SystemClock.elapsedRealtime() - pressStartedAt
         telemetry.recordMany(
             mapOf(
@@ -166,14 +177,13 @@ internal fun AddPlaylistDialog(
             }.onSuccess { result ->
                 state = DraftLoadState(
                     loading = true,
-                    message = "Katalog hazırlanıyor",
+                    message = preparingMessage,
                     processedItems = result.items.size,
                     totalItems = result.items.size,
                 )
-                state = DraftLoadState(loading = true, message = "Katalog hazırlanıyor")
                 state = DraftLoadState(
                     loading = true,
-                    message = "Katalog hazırlanıyor",
+                    message = preparingMessage,
                     processedItems = result.items.size,
                     totalItems = result.items.size,
                 )
@@ -193,7 +203,7 @@ internal fun AddPlaylistDialog(
             }.onFailure { throwable ->
                 telemetry.endUiWatch(uiWatchId)
                 telemetry.recordError("Oynatma listesi ekleme hatası", throwable)
-                state = DraftLoadState(error = simpleUserMessage(throwable.message.orEmpty()).ifBlank { "Liste yüklenemedi" })
+                state = DraftLoadState(error = simpleUserMessage(throwable.message.orEmpty()).ifBlank { loadFailedMessage })
             }
         }
     }
@@ -215,9 +225,13 @@ internal fun AddPlaylistDialog(
         ) {
             Surface(
                 modifier = if (compactDialog) {
-                    Modifier.fillMaxWidth()
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = maxDialogHeight)
                 } else {
-                    Modifier.width(dialogWidth)
+                    Modifier
+                        .width(dialogWidth)
+                        .heightIn(max = maxDialogHeight)
                 },
                 color = MaterialTheme.colorScheme.surface,
                 shape = if (compactDialog) {
@@ -234,18 +248,18 @@ internal fun AddPlaylistDialog(
                     .fillMaxWidth()
                     .focusGroup()
                     .verticalScroll(rememberScrollState())
-                    .padding(if (compactDialog) 20.dp else 28.dp),
-                verticalArrangement = Arrangement.spacedBy(if (compactDialog) 14.dp else 16.dp),
+                    .padding(if (compactDialog) 18.dp else 22.dp),
+                verticalArrangement = Arrangement.spacedBy(if (compactDialog) 10.dp else 12.dp),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text(
-                        "Yeni Oynatma Listesi",
+                        stringResource(R.string.playlist_add_title),
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 24.sp,
+                        fontSize = if (compactDialog) 22.sp else 23.sp,
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        "Önce liste adresini girin. Liste adı isteğe bağlıdır.",
+                        stringResource(R.string.playlist_add_body),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp,
                         lineHeight = 19.sp,
@@ -266,15 +280,11 @@ internal fun AddPlaylistDialog(
                     },
                     label = {
                         Text(
-                            when (type) {
-                                PlaylistSourceType.JSON_DIRECTORY -> "JSON URL"
-                                PlaylistSourceType.M3U_URL -> "Oynatma listesi URL"
-                                PlaylistSourceType.XTREAM -> "Sunucu URL"
-                            },
+                            stringResource(type.endpointLabelRes()),
                         )
                     },
                     placeholder = { Text("https://...") },
-                    helperText = type.endpointHelperText(),
+                    helperText = stringResource(type.endpointHelperTextRes()),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                     requestInitialFocus = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -282,24 +292,24 @@ internal fun AddPlaylistDialog(
                 TvTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Liste adı") },
-                    placeholder = { Text("Oynatma Listem") },
-                    helperText = "Boş bırakırsanız otomatik ad verilir.",
+                    label = { Text(stringResource(R.string.playlist_add_name_label)) },
+                    placeholder = { Text(stringResource(R.string.playlist_add_name_placeholder)) },
+                    helperText = stringResource(R.string.playlist_add_name_helper),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 if (type == PlaylistSourceType.XTREAM) {
                     TvTextField(
                         value = username,
                         onValueChange = { username = it },
-                        label = { Text("Kullanıcı adı") },
-                        helperText = "Xtream hesabınızdaki kullanıcı adını girin.",
+                        label = { Text(stringResource(R.string.playlist_add_username_label)) },
+                        helperText = stringResource(R.string.playlist_add_username_helper),
                         modifier = Modifier.fillMaxWidth(),
                     )
                     TvTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Parola") },
-                        helperText = "Parola yalnızca bağlantı kurmak için kullanılır.",
+                        label = { Text(stringResource(R.string.playlist_add_password_label)) },
+                        helperText = stringResource(R.string.playlist_add_password_helper),
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -316,9 +326,9 @@ internal fun AddPlaylistDialog(
                 if (!canSubmit && !state.loading) {
                     Text(
                         text = if (type == PlaylistSourceType.XTREAM) {
-                            "Sunucu URL, kullanıcı adı ve parola girildiğinde devam edebilirsiniz."
+                            stringResource(R.string.playlist_add_invalid_xtream_hint)
                         } else {
-                            "URL girildiğinde Kaydet ve Yükle aktif olur."
+                            stringResource(R.string.playlist_add_invalid_url_hint)
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
@@ -331,13 +341,13 @@ internal fun AddPlaylistDialog(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     DialogGhostAction(
-                        text = "Vazgeç",
+                        text = cancelText,
                         enabled = !state.loading,
                         modifier = Modifier.weight(0.8f),
                         onClick = onDismiss,
                     )
                     DialogPrimaryAction(
-                        text = if (state.loading) "Yükleniyor" else "Kaydet ve Yükle",
+                        text = if (state.loading) loadingText else saveLoadText,
                         enabled = canSubmit,
                         modifier = Modifier.weight(1.35f),
                         onClick = ::submit,

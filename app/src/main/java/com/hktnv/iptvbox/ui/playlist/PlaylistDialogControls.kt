@@ -2,6 +2,7 @@ package com.hktnv.iptvbox.ui.playlist
 import androidx.compose.material3.MaterialTheme
 import com.hktnv.iptvbox.core.designsystem.surfaceBorder
 import com.hktnv.iptvbox.core.designsystem.transparent
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,11 +25,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.model.PlaylistSourceType
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.model.LoadedPlaylist
@@ -66,7 +69,7 @@ internal fun TypeSelector(
             }
         }
         Text(
-            text = type.typeHelperText(),
+            text = stringResource(type.typeHelperTextRes()),
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.94f),
             fontSize = 12.sp,
             lineHeight = 16.sp,
@@ -128,19 +131,30 @@ internal fun playlistFieldColors() = OutlinedTextFieldDefaults.colors(
     unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
 )
 
-internal fun PlaylistSourceType.typeHelperText(): String {
+@StringRes
+internal fun PlaylistSourceType.typeHelperTextRes(): Int {
     return when (this) {
-        PlaylistSourceType.JSON_DIRECTORY -> "JSON seçili: katalog adresini girin."
-        PlaylistSourceType.M3U_URL -> "M3U seçili: oynatma listesi URL'sini girin."
-        PlaylistSourceType.XTREAM -> "Xtream seçili: sunucu, kullanıcı adı ve parola gerekir."
+        PlaylistSourceType.JSON_DIRECTORY -> R.string.playlist_type_json_helper
+        PlaylistSourceType.M3U_URL -> R.string.playlist_type_m3u_helper
+        PlaylistSourceType.XTREAM -> R.string.playlist_type_xtream_helper
     }
 }
 
-internal fun PlaylistSourceType.endpointHelperText(): String {
+@StringRes
+internal fun PlaylistSourceType.endpointHelperTextRes(): Int {
     return when (this) {
-        PlaylistSourceType.JSON_DIRECTORY -> "JSON dosya veya servis adresini yazın."
-        PlaylistSourceType.M3U_URL -> "M3U veya m3u_plus liste adresini yazın."
-        PlaylistSourceType.XTREAM -> "Sunucu kök adresini yazın; kullanıcı adı ve parola aşağıda girilir."
+        PlaylistSourceType.JSON_DIRECTORY -> R.string.playlist_endpoint_json_helper
+        PlaylistSourceType.M3U_URL -> R.string.playlist_endpoint_m3u_helper
+        PlaylistSourceType.XTREAM -> R.string.playlist_endpoint_xtream_helper
+    }
+}
+
+@StringRes
+internal fun PlaylistSourceType.endpointLabelRes(): Int {
+    return when (this) {
+        PlaylistSourceType.JSON_DIRECTORY -> R.string.playlist_add_json_label
+        PlaylistSourceType.M3U_URL -> R.string.playlist_add_m3u_label
+        PlaylistSourceType.XTREAM -> R.string.playlist_add_xtream_label
     }
 }
 
@@ -163,23 +177,27 @@ internal fun RenamePlaylistDialog(
                     .padding(18.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("Oynatma Listesi Adı", color = MaterialTheme.colorScheme.onSurface, fontSize = 22.sp)
+                Text(
+                    text = stringResource(R.string.playlist_rename_title),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 22.sp,
+                )
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Liste adı") },
+                    label = { Text(stringResource(R.string.playlist_add_name_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                     TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                        Text("Vazgeç")
+                        Text(stringResource(R.string.action_cancel))
                     }
                     Button(
                         onClick = { onSave(name) },
                         modifier = Modifier.weight(1.2f),
                     ) {
-                        Text("Kaydet")
+                        Text(stringResource(R.string.action_save))
                     }
                 }
             }

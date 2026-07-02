@@ -1,5 +1,6 @@
 package com.hktnv.iptvbox.ui.playlist.detail
 
+import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -36,12 +38,14 @@ internal fun PlaylistDetailScreen(
     syncStatus: CatalogSyncStatus? = null,
 ) {
     BackHandler(onBack = onBack)
+    val configuration = LocalConfiguration.current
+    val television = configuration.uiMode and Configuration.UI_MODE_TYPE_MASK == Configuration.UI_MODE_TYPE_TELEVISION
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = contentPadding),
     ) {
-        val splitLayout = maxWidth >= 900.dp
+        val splitLayout = television || maxWidth >= 900.dp
         val sectionGap = if (maxWidth < 600.dp) 16.dp else 10.dp
         LazyColumn(
             contentPadding = PaddingValues(top = 10.dp, bottom = ScreenBottomPadding),

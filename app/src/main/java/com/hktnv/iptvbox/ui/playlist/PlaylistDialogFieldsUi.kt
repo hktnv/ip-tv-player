@@ -40,11 +40,13 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hktnv.iptvbox.R
 import com.hktnv.iptvbox.core.designsystem.focusBorder
 import com.hktnv.iptvbox.data.catalog.column
 import com.hktnv.iptvbox.ui.common.tvClickable
@@ -186,7 +188,7 @@ internal fun LoadingStepText(
                 )
             }
             Text(
-                text = "Lütfen bekleyin, işlem devam ediyor.",
+                text = stringResource(R.string.playlist_dialog_waiting),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 lineHeight = 16.sp,

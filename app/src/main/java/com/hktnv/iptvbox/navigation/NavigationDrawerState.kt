@@ -97,7 +97,6 @@ internal fun shouldExpandCollapsedDrawerOnFocus(
     focusExpansion: NavigationDrawerFocusExpansion = NavigationDrawerFocusExpansion.Enabled,
     thresholdMs: Long = 1_400L,
 ): Boolean {
-    return focusExpansion == NavigationDrawerFocusExpansion.Enabled &&
-        lastUserLeftIntentMs > 0L &&
+    return lastUserLeftIntentMs > 0L &&
         nowMs - lastUserLeftIntentMs in 0L..thresholdMs
 }

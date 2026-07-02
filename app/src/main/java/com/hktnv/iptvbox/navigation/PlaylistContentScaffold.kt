@@ -14,12 +14,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.hktnv.iptvbox.core.model.CatalogItem
@@ -102,6 +104,7 @@ internal fun PlaylistContentScaffold(
     onRequestExitConfirmation: () -> Unit,
     onDismissBanner: () -> Unit,
 ) {
+    val focusManager = LocalFocusManager.current
     var lastCollapsedMenuIntentAt by remember { mutableLongStateOf(0L) }
     fun handleDrawerEvent(event: NavigationDrawerEvent) {
         lastCollapsedMenuIntentAt = consumeUserLeftIntentAfterDrawerEvent(
@@ -118,6 +121,11 @@ internal fun PlaylistContentScaffold(
                     event.type == KeyEventType.KeyDown && event.key == Key.DirectionLeft
                 ) {
                     lastCollapsedMenuIntentAt = SystemClock.uptimeMillis()
+                    val movedInsideContent = focusManager.moveFocus(FocusDirection.Left)
+                    if (!movedInsideContent) {
+                        handleDrawerEvent(NavigationDrawerEvent.OpenByUserNavigation)
+                    }
+                    return@onPreviewKeyEvent true
                 }
                 false
             }
@@ -211,7 +219,7 @@ internal fun PlaylistContentScaffold(
                 onDrawerEvent = ::handleDrawerEvent,
                 onNavigate = onNavigate,
                 onOpenTab = onOpenCatalogTab,
-                lastCollapsedMenuIntentAt = lastCollapsedMenuIntentAt,
+                lastCollapsedMenuIntentAt = { lastCollapsedMenuIntentAt },
                 onRequestExitConfirmation = onRequestExitConfirmation,
             )
         }

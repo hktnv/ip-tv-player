@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -61,6 +62,8 @@ internal fun PlaylistHubHeader(
     playlistCount: Int,
     onAddPlaylist: () -> Unit,
     onOpenSettings: () -> Unit,
+    settingsFocusRequester: FocusRequester? = null,
+    requestSettingsFocus: Boolean = false,
 ) {
     Row(
         modifier = Modifier
@@ -101,6 +104,8 @@ internal fun PlaylistHubHeader(
             icon = Icons.Filled.Settings,
             contentDescription = stringResource(R.string.playlist_hub_settings_action),
             primary = false,
+            focusRequester = settingsFocusRequester,
+            requestInitialFocus = requestSettingsFocus,
             onClick = onOpenSettings,
         )
     }
@@ -112,11 +117,7 @@ internal fun ContinuePlaylistBanner(
     compact: Boolean,
     onClick: () -> Unit,
 ) {
-    val focusRequester = remember { FocusRequester() }
     var focused by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        runCatching { focusRequester.requestFocus() }
-    }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -124,7 +125,6 @@ internal fun ContinuePlaylistBanner(
             .heightIn(max = if (compact) 120.dp else 140.dp)
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.01f, liftPx = 0f)
-            .focusRequester(focusRequester)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
         color = if (focused) TvFocusPanel else MaterialTheme.colorScheme.surface,
@@ -261,13 +261,22 @@ private fun HubActionButton(
     primary: Boolean,
     onClick: () -> Unit,
     contentDescription: String? = label,
+    focusRequester: FocusRequester? = null,
+    requestInitialFocus: Boolean = false,
 ) {
     var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(requestInitialFocus, focusRequester) {
+        if (requestInitialFocus && focusRequester != null) {
+            withFrameNanos { }
+            runCatching { focusRequester.requestFocus() }
+        }
+    }
     Surface(
         modifier = Modifier
             .height(44.dp)
             .zIndex(if (focused) 1f else 0f)
             .tvFocusLift(focused = focused, scale = 1.012f, liftPx = 0f)
+            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
             .onFocusChanged { focused = it.isFocused }
             .tvClickable(onClick = onClick),
         color = when {

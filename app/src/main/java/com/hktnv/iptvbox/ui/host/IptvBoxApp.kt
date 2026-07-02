@@ -235,7 +235,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         screen = AppScreen.PLAYLISTS; showPlaylistEntry = true; playlistDetailId = null; applyDrawerEvent(NavigationDrawerEvent.CollapseForContentFocus)
     }
     fun openPlaylistLibrary() {
-        screen = AppScreen.PLAYLISTS; showPlaylistEntry = false; playlistDetailId = null; applyDrawerEvent(NavigationDrawerEvent.CollapseForContentFocus); requestContentFocus()
+        openPlaylistEntry()
     }
     fun navigate(target: AppScreen) {
         pendingNavigationStartedAt = SystemClock.elapsedRealtime()

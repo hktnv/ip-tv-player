@@ -129,6 +129,7 @@ private fun PlaylistHubContent(
     onOpenPlaylistDetails: (String) -> Unit,
 ) {
     val lastPlaylist = playlists.firstOrNull { it.id == selectedPlaylistId } ?: playlists.first()
+    val settingsFocusRequester = remember { FocusRequester() }
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -146,6 +147,8 @@ private fun PlaylistHubContent(
                     playlistCount = playlists.size,
                     onAddPlaylist = onAddPlaylist,
                     onOpenSettings = onOpenSettings,
+                    settingsFocusRequester = settingsFocusRequester,
+                    requestSettingsFocus = true,
                 )
             }
             item(key = "playlist-hub-continue", contentType = "continue") {
