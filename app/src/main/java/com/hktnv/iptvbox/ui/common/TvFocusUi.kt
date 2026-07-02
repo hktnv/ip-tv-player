@@ -88,6 +88,7 @@ internal fun Modifier.tvClickable(
     if (!enabled) return clickable(enabled = false, onClick = onClick)
     return composed {
         var longPressJob by remember { mutableStateOf<Job?>(null) }
+        var selectPressed by remember { mutableStateOf(false) }
         val clickGuard = remember { TvLongPressClickGuard() }
         val scope = rememberCoroutineScope()
         fun dispatchLongClick() {
@@ -100,8 +101,9 @@ internal fun Modifier.tvClickable(
         val pressHandler = Modifier.onPreviewKeyEvent { event ->
             if (!event.key.isSelectKey()) return@onPreviewKeyEvent false
             when {
-                event.type == KeyEventType.KeyDown &&
-                    onLongClick != null -> {
+                event.type == KeyEventType.KeyDown -> {
+                    selectPressed = true
+                    if (onLongClick == null) return@onPreviewKeyEvent true
                     if (event.isNativeLongSelectPress() && !clickGuard.longClickHandled) {
                         longPressJob?.cancel()
                         longPressJob = null
@@ -118,9 +120,11 @@ internal fun Modifier.tvClickable(
                     true
                 }
                 event.type == KeyEventType.KeyUp -> {
+                    val shouldClick = selectPressed
+                    selectPressed = false
                     longPressJob?.cancel()
                     longPressJob = null
-                    dispatchClickIfAllowed()
+                    if (shouldClick) dispatchClickIfAllowed()
                     true
                 }
                 else -> false

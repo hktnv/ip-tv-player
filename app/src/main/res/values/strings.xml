@@ -75,6 +75,11 @@
     <string name="empty_saved_body">Katalogdaki içerikleri seçtikçe bu ekran otomatik dolar.</string>
     <string name="banner_playlist_refreshing">%1$s yenileniyor</string>
     <string name="banner_playlist_refreshed">%1$s yenilendi: %2$d içerik</string>
+    <string name="banner_playlist_saving">Oynatma listesi kaydediliyor</string>
+    <string name="banner_playlist_loaded">%1$s yüklendi: %2$d içerik</string>
+    <string name="banner_broken_playlist_removed">Sorunlu liste kaldırıldı</string>
+    <string name="banner_favorite_added">Favorilere eklendi</string>
+    <string name="banner_favorite_removed">Favoriden çıkarıldı</string>
     <string name="playlist_load_failed">Liste yüklenemedi</string>
     <string name="playlist_refresh_error">Liste yenileme hatası</string>
     <string name="playlist_stage_downloading">İndiriliyor</string>

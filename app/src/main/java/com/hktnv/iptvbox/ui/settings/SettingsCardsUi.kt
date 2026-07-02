@@ -60,6 +60,7 @@ internal fun SettingsActionCard(
     onClick: () -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
+    var selectPressed by remember { mutableStateOf(false) }
     SettingsCardSurface(
         focused = focused,
         modifier = modifier
@@ -83,13 +84,22 @@ internal fun SettingsActionCard(
                         downFocusRequester.requestFocusSafely()
                     }
                     Key.Enter, Key.NumPadEnter, Key.DirectionCenter -> {
-                        if (event.type == KeyEventType.KeyUp) onClick()
+                        when (event.type) {
+                            KeyEventType.KeyDown -> selectPressed = true
+                            KeyEventType.KeyUp -> {
+                                if (selectPressed) onClick()
+                                selectPressed = false
+                            }
+                        }
                         true
                     }
                     else -> false
                 }
             }
-            .onFocusChanged { focused = it.isFocused }
+            .onFocusChanged {
+                focused = it.isFocused
+                if (!it.isFocused) selectPressed = false
+            }
             .focusable()
             .clickable(onClick = onClick),
     ) {

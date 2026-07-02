@@ -35,6 +35,7 @@ import com.hktnv.iptvbox.navigation.NavigationDrawerEvent
 import com.hktnv.iptvbox.navigation.NavigationDrawerFocusExpansion
 import com.hktnv.iptvbox.navigation.PlaylistContentScaffold
 import com.hktnv.iptvbox.navigation.shouldHandleSeriesBack
+import com.hktnv.iptvbox.navigation.shouldHandlePlaylistEntryBack
 import com.hktnv.iptvbox.navigation.shouldReturnToCatalogCategories
 import com.hktnv.iptvbox.player.PlayerScreen
 import com.hktnv.iptvbox.player.PlayerUiMode
@@ -57,6 +58,7 @@ internal fun IptvContentHost(
     currentHeaders: Map<String, String>,
     playerContextItems: List<CatalogItem>,
     playlists: List<LoadedPlaylist>,
+    playlistEntryReturnScreen: AppScreen?,
     catalogSnapshot: CatalogSnapshot?,
     catalogIndexLoading: Boolean,
     playerUiMode: PlayerUiMode,
@@ -91,6 +93,7 @@ internal fun IptvContentHost(
     onAddPlaylist: () -> Unit,
     onOpenPlaylistDetails: (String) -> Unit,
     onClosePlaylistDetails: () -> Unit,
+    onPlaylistEntryBack: () -> Unit,
     onUsePlaylist: (String) -> Unit,
     onOpenSettingsFromEntry: () -> Unit,
     onOpenCatalog: () -> Unit,
@@ -120,6 +123,15 @@ internal fun IptvContentHost(
     onDismissBanner: () -> Unit,
 ) {
     CompositionLocalProvider(LocalPerformanceMode provides performanceMode) {
+        BackHandler(
+            shouldHandlePlaylistEntryBack(
+                showPlaylistEntry = showPlaylistEntry,
+                playlistDetailId = playlistDetailId,
+                returnScreen = playlistEntryReturnScreen,
+            ),
+        ) {
+            onPlaylistEntryBack()
+        }
         BackHandler(
             shouldHandleSeriesBack(
                 screen = screen,
