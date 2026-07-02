@@ -76,6 +76,24 @@ class PlayerRelatedContentModelTest {
         assertTrue(model.options.first { it.label == "Komedi" }.selected)
     }
 
+    @Test
+    fun showsDiscoveryWhenCurrentCategoryOnlyContainsCurrentItem() {
+        val current = movie("movie-current", category = "Aksiyon")
+        val model = buildPlayerRelatedContentModel(
+            currentItem = current,
+            contextItems = listOf(
+                current,
+                movie("comedy-1", category = "Komedi"),
+                movie("drama-1", category = "Dram"),
+            ),
+            selectedOptionId = null,
+        )
+
+        assertTrue(model.hasContent)
+        assertEquals(emptyList<CatalogItem>(), model.items)
+        assertEquals(listOf("Aksiyon", "Komedi", "Dram"), model.options.map { it.label })
+    }
+
     private fun live(
         id: String,
         category: String,

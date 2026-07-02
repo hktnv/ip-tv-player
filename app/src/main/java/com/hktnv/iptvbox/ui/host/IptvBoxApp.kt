@@ -280,8 +280,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         return contextWindowForPlayer(sourceItems, item)
     }
     fun currentDiscoveryItemsForPlayer(item: CatalogItem): List<CatalogItem> {
-        val sourceItems = catalogSnapshot?.discoveryContextItemsFor(item).orEmpty()
-        return contextWindowForPlayer(sourceItems, item)
+        return catalogSnapshot?.discoveryContextItemsFor(item).orEmpty()
     }
 
     fun selectPlayerItem(item: CatalogItem) {

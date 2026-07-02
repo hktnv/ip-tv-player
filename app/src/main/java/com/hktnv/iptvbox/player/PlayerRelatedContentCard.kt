@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -76,21 +77,22 @@ internal fun PlayerRelatedContentCard(
                 )
             }
             Column(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp),
+                modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
                     text = item.displayTitle(),
+                    modifier = Modifier.height(34.dp),
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 12.sp,
+                    fontSize = if (focused) 12.sp else 11.sp,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1,
+                    maxLines = if (focused) 2 else 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = item.metaLine(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 10.sp,
+                    fontSize = 9.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

@@ -55,7 +55,8 @@ internal fun PlayerControlsOverlay(
     modifier: Modifier = Modifier,
 ) {
     val playFocusRequester = remember { FocusRequester() }
-    val relatedFocusRequester = remember { FocusRequester() }
+    val relatedOptionFocusRequester = remember { FocusRequester() }
+    val relatedCardFocusRequester = remember { FocusRequester() }
     var relatedExpanded by remember(currentItem.id) { mutableStateOf(false) }
     var selectedRelatedOptionId by remember(currentItem.id) { mutableStateOf<String?>(null) }
     val relatedModel = remember(currentItem.id, relatedContextItems, selectedRelatedOptionId) {
@@ -72,7 +73,13 @@ internal fun PlayerControlsOverlay(
     LaunchedEffect(relatedExpanded, relatedModel) {
         if (relatedExpanded && relatedModel.hasContent) {
             withFrameNanos { }
-            runCatching { relatedFocusRequester.requestFocus() }
+            runCatching {
+                if (relatedModel.options.isNotEmpty()) {
+                    relatedOptionFocusRequester.requestFocus()
+                } else {
+                    relatedCardFocusRequester.requestFocus()
+                }
+            }
         }
     }
     Box(
@@ -181,15 +188,24 @@ internal fun PlayerControlsOverlay(
             PlayerRelatedContentRail(
                 model = relatedModel,
                 expanded = relatedExpanded,
-                initialFocusRequester = relatedFocusRequester,
+                optionFocusRequester = relatedOptionFocusRequester,
+                cardFocusRequester = relatedCardFocusRequester,
                 onExpand = {
                     onUserInteraction()
                     relatedExpanded = true
                 },
-                onCollapse = {
+                onReturnToControls = {
                     onUserInteraction()
                     relatedExpanded = false
                     runCatching { playFocusRequester.requestFocus() }
+                },
+                onRequestOptionsFocus = {
+                    onUserInteraction()
+                    runCatching { relatedOptionFocusRequester.requestFocus() }
+                },
+                onRequestCardsFocus = {
+                    onUserInteraction()
+                    runCatching { relatedCardFocusRequester.requestFocus() }
                 },
                 onOptionSelected = {
                     onUserInteraction()

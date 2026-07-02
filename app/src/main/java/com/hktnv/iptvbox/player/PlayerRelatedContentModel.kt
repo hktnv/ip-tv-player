@@ -14,7 +14,7 @@ internal data class PlayerRelatedContentModel(
     val options: List<PlayerRelatedContentOption>,
     val items: List<CatalogItem>,
 ) {
-    val hasContent: Boolean = items.isNotEmpty()
+    val hasContent: Boolean = items.isNotEmpty() || options.size > 1
 }
 
 internal fun buildPlayerRelatedContentModel(
