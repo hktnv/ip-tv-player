@@ -73,7 +73,44 @@ class PlayerRelatedContentModelTest {
         )
 
         assertEquals((1..16).map { "comedy-$it" }, model.items.map { it.id })
+        assertEquals(18, model.totalItemCount)
+        assertTrue(model.hasMoreItems)
         assertTrue(model.options.first { it.label == "Komedi" }.selected)
+    }
+
+    @Test
+    fun categoryModelLoadsSecondBatchWhenLimitIncreases() {
+        val current = movie("movie-current", category = "Yeni Eklenen Filmler")
+        val categoryItems = (1..45).map {
+            movie("movie-$it", category = "Yeni Eklenen Filmler", order = it)
+        }
+        val model = buildPlayerRelatedContentModel(
+            currentItem = current,
+            contextItems = listOf(current) + categoryItems,
+            selectedOptionId = null,
+            itemLimit = 32,
+        )
+
+        assertEquals(45, model.totalItemCount)
+        assertEquals(32, model.items.size)
+        assertEquals("movie-32", model.items.last().id)
+        assertTrue(model.hasMoreItems)
+    }
+
+    @Test
+    fun normalizedCategoryMatchingKeepsForeignLiveCategoriesPopulated() {
+        val current = live("canada-current", category = " Canada ")
+        val canadaChannels = (1..118).map { live("canada-$it", category = "Canada", order = it) }
+        val model = buildPlayerRelatedContentModel(
+            currentItem = current,
+            contextItems = listOf(current) + canadaChannels + listOf(live("news-1", category = "News")),
+            selectedOptionId = "category:canada",
+        )
+
+        assertEquals(118, model.totalItemCount)
+        assertEquals(16, model.items.size)
+        assertFalse(model.items.any { it.id == current.id })
+        assertTrue(model.items.all { it.category?.trim() == "Canada" })
     }
 
     @Test
@@ -97,6 +134,7 @@ class PlayerRelatedContentModelTest {
     private fun live(
         id: String,
         category: String,
+        order: Int = 0,
     ): CatalogItem {
         return CatalogItem(
             id = id,
@@ -105,6 +143,7 @@ class PlayerRelatedContentModelTest {
             title = "Kanal $id",
             streamUrl = "https://example.test/$id",
             category = category,
+            providerOrder = order,
         )
     }
 

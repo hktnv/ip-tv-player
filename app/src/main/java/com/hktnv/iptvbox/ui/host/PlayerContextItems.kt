@@ -2,6 +2,8 @@ package com.hktnv.iptvbox.ui.host
 
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentKind
+import com.hktnv.iptvbox.data.catalog.CatalogStore
+import com.hktnv.iptvbox.data.catalog.episodes
 import com.hktnv.iptvbox.model.CatalogTab
 import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
 
@@ -50,6 +52,24 @@ internal fun CatalogSnapshot.discoveryContextItemsFor(item: CatalogItem): List<C
         }
         else -> items(tab)
     }.ifEmpty { playbackContextItemsFor(item) }
+}
+
+internal fun CatalogStore.discoveryContextItemsForPlayer(
+    playlistId: String,
+    item: CatalogItem,
+): List<CatalogItem> {
+    val tab = item.tabForPlayerContext()
+    return when (item.kind) {
+        ContentKind.EPISODE -> {
+            val seriesTitle = item.seriesTitle?.takeIf { !it.isNullOrBlank() }
+            if (seriesTitle != null) {
+                episodes(playlistId, seriesTitle, seasonNumber = null, limit = Int.MAX_VALUE)
+            } else {
+                loadItems(playlistId, tab, category = null, limit = Int.MAX_VALUE)
+            }
+        }
+        else -> loadItems(playlistId, tab, category = null, limit = Int.MAX_VALUE)
+    }
 }
 
 internal fun CatalogItem.tabForPlayerContext(): CatalogTab {

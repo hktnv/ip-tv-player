@@ -1,7 +1,6 @@
 package com.hktnv.iptvbox.player
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +20,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -44,15 +51,28 @@ internal fun PlayerRelatedContentCard(
     width: Dp,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onDirectionalKey: (Key) -> Boolean = { false },
 ) {
     var focused by remember { mutableStateOf(false) }
     Surface(
         modifier = modifier
             .width(width)
             .tvFocusLift(focused = focused, scale = 1.025f, liftPx = -3f)
+            .focusProperties {
+                left = FocusRequester.Cancel
+                right = FocusRequester.Cancel
+            }
             .onFocusChanged { focused = it.isFocused }
-            .focusable()
-            .tvClickable(onClick = onClick),
+            .onPreviewKeyEvent { event ->
+                event.type == KeyEventType.KeyDown && onDirectionalKey(event.key)
+            }
+            .tvClickable(onClick = onClick)
+            .onPreviewKeyEvent { event ->
+                event.type == KeyEventType.KeyDown && onDirectionalKey(event.key)
+            }
+            .onKeyEvent { event ->
+                event.type == KeyEventType.KeyDown && onDirectionalKey(event.key)
+            },
         color = MaterialTheme.colorScheme.surface.copy(alpha = if (focused) 0.78f else 0.52f),
         shape = RoundedCornerShape(mediaCardRadius),
         border = BorderStroke(

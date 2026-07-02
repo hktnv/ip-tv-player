@@ -105,6 +105,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     var catalogSnapshot by remember { mutableStateOf<CatalogSnapshot?>(null) }; var catalogIndexLoading by remember { mutableStateOf(false) }
     var startupStreamApplied by rememberSaveable { mutableStateOf(false) }
     var catalogRefreshToken by remember { mutableStateOf(0) }
+    val playerDiscoveryCache = remember { mutableMapOf<String, List<CatalogItem>>() }
     var firstDrawRecorded by remember { mutableStateOf(false) }; var updateCheckStarted by rememberSaveable { mutableStateOf(false) }
     var updateState by remember { mutableStateOf<AppUpdateUiState>(AppUpdateUiState.Hidden) }; var pendingNavigationStartedAt by remember { mutableStateOf<Long?>(null) }
     var contentFocusRequest by remember { mutableStateOf(0) }; var initialContentFocusApplied by rememberSaveable { mutableStateOf(false) }
@@ -158,6 +159,9 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val favoriteSignature = favoriteIds.joinToString("|")
     val recentSignature = recentIds.joinToString("|")
     val selectedContentCategory = if (showCatalogCategoryLanding) null else selectedCategory
+    LaunchedEffect(catalogRefreshToken, selectedPlaylistId) {
+        playerDiscoveryCache.clear()
+    }
     CatalogSnapshotEffect(
         selectedPlaylist = selectedPlaylist, showPlaylistEntry = showPlaylistEntry, selectedTab = selectedTab,
         selectedCategory = selectedContentCategory, selectedSeriesTitle = selectedSeriesTitle, selectedSeasonNumber = selectedSeasonNumber,
@@ -280,7 +284,17 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         return contextWindowForPlayer(sourceItems, item)
     }
     fun currentDiscoveryItemsForPlayer(item: CatalogItem): List<CatalogItem> {
-        return catalogSnapshot?.discoveryContextItemsFor(item).orEmpty()
+        val playlistId = selectedPlaylist?.id ?: catalogSnapshot?.playlistId ?: item.sourceId
+        val cacheKey = playerDiscoveryCacheKey(playlistId, item)
+        return playerDiscoveryCache.getOrPut(cacheKey) {
+            runCatching {
+                catalogStore.discoveryContextItemsForPlayer(playlistId, item)
+            }.getOrElse {
+                catalogSnapshot?.discoveryContextItemsFor(item).orEmpty()
+            }.ifEmpty {
+                catalogSnapshot?.discoveryContextItemsFor(item).orEmpty()
+            }
+        }
     }
 
     fun selectPlayerItem(item: CatalogItem) {
@@ -489,4 +503,9 @@ private fun StartupBehavior.screenForStartup(restoredScreen: AppScreen): AppScre
         StartupBehavior.LastStream -> AppScreen.HOME
         StartupBehavior.LastScreen -> restoredScreen
     }
+}
+
+private fun playerDiscoveryCacheKey(playlistId: String, item: CatalogItem): String {
+    val seriesKey = item.seriesTitle.orEmpty()
+    return "$playlistId|${item.tabForPlayerContext()}|$seriesKey"
 }

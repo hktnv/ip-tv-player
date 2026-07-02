@@ -1,5 +1,6 @@
 package com.hktnv.iptvbox.player
 
+import com.hktnv.iptvbox.core.common.SearchNormalizer
 import com.hktnv.iptvbox.core.model.CatalogItem
 import com.hktnv.iptvbox.core.model.ContentKind
 
@@ -13,8 +14,10 @@ internal data class PlayerRelatedContentOption(
 internal data class PlayerRelatedContentModel(
     val options: List<PlayerRelatedContentOption>,
     val items: List<CatalogItem>,
+    val totalItemCount: Int = items.size,
 ) {
     val hasContent: Boolean = items.isNotEmpty() || options.size > 1
+    val hasMoreItems: Boolean = items.size < totalItemCount
 }
 
 internal fun buildPlayerRelatedContentModel(
@@ -75,10 +78,11 @@ private fun buildEpisodeRelatedContent(
     }
     val items = episodes
         .filter { (it.seasonNumber ?: 1) == selectedSeason && it.id != currentItem.id }
-        .take(itemLimit)
+    val visibleItems = items.take(itemLimit)
     return PlayerRelatedContentModel(
         options = options.markSelected(optionId),
-        items = items,
+        items = visibleItems,
+        totalItemCount = items.size,
     )
 }
 
@@ -90,16 +94,20 @@ private fun buildCategoryRelatedContent(
 ): PlayerRelatedContentModel {
     val compatibleItems = uniqueContextItems(contextItems, currentItem)
         .filter { it.kind == currentItem.kind && it.streamUrl.isNotBlank() }
-    val categories = compatibleItems
-        .map { it.categoryLabel() }
-        .distinct()
+    val categoriesByKey = linkedMapOf<String, String>()
+    compatibleItems.forEach { item ->
+        val category = item.categoryLabel()
+        categoriesByKey.putIfAbsent(category.categoryKey(), category)
+    }
+    val categories = categoriesByKey.values.toList()
     if (categories.isEmpty()) return PlayerRelatedContentModel(options = emptyList(), items = emptyList())
 
     val currentCategory = currentItem.categoryLabel()
     val selectedCategory = selectedOptionId?.removePrefix(CategoryOptionPrefix)
-        ?.let { selectedKey -> categories.firstOrNull { it.categoryKey() == selectedKey } }
-        ?: currentCategory.takeIf { it in categories }
+        ?.let(categoriesByKey::get)
+        ?: categoriesByKey[currentCategory.categoryKey()]
         ?: categories.first()
+    val selectedCategoryKey = selectedCategory.categoryKey()
     val optionId = categoryOptionId(selectedCategory)
     val options = categories.map { category ->
         PlayerRelatedContentOption(
@@ -109,12 +117,13 @@ private fun buildCategoryRelatedContent(
         )
     }
     val items = compatibleItems
-        .filter { it.categoryLabel() == selectedCategory && it.id != currentItem.id }
+        .filter { it.categoryLabel().categoryKey() == selectedCategoryKey && it.id != currentItem.id }
         .sortedWith(compareBy<CatalogItem> { it.providerOrder }.thenBy { it.title })
-        .take(itemLimit)
+    val visibleItems = items.take(itemLimit)
     return PlayerRelatedContentModel(
         options = options.markSelected(optionId),
-        items = items,
+        items = visibleItems,
+        totalItemCount = items.size,
     )
 }
 
@@ -142,10 +151,12 @@ private fun CatalogItem.seriesContextKey(): String {
 }
 
 private fun CatalogItem.categoryLabel(): String {
-    return category?.trim().orEmpty()
+    return category?.trim()?.takeIf { it.isNotBlank() } ?: DefaultCategoryLabel
 }
 
-private fun String.categoryKey(): String = trim().lowercase()
+private fun String.categoryKey(): String {
+    return SearchNormalizer.normalize(this).ifBlank { trim().lowercase() }
+}
 
 private fun seasonOptionId(season: Int): String = "$SeasonOptionPrefix$season"
 
@@ -154,3 +165,4 @@ private fun categoryOptionId(category: String): String = "$CategoryOptionPrefix$
 private const val RelatedContentItemLimit = 16
 private const val SeasonOptionPrefix = "season:"
 private const val CategoryOptionPrefix = "category:"
+private const val DefaultCategoryLabel = "Genel"

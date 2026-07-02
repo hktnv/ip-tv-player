@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -59,11 +60,15 @@ internal fun PlayerControlsOverlay(
     val relatedCardFocusRequester = remember { FocusRequester() }
     var relatedExpanded by remember(currentItem.id) { mutableStateOf(false) }
     var selectedRelatedOptionId by remember(currentItem.id) { mutableStateOf<String?>(null) }
-    val relatedModel = remember(currentItem.id, relatedContextItems, selectedRelatedOptionId) {
+    var relatedItemLimit by remember(currentItem.id, selectedRelatedOptionId) {
+        mutableIntStateOf(RelatedContentInitialBatchSize)
+    }
+    val relatedModel = remember(currentItem.id, relatedContextItems, selectedRelatedOptionId, relatedItemLimit) {
         buildPlayerRelatedContentModel(
             currentItem = currentItem,
             contextItems = relatedContextItems,
             selectedOptionId = selectedRelatedOptionId,
+            itemLimit = relatedItemLimit,
         )
     }
     LaunchedEffect(Unit) {
@@ -207,6 +212,10 @@ internal fun PlayerControlsOverlay(
                     onUserInteraction()
                     runCatching { relatedCardFocusRequester.requestFocus() }
                 },
+                onLoadMoreItems = {
+                    onUserInteraction()
+                    relatedItemLimit += RelatedContentPageSize
+                },
                 onOptionSelected = {
                     onUserInteraction()
                     selectedRelatedOptionId = it
@@ -220,3 +229,6 @@ internal fun PlayerControlsOverlay(
         }
     }
 }
+
+private const val RelatedContentInitialBatchSize = 16
+private const val RelatedContentPageSize = 16
