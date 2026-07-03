@@ -10,7 +10,7 @@ class PlayerBackPressGuardTest {
     fun duplicateBackAfterControlsCloseIsSuppressedWithinWindow() {
         val guard = PlayerBackPressGuard(duplicateWindowMs = 350L)
 
-        guard.markOverlayBackHandled(nowMs = 1_000L)
+        guard.markControlsBackHandled(nowMs = 1_000L)
 
         assertTrue(guard.shouldSuppressExitBack(nowMs = 1_050L))
         assertTrue(guard.shouldSuppressExitBack(nowMs = 1_060L))
@@ -21,7 +21,7 @@ class PlayerBackPressGuardTest {
     fun laterBackAfterControlsCloseCanOpenExitFlow() {
         val guard = PlayerBackPressGuard(duplicateWindowMs = 350L)
 
-        guard.markOverlayBackHandled(nowMs = 1_000L)
+        guard.markControlsBackHandled(nowMs = 1_000L)
 
         assertFalse(guard.shouldSuppressExitBack(nowMs = 1_400L))
     }

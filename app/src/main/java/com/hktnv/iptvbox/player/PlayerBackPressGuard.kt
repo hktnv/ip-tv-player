@@ -5,7 +5,7 @@ internal class PlayerBackPressGuard(
 ) {
     private var suppressExitBackUntilMs: Long = Long.MIN_VALUE
 
-    fun markOverlayBackHandled(nowMs: Long) {
+    fun markControlsBackHandled(nowMs: Long) {
         suppressExitBackUntilMs = nowMs + duplicateWindowMs
     }
 

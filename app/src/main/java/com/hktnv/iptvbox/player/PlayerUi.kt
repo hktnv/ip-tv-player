@@ -226,7 +226,6 @@ internal fun PlayerScreen(
         if (result.state == PlayerInputState.ControlsVisible) {
             zappingInfoVisible = false
             controlsRevision++
-            backPressGuard.markOverlayBackHandled(SystemClock.uptimeMillis())
         } else if (result.state != PlayerInputState.Watching) {
             zappingInfoVisible = false
         }
@@ -274,7 +273,7 @@ internal fun PlayerScreen(
             command == PlayerRemoteCommand.Back &&
             inputState == PlayerInputState.ControlsVisible
         ) {
-            backPressGuard.markOverlayBackHandled(SystemClock.uptimeMillis())
+            backPressGuard.markControlsBackHandled(SystemClock.uptimeMillis())
         } else if (
             command == PlayerRemoteCommand.Back &&
             inputState == PlayerInputState.Watching &&
@@ -292,7 +291,7 @@ internal fun PlayerScreen(
     fun handleBackPressed() {
         val nowMs = SystemClock.uptimeMillis()
         if (inputState == PlayerInputState.ControlsVisible) {
-            backPressGuard.markOverlayBackHandled(nowMs)
+            backPressGuard.markControlsBackHandled(nowMs)
         } else if (inputState == PlayerInputState.Watching && backPressGuard.shouldSuppressExitBack(nowMs)) {
             return
         }
@@ -354,7 +353,6 @@ internal fun PlayerScreen(
                 onInputStateChange = { nextState -> inputState = nextState },
                 onControlsShown = {
                     controlsRevision++
-                    backPressGuard.markOverlayBackHandled(SystemClock.uptimeMillis())
                 },
             )
         }
