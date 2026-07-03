@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -67,11 +67,13 @@ internal fun HomeContentRow(
     onFocusedInfoChanged: (FocusedContentInfo?) -> Unit = {},
 ) {
     var focusedIndex by remember(items) { mutableStateOf(0) }
+    val firstItemFocusRequester = remember { FocusRequester() }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         HomeRailHeader(
             title = title,
             onOpenAll = onOpenAll,
             focusRequester = headerFocusRequester,
+            firstItemFocusRequester = firstItemFocusRequester.takeIf { items.isNotEmpty() },
             onRequestSideMenu = onRequestSideMenu,
         )
         if (items.isEmpty()) {
@@ -85,8 +87,11 @@ internal fun HomeContentRow(
                 horizontalArrangement = Arrangement.spacedBy(mediaCardSpacing),
                 contentPadding = PaddingValues(horizontal = 2.dp),
             ) {
-                items(items, key = { it.id }, contentType = { it.kind.name }) { item ->
-                    val index = items.indexOf(item)
+                itemsIndexed(
+                    items,
+                    key = { _, item -> item.id },
+                    contentType = { _, item -> item.kind.name },
+                ) { index, item ->
                     Box(
                         modifier = Modifier.homeRailItemVerticalNavigation(
                             headerFocusRequester = headerFocusRequester,
@@ -98,6 +103,7 @@ internal fun HomeContentRow(
                             onClick = { onOpenItem(item) },
                             favorite = item.id in favoriteIds,
                             onLongClick = { onShowItemOptions(item) },
+                            modifier = if (index == 0) Modifier.focusRequester(firstItemFocusRequester) else Modifier,
                             fixedWidth = cardWidth,
                             fixedRatio = cardRatio,
                             onFocused = {
@@ -128,11 +134,13 @@ internal fun HomeSeriesRow(
     onFocusedInfoChanged: (FocusedContentInfo?) -> Unit = {},
 ) {
     var focusedIndex by remember(groups) { mutableStateOf(0) }
+    val firstItemFocusRequester = remember { FocusRequester() }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         HomeRailHeader(
             title = title,
             onOpenAll = onOpenAll,
             focusRequester = headerFocusRequester,
+            firstItemFocusRequester = firstItemFocusRequester.takeIf { groups.isNotEmpty() },
             onRequestSideMenu = onRequestSideMenu,
         )
         if (groups.isEmpty()) {
@@ -146,8 +154,11 @@ internal fun HomeSeriesRow(
                 horizontalArrangement = Arrangement.spacedBy(mediaCardSpacing),
                 contentPadding = PaddingValues(horizontal = 2.dp),
             ) {
-                items(groups, key = { it.id }, contentType = { "series-card" }) { group ->
-                    val index = groups.indexOf(group)
+                itemsIndexed(
+                    groups,
+                    key = { _, group -> group.id },
+                    contentType = { _, _ -> "series-card" },
+                ) { index, group ->
                     Box(
                         modifier = Modifier.homeRailItemVerticalNavigation(
                             headerFocusRequester = headerFocusRequester,
@@ -157,7 +168,9 @@ internal fun HomeSeriesRow(
                         SeriesGroupCard(
                             group = group,
                             onClick = { onOpenSeries(group.title) },
-                            modifier = Modifier.width(MediaCardCompactWidth),
+                            modifier = Modifier
+                                .width(MediaCardCompactWidth)
+                                .then(if (index == 0) Modifier.focusRequester(firstItemFocusRequester) else Modifier),
                             onFocused = {
                                 focusedIndex = index
                                 onFocusedInfoChanged(group.focusedContentInfo())
@@ -178,6 +191,7 @@ internal fun HomeRailHeader(
     title: String,
     onOpenAll: () -> Unit,
     focusRequester: FocusRequester,
+    firstItemFocusRequester: FocusRequester?,
     onRequestSideMenu: () -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
@@ -186,9 +200,14 @@ internal fun HomeRailHeader(
             .fillMaxWidth()
             .focusRequester(focusRequester)
             .onPreviewKeyEvent { event ->
-                event.type == KeyEventType.KeyDown &&
-                    event.key == Key.DirectionLeft &&
-                    onRequestSideMenu().let { true }
+                if (event.type != KeyEventType.KeyDown) {
+                    return@onPreviewKeyEvent false
+                }
+                when (event.key) {
+                    Key.DirectionDown -> firstItemFocusRequester.requestFocusSafely()
+                    Key.DirectionLeft -> onRequestSideMenu().let { true }
+                    else -> false
+                }
             }
             .tvFocusLift(focused = focused, scale = 1.01f, liftPx = -3f)
             .onFocusChanged { focused = it.isFocused }
