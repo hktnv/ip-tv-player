@@ -123,7 +123,6 @@ import com.hktnv.iptvbox.model.PlaylistImportProgress
 import com.hktnv.iptvbox.model.LocalPerformanceMode
 import com.hktnv.iptvbox.model.ScreenBottomPadding
 import com.hktnv.iptvbox.ui.common.EmptyState
-import com.hktnv.iptvbox.ui.common.LoadingPanel
 import com.hktnv.iptvbox.ui.common.ScreenHeader
 import com.hktnv.iptvbox.ui.media.FocusedContentInfo
 import com.hktnv.iptvbox.ui.media.FocusedContentInfoPanel
@@ -181,7 +180,11 @@ internal fun HomeScreen(
     val liveRailFocus = remember { FocusRequester() }
     val seriesRailFocus = remember { FocusRequester() }
     val moviesRailFocus = remember { FocusRequester() }
-    val showFavoritesRail = favoriteItems.isNotEmpty()
+    val homeLoading = snapshot == null || catalogIndexLoading
+    fun placeholderSlots(currentCount: Int): Int {
+        return if (homeLoading) (previewLimit - currentCount).coerceAtLeast(0) else 0
+    }
+    val showFavoritesRail = favoriteItems.isNotEmpty() || (homeLoading && favoriteIds.isNotEmpty())
     val afterRecentFocus = if (showFavoritesRail) favoritesRailFocus else latestRailFocus
     val favoriteIdSet = remember(favoriteIds.joinToString("|")) { favoriteIds.toSet() }
     var focusedContentInfo by remember { mutableStateOf<FocusedContentInfo?>(null) }
@@ -203,11 +206,6 @@ internal fun HomeScreen(
                 )
             }
         } else {
-            if (snapshot == null) {
-                item(key = "catalog-loading", contentType = "loading") {
-                    LoadingPanel(stringResource(R.string.catalog_preparing))
-                }
-            }
             item(key = "recent-row", contentType = "media-row") {
                 HomeContentRow(
                     title = "Son İzlenenler",
@@ -221,6 +219,11 @@ internal fun HomeScreen(
                     onRequestSideMenu = onRequestSideMenu,
                     favoriteIds = favoriteIdSet,
                     cardRatio = 0.78f,
+                    placeholderCount = if (recentCount > 0) {
+                        placeholderSlots(recentItems.take(previewLimit).size)
+                    } else {
+                        0
+                    },
                     onFocusedInfoChanged = { focusedContentInfo = it },
                 )
             }
@@ -237,6 +240,7 @@ internal fun HomeScreen(
                     nextRailFocusRequester = latestRailFocus,
                     onRequestSideMenu = onRequestSideMenu,
                     favoriteIds = favoriteIdSet,
+                    placeholderCount = placeholderSlots(favoriteItems.take(previewLimit).size),
                     onFocusedInfoChanged = { focusedContentInfo = it },
                 )
                 }
@@ -253,6 +257,7 @@ internal fun HomeScreen(
                     nextRailFocusRequester = moviesRailFocus,
                     onRequestSideMenu = onRequestSideMenu,
                     favoriteIds = favoriteIdSet,
+                    placeholderCount = placeholderSlots(latestPreview.size),
                     onFocusedInfoChanged = { focusedContentInfo = it },
                 )
             }
@@ -268,6 +273,7 @@ internal fun HomeScreen(
                     nextRailFocusRequester = liveRailFocus,
                     onRequestSideMenu = onRequestSideMenu,
                     favoriteIds = favoriteIdSet,
+                    placeholderCount = placeholderSlots(moviePreview.size),
                     onFocusedInfoChanged = { focusedContentInfo = it },
                 )
             }
@@ -283,6 +289,7 @@ internal fun HomeScreen(
                     nextRailFocusRequester = seriesRailFocus,
                     onRequestSideMenu = onRequestSideMenu,
                     favoriteIds = favoriteIdSet,
+                    placeholderCount = placeholderSlots(livePreview.size),
                     onFocusedInfoChanged = { focusedContentInfo = it },
                 )
             }
@@ -296,6 +303,7 @@ internal fun HomeScreen(
                     headerFocusRequester = seriesRailFocus,
                     nextRailFocusRequester = null,
                     onRequestSideMenu = onRequestSideMenu,
+                    placeholderCount = placeholderSlots(seriesPreview.size),
                     onFocusedInfoChanged = { focusedContentInfo = it },
                 )
             }

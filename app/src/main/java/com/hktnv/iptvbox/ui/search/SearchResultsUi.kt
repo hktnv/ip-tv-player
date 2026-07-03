@@ -51,6 +51,7 @@ import com.hktnv.iptvbox.ui.media.ContentArtwork
 import com.hktnv.iptvbox.ui.media.FavoriteIndicator
 import com.hktnv.iptvbox.ui.media.FocusedContentInfo
 import com.hktnv.iptvbox.ui.media.HorizontalMediaCardGrid
+import com.hktnv.iptvbox.ui.media.SearchResultPlaceholder
 import com.hktnv.iptvbox.ui.media.cleanUiTitle
 
 private val SearchResultRowHeight = 118.dp
@@ -97,6 +98,26 @@ internal fun SearchResultsList(
             compact = compact,
             modifier = itemModifier,
             onFocusedInfoChanged = onFocusedInfoChanged,
+        )
+    }
+}
+
+@Composable
+internal fun SearchResultsPlaceholderList(
+    columnCount: Int,
+    compact: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    HorizontalMediaCardGrid(
+        items = (0 until 8).toList(),
+        itemKey = { "search-placeholder-$it" },
+        modifier = modifier,
+        columnCount = columnCount,
+        contentType = { "search-placeholder" },
+    ) { _, _, itemModifier ->
+        SearchResultPlaceholder(
+            compact = compact,
+            modifier = itemModifier,
         )
     }
 }

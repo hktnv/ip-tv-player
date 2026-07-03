@@ -17,7 +17,6 @@ import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
 import com.hktnv.iptvbox.model.LoadedPlaylist
 import com.hktnv.iptvbox.ui.common.EmptyCatalog
 import com.hktnv.iptvbox.ui.common.EmptyState
-import com.hktnv.iptvbox.ui.common.LoadingPanel
 import com.hktnv.iptvbox.ui.media.ContentGrid
 import com.hktnv.iptvbox.ui.media.itemsByIds
 
@@ -49,8 +48,18 @@ internal fun SavedItemsScreen(
             .fillMaxSize()
             .padding(horizontal = contentPadding),
     ) {
-        if (snapshot == null) {
-            LoadingPanel(stringResource(R.string.catalog_preparing), Modifier.padding(top = 18.dp))
+        if (snapshot == null || catalogIndexLoading) {
+            ContentGrid(
+                items = items,
+                favoriteIds = favoriteIds,
+                onOpenItem = onOpenItem,
+                onShowItemOptions = onShowItemOptions,
+                modifier = Modifier.weight(1f),
+                requestInitialFocus = initialFocusRequester != null && items.isNotEmpty(),
+                initialFocusRequester = initialFocusRequester,
+                onRequestSideMenu = onRequestSideMenu,
+                placeholderCount = (12 - items.size).coerceAtLeast(0),
+            )
         } else if (items.isEmpty()) {
             EmptyState(
                 title = emptyText,
@@ -103,8 +112,18 @@ internal fun LatestItemsScreen(
             .fillMaxSize()
             .padding(horizontal = contentPadding),
     ) {
-        if (snapshot == null) {
-            LoadingPanel(stringResource(R.string.catalog_preparing), Modifier.padding(top = 18.dp))
+        if (snapshot == null || catalogIndexLoading) {
+            ContentGrid(
+                items = items,
+                favoriteIds = favoriteIds,
+                onOpenItem = onOpenItem,
+                onShowItemOptions = onShowItemOptions,
+                modifier = Modifier.weight(1f),
+                requestInitialFocus = initialFocusRequester != null && items.isNotEmpty(),
+                initialFocusRequester = initialFocusRequester,
+                onRequestSideMenu = onRequestSideMenu,
+                placeholderCount = (12 - items.size).coerceAtLeast(0),
+            )
         } else if (items.isEmpty()) {
             EmptyState(
                 title = stringResource(R.string.empty_latest_title),

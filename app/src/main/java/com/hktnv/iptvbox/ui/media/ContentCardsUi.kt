@@ -47,8 +47,8 @@ import com.hktnv.iptvbox.ui.common.TvRestingBorder
 
 private val MediaCardShape = RoundedCornerShape(mediaCardRadius)
 internal val MediaCardCompactWidth = 110.dp
-private const val MediaCardArtworkRatio = 0.78f
-private val MediaCardRailInfoHeight = 64.dp
+internal const val MediaCardArtworkRatio = 0.78f
+internal val MediaCardRailInfoHeight = 64.dp
 private val MediaCardGridInfoHeight = MediaCardRailInfoHeight
 
 internal data class CompactContentCardChrome(

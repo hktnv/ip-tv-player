@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
@@ -45,7 +46,9 @@ import com.hktnv.iptvbox.ui.common.tvFocusLift
 import com.hktnv.iptvbox.ui.common.TvFocusPanel
 import com.hktnv.iptvbox.ui.common.TvRestingBorder
 import com.hktnv.iptvbox.ui.media.CompactContentCard
+import com.hktnv.iptvbox.ui.media.ContentCardPlaceholder
 import com.hktnv.iptvbox.ui.media.FocusedContentInfo
+import com.hktnv.iptvbox.ui.media.MediaCardArtworkRatio
 import com.hktnv.iptvbox.ui.media.MediaCardCompactWidth
 import com.hktnv.iptvbox.ui.media.SeriesGroupCard
 import com.hktnv.iptvbox.ui.media.focusedContentInfo
@@ -64,6 +67,7 @@ internal fun HomeContentRow(
     favoriteIds: Set<String> = emptySet(),
     cardWidth: Dp? = null,
     cardRatio: Float? = null,
+    placeholderCount: Int = 0,
     onFocusedInfoChanged: (FocusedContentInfo?) -> Unit = {},
 ) {
     var focusedIndex by remember(items) { mutableStateOf(0) }
@@ -76,7 +80,7 @@ internal fun HomeContentRow(
             firstItemFocusRequester = firstItemFocusRequester.takeIf { items.isNotEmpty() },
             onRequestSideMenu = onRequestSideMenu,
         )
-        if (items.isEmpty()) {
+        if (items.isEmpty() && placeholderCount <= 0) {
             Text(emptyText, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
         } else {
             LazyRow(
@@ -116,6 +120,16 @@ internal fun HomeContentRow(
                         )
                     }
                 }
+                items(
+                    count = placeholderCount,
+                    key = { "home-content-placeholder-$title-$it" },
+                    contentType = { "home-content-placeholder" },
+                ) {
+                    ContentCardPlaceholder(
+                        fixedWidth = cardWidth,
+                        fixedRatio = cardRatio,
+                    )
+                }
             }
         }
     }
@@ -131,6 +145,7 @@ internal fun HomeSeriesRow(
     headerFocusRequester: FocusRequester,
     nextRailFocusRequester: FocusRequester?,
     onRequestSideMenu: () -> Unit,
+    placeholderCount: Int = 0,
     onFocusedInfoChanged: (FocusedContentInfo?) -> Unit = {},
 ) {
     var focusedIndex by remember(groups) { mutableStateOf(0) }
@@ -143,7 +158,7 @@ internal fun HomeSeriesRow(
             firstItemFocusRequester = firstItemFocusRequester.takeIf { groups.isNotEmpty() },
             onRequestSideMenu = onRequestSideMenu,
         )
-        if (groups.isEmpty()) {
+        if (groups.isEmpty() && placeholderCount <= 0) {
             Text(emptyText, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
         } else {
             LazyRow(
@@ -180,6 +195,16 @@ internal fun HomeSeriesRow(
                             },
                         )
                     }
+                }
+                items(
+                    count = placeholderCount,
+                    key = { "home-series-placeholder-$title-$it" },
+                    contentType = { "home-series-placeholder" },
+                ) {
+                    ContentCardPlaceholder(
+                        fixedWidth = MediaCardCompactWidth,
+                        fixedRatio = MediaCardArtworkRatio,
+                    )
                 }
             }
         }

@@ -25,7 +25,6 @@ import com.hktnv.iptvbox.ui.catalog.category.categoryCards
 import com.hktnv.iptvbox.ui.catalog.series.SeriesCatalogContent
 import com.hktnv.iptvbox.ui.common.EmptyCatalog
 import com.hktnv.iptvbox.ui.common.EmptyState
-import com.hktnv.iptvbox.ui.common.LoadingPanel
 import com.hktnv.iptvbox.ui.common.WarningText
 import com.hktnv.iptvbox.ui.media.ContentGrid
 import com.hktnv.iptvbox.ui.media.FocusedContentInfo
@@ -76,13 +75,33 @@ internal fun CatalogScreen(
             WarningText(playlist.warnings.first())
         }
         when {
-            snapshot == null -> LoadingPanel(
-                text = stringResource(R.string.catalog_preparing),
-                modifier = Modifier.padding(top = 18.dp),
+            snapshot == null -> ContentGrid(
+                items = emptyList(),
+                favoriteIds = emptyList(),
+                onOpenItem = {},
+                onShowItemOptions = {},
+                modifier = Modifier.weight(1f),
+                placeholderCount = 12,
             )
-            catalogIndexLoading -> LoadingPanel(
-                text = stringResource(R.string.catalog_preparing),
-                modifier = Modifier.padding(top = 18.dp),
+            catalogIndexLoading && selectedTab != CatalogTab.SERIES && !showCategoryLanding -> ContentGrid(
+                items = visibleItems,
+                favoriteIds = favoriteIds,
+                onOpenItem = onOpenItem,
+                onShowItemOptions = onShowItemOptions,
+                onRequestSideMenu = onRequestSideMenu,
+                modifier = Modifier.weight(1f),
+                requestInitialFocus = initialFocusRequester != null && visibleItems.isNotEmpty(),
+                initialFocusRequester = contentFocusRequester,
+                onFocusedInfoChanged = { focusedContentInfo = it },
+                placeholderCount = (12 - visibleItems.size).coerceAtLeast(0),
+            )
+            catalogIndexLoading -> ContentGrid(
+                items = emptyList(),
+                favoriteIds = emptyList(),
+                onOpenItem = {},
+                onShowItemOptions = {},
+                modifier = Modifier.weight(1f),
+                placeholderCount = 12,
             )
             showCategoryLanding -> CategoryLandingGrid(
                 cards = categoryCards,

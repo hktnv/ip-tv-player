@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,6 +41,8 @@ internal fun <T> MediaCardGrid(
     initialFocusRequester: FocusRequester? = null,
     onRequestSideMenu: (() -> Unit)? = null,
     contentType: (T) -> Any? = { null },
+    placeholderCount: Int = 0,
+    placeholderContent: (@Composable (Modifier) -> Unit)? = null,
     itemContent: @Composable (
         item: T,
         modifier: Modifier,
@@ -106,6 +109,15 @@ internal fun <T> MediaCardGrid(
                         if (focused) focusedIndex = index
                     },
                 )
+            }
+            if (placeholderCount > 0 && placeholderContent != null) {
+                items(
+                    count = placeholderCount,
+                    key = { "media-card-placeholder-$it" },
+                    contentType = { "media-card-placeholder" },
+                ) {
+                    placeholderContent(Modifier)
+                }
             }
         }
     }

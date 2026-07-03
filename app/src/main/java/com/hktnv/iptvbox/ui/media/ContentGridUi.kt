@@ -16,6 +16,7 @@ internal fun ContentGrid(
     initialFocusRequester: FocusRequester? = null,
     onRequestSideMenu: (() -> Unit)? = null,
     onFocusedInfoChanged: (FocusedContentInfo?) -> Unit = {},
+    placeholderCount: Int = 0,
 ) {
     val favoriteKey = favoriteIds.joinToString("|")
     val favoriteSet = remember(favoriteKey) { favoriteIds.toSet() }
@@ -27,6 +28,10 @@ internal fun ContentGrid(
         initialFocusRequester = initialFocusRequester,
         onRequestSideMenu = onRequestSideMenu,
         contentType = { it.kind.name },
+        placeholderCount = placeholderCount,
+        placeholderContent = { itemModifier ->
+            ContentCardPlaceholder(modifier = itemModifier)
+        },
     ) { item, itemModifier, onFocused, onFocusChanged ->
         ContentCard(
             item = item,

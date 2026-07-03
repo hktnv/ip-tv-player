@@ -46,7 +46,6 @@ import com.hktnv.iptvbox.repository.catalog.CatalogSnapshot
 import com.hktnv.iptvbox.telemetry.AppPerformanceTelemetry
 import com.hktnv.iptvbox.ui.common.EmptyCatalog
 import com.hktnv.iptvbox.ui.common.EmptyState
-import com.hktnv.iptvbox.ui.common.LoadingPanel
 import com.hktnv.iptvbox.ui.media.FocusedContentInfo
 import com.hktnv.iptvbox.ui.media.FocusedContentInfoPanel
 import kotlinx.coroutines.delay
@@ -259,8 +258,12 @@ internal fun SearchScreen(
             fontSize = 14.sp,
             modifier = Modifier.padding(bottom = 8.dp),
         )
-        if (snapshot == null) {
-            LoadingPanel(stringResource(R.string.catalog_preparing), Modifier.padding(top = 12.dp))
+        if (snapshot == null || catalogIndexLoading || (searchLoading && results.isEmpty())) {
+            SearchResultsPlaceholderList(
+                columnCount = searchResultColumnCount,
+                compact = compactSearchControls,
+                modifier = Modifier.weight(1f),
+            )
         } else if (submittedQuery.isNotBlank() && !searchLoading && results.isEmpty()) {
             EmptyState(
                 title = stringResource(R.string.search_no_results),
