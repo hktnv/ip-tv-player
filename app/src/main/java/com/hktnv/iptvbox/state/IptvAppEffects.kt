@@ -121,6 +121,7 @@ internal fun CatalogSnapshotEffect(
     selectedSeriesTitle: String?,
     selectedSeasonNumber: Int?,
     currentSnapshotPlaylistId: String?,
+    currentSnapshotViewReady: Boolean,
     favoriteIds: List<String>,
     recentIds: List<String>,
     favoriteSignature: String,
@@ -145,6 +146,7 @@ internal fun CatalogSnapshotEffect(
         selectedSeriesTitle,
         selectedSeasonNumber,
         showPlaylistEntry,
+        currentSnapshotViewReady,
         favoriteSignature,
         recentSignature,
         refreshToken,
@@ -157,7 +159,12 @@ internal fun CatalogSnapshotEffect(
             return@LaunchedEffect
         }
 
-        val loadPlan = planCatalogSnapshotLoad(currentSnapshotPlaylistId, playlist.id, showPlaylistEntry)
+        val loadPlan = planCatalogSnapshotLoad(
+            currentSnapshotPlaylistId = currentSnapshotPlaylistId,
+            targetPlaylistId = playlist.id,
+            showPlaylistEntry = showPlaylistEntry,
+            currentSnapshotViewReady = currentSnapshotViewReady,
+        )
         if (loadPlan.clearSnapshot) onSnapshotChange(null)
         onLoadingChange(loadPlan.showBlockingLoading)
         val catalogStartedAt = SystemClock.elapsedRealtime()

@@ -80,6 +80,10 @@ internal fun CatalogScreen(
                 text = stringResource(R.string.catalog_preparing),
                 modifier = Modifier.padding(top = 18.dp),
             )
+            catalogIndexLoading -> LoadingPanel(
+                text = stringResource(R.string.catalog_preparing),
+                modifier = Modifier.padding(top = 18.dp),
+            )
             showCategoryLanding -> CategoryLandingGrid(
                 cards = categoryCards,
                 selectedCategory = selectedCategory,

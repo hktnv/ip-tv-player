@@ -40,6 +40,7 @@ import com.hktnv.iptvbox.state.CatalogSnapshotEffect
 import com.hktnv.iptvbox.state.clearBrokenStateAction
 import com.hktnv.iptvbox.state.deletePlaylistAction
 import com.hktnv.iptvbox.state.InitialContentFocusEffect
+import com.hktnv.iptvbox.state.isCatalogSnapshotReadyForView
 import com.hktnv.iptvbox.state.NavigationTimingEffect
 import com.hktnv.iptvbox.state.PersistAppStateEffect
 import com.hktnv.iptvbox.state.playlistStateAfterDeletion
@@ -159,13 +160,23 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
     val favoriteSignature = favoriteIds.joinToString("|")
     val recentSignature = recentIds.joinToString("|")
     val selectedContentCategory = if (showCatalogCategoryLanding) null else selectedCategory
+    val catalogSnapshotViewReady = isCatalogSnapshotReadyForView(
+        snapshot = catalogSnapshot,
+        playlistId = selectedPlaylist?.id,
+        showCategoryLanding = showCatalogCategoryLanding,
+        selectedTab = selectedTab,
+        selectedCategory = selectedContentCategory,
+        selectedSeriesTitle = selectedSeriesTitle,
+        selectedSeasonNumber = selectedSeasonNumber,
+    )
+    val catalogUiLoading = catalogIndexLoading || (screen == AppScreen.CATALOG && !catalogSnapshotViewReady)
     LaunchedEffect(catalogRefreshToken, selectedPlaylistId) {
         playerDiscoveryCache.clear()
     }
     CatalogSnapshotEffect(
         selectedPlaylist = selectedPlaylist, showPlaylistEntry = showPlaylistEntry, selectedTab = selectedTab,
         selectedCategory = selectedContentCategory, selectedSeriesTitle = selectedSeriesTitle, selectedSeasonNumber = selectedSeasonNumber,
-        currentSnapshotPlaylistId = catalogSnapshot?.playlistId,
+        currentSnapshotPlaylistId = catalogSnapshot?.playlistId, currentSnapshotViewReady = catalogSnapshotViewReady,
         favoriteIds = favoriteIds, recentIds = recentIds, favoriteSignature = favoriteSignature, recentSignature = recentSignature, performanceMode = performanceMode,
         refreshToken = catalogRefreshToken,
         catalogStore = catalogStore, catalogRepository = catalogRepository, telemetry = telemetry,
@@ -421,7 +432,7 @@ internal fun IptvBoxApp(telemetry: AppPerformanceTelemetry) {
         performanceMode = performanceMode, restoredApplied = restoredApplied, showRecovery = showRecovery, bootError = bootError,
         selectedPlaylist = selectedPlaylist, screen = screen, showPlaylistEntry = showPlaylistEntry, currentItem = currentItem,
         currentHeaders = currentHeaders, playerContextItems = playerContextItems, playerDiscoveryItems = playerDiscoveryItems, playlists = playlists,
-        playlistEntryReturnScreen = playlistEntryReturnScreen, catalogSnapshot = catalogSnapshot, catalogIndexLoading = catalogIndexLoading,
+        playlistEntryReturnScreen = playlistEntryReturnScreen, catalogSnapshot = catalogSnapshot, catalogIndexLoading = catalogUiLoading,
         playerUiMode = playerUiMode,
         startupBehavior = startupBehavior,
         selectedTab = selectedTab, selectedCategory = selectedCategory, showCatalogCategoryLanding = showCatalogCategoryLanding, selectedSeriesTitle = selectedSeriesTitle,
