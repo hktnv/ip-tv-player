@@ -1,7 +1,12 @@
 package com.hktnv.iptvbox
 
+import android.view.KeyEvent
+import androidx.compose.ui.input.key.Key
 import com.hktnv.iptvbox.player.PlayerInputAction
 import com.hktnv.iptvbox.player.PlayerInputState
+import com.hktnv.iptvbox.player.PlayerRemoteCommand
+import com.hktnv.iptvbox.player.playerRemoteCommandForComposeKey
+import com.hktnv.iptvbox.player.playerRemoteCommandForKeyCode
 import com.hktnv.iptvbox.player.reducePlayerInput
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -64,6 +69,12 @@ class PlayerInputStateTest {
         assertFalse(controlsResult.exitRequested)
         assertEquals(PlayerInputState.ExitConfirmVisible, watchingResult.state)
         assertFalse(watchingResult.exitRequested)
+    }
+
+    @Test
+    fun backKeyIsReservedForBackHandler() {
+        assertEquals(PlayerRemoteCommand.None, playerRemoteCommandForKeyCode(KeyEvent.KEYCODE_BACK))
+        assertEquals(PlayerRemoteCommand.None, playerRemoteCommandForComposeKey(Key.Back))
     }
 
     @Test

@@ -119,7 +119,6 @@ internal fun PlayerRemoteCommand.toInputAction(): PlayerInputAction? {
         PlayerRemoteCommand.PreviousItem -> PlayerInputAction.DownPressed
         PlayerRemoteCommand.Left -> PlayerInputAction.LeftPressed
         PlayerRemoteCommand.Right -> PlayerInputAction.RightPressed
-        PlayerRemoteCommand.Back -> PlayerInputAction.BackPressed
         PlayerRemoteCommand.None -> null
     }
 }

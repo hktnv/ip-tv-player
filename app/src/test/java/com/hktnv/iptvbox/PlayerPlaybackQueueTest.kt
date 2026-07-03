@@ -107,7 +107,7 @@ class PlayerPlaybackQueueTest {
             playerRemoteCommandForKeyCode(KeyEvent.KEYCODE_DPAD_RIGHT),
         )
         assertEquals(
-            PlayerRemoteCommand.Back,
+            PlayerRemoteCommand.None,
             playerRemoteCommandForKeyCode(KeyEvent.KEYCODE_BACK),
         )
     }

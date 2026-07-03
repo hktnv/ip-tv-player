@@ -1,6 +1,5 @@
 package com.hktnv.iptvbox.player
 
-import android.os.SystemClock
 import android.view.KeyEvent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -120,7 +119,6 @@ internal fun PlayerScreen(
     var zappingInfoVisible by remember { mutableStateOf(false) }
     var seekLoadingVisible by remember(player, item.id) { mutableStateOf(false) }
     var seekLoadingRevision by remember(player, item.id) { mutableIntStateOf(0) }
-    val backPressGuard = remember { PlayerBackPressGuard() }
     val controlsVisible = inputState == PlayerInputState.ControlsVisible
     val exitConfirmVisible = inputState == PlayerInputState.ExitConfirmVisible
     val connectionTimeoutVisible = connectionTimeoutUi.showTimeoutDialog
@@ -269,18 +267,6 @@ internal fun PlayerScreen(
     }
     fun handleRemoteCommand(command: PlayerRemoteCommand): Boolean {
         val action = command.toInputAction() ?: return false
-        if (
-            command == PlayerRemoteCommand.Back &&
-            inputState == PlayerInputState.ControlsVisible
-        ) {
-            backPressGuard.markControlsBackHandled(SystemClock.uptimeMillis())
-        } else if (
-            command == PlayerRemoteCommand.Back &&
-            inputState == PlayerInputState.Watching &&
-            backPressGuard.shouldSuppressExitBack(SystemClock.uptimeMillis())
-        ) {
-            return true
-        }
         return applyInputResult(reducePlayerInput(inputState, action))
     }
 
@@ -289,12 +275,6 @@ internal fun PlayerScreen(
         return reducePlayerInput(inputState, action).consumeInput
     }
     fun handleBackPressed() {
-        val nowMs = SystemClock.uptimeMillis()
-        if (inputState == PlayerInputState.ControlsVisible) {
-            backPressGuard.markControlsBackHandled(nowMs)
-        } else if (inputState == PlayerInputState.Watching && backPressGuard.shouldSuppressExitBack(nowMs)) {
-            return
-        }
         applyInputResult(reducePlayerInput(inputState, PlayerInputAction.BackPressed))
     }
 

@@ -21,7 +21,6 @@ internal fun playerRemoteCommandForComposeKey(key: Key): PlayerRemoteCommand {
         Key.DirectionDown -> PlayerRemoteCommand.PreviousItem
         Key.DirectionLeft -> PlayerRemoteCommand.Left
         Key.DirectionRight -> PlayerRemoteCommand.Right
-        Key.Back -> PlayerRemoteCommand.Back
         else -> PlayerRemoteCommand.None
     }
 }
